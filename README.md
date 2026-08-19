@@ -232,18 +232,26 @@ nothing in common beyond the maker.
 | Model | State | Shared memory | Notes |
 |:------|:------|:-------------:|:------|
 | `st010` | modelled | 4 KB | Eight commands. Aliases: `st-010`, `seta010`, `setast010` |
-| `st011` | not modelled | n/a | Plays shogi. No implementation exists to be held to |
+| `st011` | elsewhere | n/a | Plays shogi. Reached by running its own firmware on the processor underneath |
 
-Asking for the second says so rather than building something:
+Asking for the second says where it went rather than building something:
 
 ```python
 from st010 import Seta
 
 Seta(model="st011")
-# UnknownModelError: st011 is not modelled here: the ST011 plays shogi, and the
-# reference this package is measured against answers a handful of canned values
-# rather than playing anything, so there is nothing to hold a model to
+# UnknownModelError: st011 is not modelled here: the ST011 plays shogi, so its
+# behaviour is the player masked into it rather than a set of commands that
+# could be written down; it is reached instead by running its own firmware on
+# the processor underneath, which lives in nec-upd7725-python
 ```
+
+The line between the two is worth stating, because both parts sit in the same
+socket and answer through the same shared memory. The ST010's eight commands are
+each a function of their arguments, so they can be written down and held to a
+corpus. The ST011's one job is to choose a move, and no list of commands produces
+that; the program masked into it does. A model of it written here would be a shogi
+engine written here, which is a different thing wearing the same name.
 
 ## Project structure
 
@@ -336,10 +344,13 @@ measurements and saying what they fit is the honest description.
 <summary><strong>Why is the ST011 not here?</strong></summary>
 <br>
 
-Because there is nothing to hold a model to. The implementation this package is
-measured against answers a handful of canned values and does not play shogi. A
-model with nothing behind it would make its fidelity a claim rather than a
-measurement.
+Because it is a different kind of part wearing the same package. Every command here
+is a function of its arguments, which is why each one can be written down and held
+to a corpus. The ST011 chooses a shogi move, and that is not a function anyone can
+write down; it is a program, masked into the part. Reproducing it means running that
+program, which means the processor underneath and a firmware image its owner
+supplies. That work lives in `nec-upd7725-python`, where it belongs, rather than
+here where it would have to be invented.
 
 </details>
 

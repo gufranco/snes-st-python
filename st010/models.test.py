@@ -32,6 +32,12 @@ class CatalogueTest(unittest.TestCase):
 
         self.assertIn("st011", str(raised.exception))
 
+    def test_the_refusal_names_the_reason_rather_than_the_state_of_other_emulators(self):
+        why = models.NOT_MODELLED["st011"]
+
+        self.assertIn("shogi", why)
+        self.assertNotIn("no implementation", why)
+
     def test_the_refusal_lists_what_is_available(self):
         with self.assertRaises(models.UnknownModelError) as raised:
             models.describe("nonsense")

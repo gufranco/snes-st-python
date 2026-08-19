@@ -1,15 +1,22 @@
 """Which parts this package covers, and what each one is.
 
 Seta made two coprocessors for the Super Nintendo under the ST name and they have
-nothing in common beyond the maker. The ST010 does navigation maths for a racing
-cartridge. The ST011 plays shogi, and no implementation of it exists to be held
-to: the one in the emulator this package is measured against answers a handful of
-canned values and does not play anything.
+nothing in common beyond the maker and the socket. The ST010 does navigation maths
+for a racing cartridge: eight commands, each one a function of its arguments, which
+is why it can be written down. The ST011 plays shogi.
 
-So the ST011 is not here, and asking for it says that rather than building
-something. A model with nothing behind it would make its fidelity a claim rather
-than a measurement, and a claim about a chip that plays a board game would be a
-particularly empty one.
+That difference is why only one of them is here, and it is a difference in kind
+rather than in effort. What the console sends the ST011 is a board and what it
+reads back is a move, so its behaviour is not a set of commands that could be
+listed; its behaviour is the player masked into it. Writing that down would mean
+writing a shogi engine and calling the result a model of that part, which it would
+not be.
+
+The honest way to reach it is the processor underneath running the part's own
+firmware, and that is a different package: `nec-upd7725-python` carries the NEC
+uPD96050 this part is built on, and runs a firmware image its owner supplies. This
+package stays what it is, eight commands written down as functions of their
+arguments, because that is what the ST010 actually is.
 """
 
 
@@ -61,9 +68,10 @@ MODELS = {model.name: model for model in _CATALOGUE}
 
 NOT_MODELLED = {
     "st011": (
-        "the ST011 plays shogi, and the reference this package is measured against "
-        "answers a handful of canned values rather than playing anything, so there "
-        "is nothing to hold a model to"
+        "the ST011 plays shogi, so its behaviour is the player masked into it rather "
+        "than a set of commands that could be written down; it is reached instead by "
+        "running its own firmware on the processor underneath, which lives in "
+        "nec-upd7725-python"
     ),
 }
 """Parts of the same family that are named here so that asking about one explains itself."""
