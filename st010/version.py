@@ -1,1 +1,1 @@
-VERSION = "0.0.0-managed-by-semantic-release"
+VERSION = "1.0.0"
