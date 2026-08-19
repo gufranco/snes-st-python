@@ -21,7 +21,13 @@ jobs:
     name: Format and lint
     runs-on: ubuntu-latest
     steps:
+      # The package reaches the processor through this submodule, and without it
+      # the microcode backend cannot be built at all. Checking it out here does
+      # not supply any firmware, so the runner still exercises the path a user
+      # without an image takes.
       - uses: actions/checkout@v5
+        with:
+          submodules: recursive
 
       - uses: actions/setup-python@v6
         with:
@@ -57,7 +63,13 @@ jobs:
       matrix:
         python: ["3.12", "3.13", "3.14"]
     steps:
+      # The package reaches the processor through this submodule, and without it
+      # the microcode backend cannot be built at all. Checking it out here does
+      # not supply any firmware, so the runner still exercises the path a user
+      # without an image takes.
       - uses: actions/checkout@v5
+        with:
+          submodules: recursive
 
       - uses: actions/setup-python@v6
         with:
@@ -103,7 +115,13 @@ jobs:
     name: Conformance against the reference
     runs-on: ubuntu-latest
     steps:
+      # The package reaches the processor through this submodule, and without it
+      # the microcode backend cannot be built at all. Checking it out here does
+      # not supply any firmware, so the runner still exercises the path a user
+      # without an image takes.
       - uses: actions/checkout@v5
+        with:
+          submodules: recursive
 
       - uses: actions/setup-python@v6
         with:
