@@ -127,4 +127,4 @@ jobs:
 
       # Every state the chip has, so there is no shorter run to fall back to.
       - name: Settle the chip against the reference
-        run: python conformance/exhaustive.py
+        run: python conformance/corpus.py

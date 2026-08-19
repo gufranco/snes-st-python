@@ -29,13 +29,13 @@
 from st010 import St010
 
 chip = St010()
-chip.write(0x000000, 0x00)          # the write that makes it listen
+chip.write(0x000000, 0x00)  # the write that makes it listen
 
 for at, value in enumerate((0x00, 0x01, 0x00, 0x02)):
     chip.write(0x680000 + at, value)  # a point at (0x0100, 0x0200)
 
-chip.write(0x680020, 0x01)          # which way does it lie
-chip.write(0x680021, 0x80)          # go
+chip.write(0x680020, 0x01)  # which way does it lie
+chip.write(0x680021, 0x80)  # go
 
 chip.read(0x680010) | (chip.read(0x680011) << 8)
 # 0x9300
@@ -157,11 +157,11 @@ chip = St010()
 chip.write(0x000000, 0x00)
 chip.write(0x680020, 0x04)
 
-chip.read(0x680020)       # 0x04, the register
-chip.memory[0x20]         # 0x04, a copy nobody asked for
+chip.read(0x680020)  # 0x04, the register
+chip.memory[0x20]  # 0x04, a copy nobody asked for
 
 chip.write(0x680021, 0x01)
-chip.memory[0x21]         # 0x00, because that branch was taken
+chip.memory[0x21]  # 0x00, because that branch was taken
 ```
 
 The other thing worth knowing is that the chip is not listening when it arrives.
@@ -217,8 +217,8 @@ approximation:
 ```python
 from st010 import maths
 
-maths.distance(0x400, 0)        # 0x3D8, four percent under the true 0x400
-maths.distance(0x400, 0x400)    # 0x56F, four percent under the true 0x5A8
+maths.distance(0x400, 0)  # 0x3D8, four percent under the true 0x400
+maths.distance(0x400, 0x400)  # 0x56F, four percent under the true 0x5A8
 ```
 
 Nothing here calls that a length, and a model that used a real square root would
