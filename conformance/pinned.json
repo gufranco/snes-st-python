@@ -1,0 +1,14 @@
+{
+  "comment": "The reference implementation this chip is held to. Pinned by commit so a build is reproducible.",
+  "reference": {
+    "name": "snes9x",
+    "repository": "https://github.com/snes9xgit/snes9x.git",
+    "commit": "2971061cf07fdc6fc7d18883edf4e648eb16a6d2",
+    "sparse": ["."],
+    "path": ".",
+    "source": "seta010.cpp",
+    "from": "static const int16\tST010_SinTable[256]",
+    "until": null,
+    "comment": "The slice starts at the chip's own tables so the driver reads them from the reference rather than from this repository, and runs to the end of the file because the chip is the last thing in it."
+  }
+}
