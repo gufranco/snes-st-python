@@ -29,15 +29,20 @@
 from st010 import St010
 
 chip = St010()
-chip.write(0x000000, 0x00)                      # the write that wakes it
+
+chip.write(0x000000, 0x00)
 for at, value in enumerate((0x00, 0x01, 0x00, 0x02)):
-    chip.write(0x680000 + at, value)            # a point at (0x0100, 0x0200)
-chip.write(0x680020, 0x01)                      # which way does it lie
-chip.write(0x680021, 0x80)                      # go
+    chip.write(0x680000 + at, value)
+chip.write(0x680020, 0x01)
+chip.write(0x680021, 0x80)
 
 chip.read(0x680010) | (chip.read(0x680011) << 8)
 # 0x9300
 ```
+
+The first write wakes the part. The four after it are a point at `(0x0100,
+0x0200)` in the shared memory, then a command number and a start bit in the two
+registers just past the end of it. The answer comes back out of the same memory.
 
 ---
 
