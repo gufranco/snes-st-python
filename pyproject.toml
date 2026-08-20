@@ -69,6 +69,12 @@ ignore = [
 
 [tool.coverage.run]
 source = ["st010"]
+# The checks that drive real microcode are measured out of the gate on purpose.
+# They depend on a file nobody may distribute, so a machine that has one runs a
+# set of paths a machine without one cannot. No single build can exercise both,
+# and a gate that demands the impossible gets switched off rather than met. What
+# they do instead is report as skipped, out loud.
+omit = ["st010/microcode.test.py"]
 branch = true
 
 [tool.coverage.report]
