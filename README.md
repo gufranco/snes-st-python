@@ -100,8 +100,11 @@ git clone --recurse-submodules https://github.com/gufranco/snes-st010-python.git
 cd snes-st010-python
 ```
 
-The submodule is [`nec-upd7725-python`](https://github.com/gufranco/nec-upd7725-python),
-which carries the NEC uPD96050 these parts are built on.
+The submodule sits at the repository root as
+[`nec-upd7725-python/`](https://github.com/gufranco/nec-upd7725-python), named
+after itself rather than buried under a generic folder, because it carries the
+NEC uPD96050 both of these parts are built on and anybody browsing this should
+see that immediately.
 
 ### Supply the microcode
 
@@ -193,7 +196,7 @@ st010/
   silicon.py        loading an image, the handshake, and driving the part
   microcode.test.py the checks that need a real image, kept out of the gate
   version.py        rewritten by the release job and by nothing else
-processor/          the NEC uPD96050, as a submodule
+nec-upd7725-python/ the processor both of these are, as a submodule at the root
 ```
 
 Each module has its tests beside it as `<module>.test.py`, so a module and the

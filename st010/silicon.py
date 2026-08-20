@@ -45,7 +45,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
-PROCESSOR = ROOT / "processor"
+PROCESSOR = ROOT / "nec-upd7725-python"
 
 MEMORY_BYTES = 0x1000
 
@@ -102,9 +102,9 @@ cannot interrupt one: it starts the command and reads memory afterwards.
 """
 
 WHY_NOT_PROCESSOR = (
-    "the processor is not here: this backend runs the part's own microcode on it,"
-    " so the submodule has to be checked out with"
-    " git submodule update --init --recursive"
+    "the processor is not here: this backend runs the part's own microcode on"
+    " the NEC uPD96050, which sits beside this package as a submodule, so it has"
+    " to be checked out with git submodule update --init --recursive"
 )
 
 WHY_NOT_FIRMWARE = (
