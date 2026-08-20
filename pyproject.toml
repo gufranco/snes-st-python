@@ -66,13 +66,9 @@ ignore = [
 # module name carries a dot that N999 rejects. The layout is deliberate: a
 # module and its tests are read together.
 "*.test.py" = ["PLR2004", "N999"]
-# These are command line tools. Printing is their output, not a stray debug
-# statement left behind, and routing it through a logger would put a level and
-# a timestamp in front of a report meant to be read by a person.
-"conformance/*.py" = ["T201"]
 
 [tool.coverage.run]
-source = ["st010", "conformance"]
+source = ["st010"]
 branch = true
 
 [tool.coverage.report]

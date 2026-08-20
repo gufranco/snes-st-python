@@ -157,6 +157,83 @@ class ShapeTest(unittest.TestCase):
         self.assertEqual(len(chip.memory), silicon.MEMORY_BYTES)
 
 
+class HandshakeTest(unittest.TestCase):
+    """The exchange a console performs before the part will take a command.
+
+    The microcode raises its attention bit on its first instruction and waits for
+    the console to read a word back. Until that happens it never reaches the loop
+    that watches for a command, so a part that is spoken to without it answers
+    nothing and looks broken. A console does this at power-on without being told.
+    """
+
+    def test_a_freshly_built_part_is_past_the_boot_exchange(self):
+        chip = built()
+
+        self.assertFalse(chip.chip.registers.sr.rqm)
+
+    def test_the_exchange_can_be_asked_for_again_without_reloading(self):
+        chip = built()
+
+        chip.handshake()
+
+        self.assertFalse(chip.chip.registers.sr.rqm)
+
+
+@unittest.skipUnless(PRESENT, silicon.WHY_NOT_FIRMWARE)
+class RealMicrocodeTest(unittest.TestCase):
+    """The part itself, which only a machine holding its microcode can run."""
+
+    def test_the_handshake_leaves_it_waiting_for_a_command(self):
+        chip = silicon.Silicon()
+
+        self.assertIn(chip.chip.registers.pc, silicon.COMMAND_LOOP["st010"])
+
+    def test_and_it_stays_there_until_one_is_started(self):
+        chip = silicon.Silicon()
+
+        for _ in range(4096):
+            chip.chip.step()
+
+        self.assertIn(chip.chip.registers.pc, silicon.COMMAND_LOOP["st010"])
+
+    def test_the_other_part_waits_in_its_own_place(self):
+        chip = silicon.Silicon("st011")
+
+        for _ in range(4096):
+            chip.chip.step()
+
+        self.assertIn(chip.chip.registers.pc, silicon.COMMAND_LOOP["st011"])
+
+    def test_every_part_the_package_covers_reaches_a_wait_of_its_own(self):
+        from st010 import models
+
+        for name in models.MODELS:
+            chip = silicon.Silicon(name)
+
+            self.assertIn(chip.chip.registers.pc, silicon.COMMAND_LOOP[name], name)
+
+    def test_a_command_runs_and_answers(self):
+        chip = silicon.Silicon()
+        chip.write(0x000000, 0x00)
+        for at, value in enumerate((0x00, 0x01, 0x00, 0x02)):
+            chip.write(0x680000 + at, value)
+        chip.write(0x680000 + silicon.COMMAND_REGISTER, 0x01)
+
+        chip.write(0x680000 + silicon.START_REGISTER, silicon.START)
+
+        self.assertEqual(chip.read(0x680010) | (chip.read(0x680011) << 8), 0x9300)
+
+    def test_and_the_start_byte_is_clear_once_it_has(self):
+        chip = silicon.Silicon()
+        chip.write(0x000000, 0x00)
+        for at, value in enumerate((0x00, 0x01, 0x00, 0x02)):
+            chip.write(0x680000 + at, value)
+        chip.write(0x680000 + silicon.COMMAND_REGISTER, 0x01)
+        chip.write(0x680000 + silicon.START_REGISTER, silicon.START)
+
+        self.assertFalse(chip.execute & silicon.START)
+
+
 class DecodeTest(unittest.TestCase):
     """The register decode, which is the cartridge's rather than the chip's."""
 

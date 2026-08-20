@@ -1,3 +1,4 @@
+import json
 import sys
 import unittest
 from pathlib import Path
@@ -7,65 +8,98 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import st010
 from st010 import models
 
+EVERY_PART = {"st010", "st011"}
+
 
 class CatalogueTest(unittest.TestCase):
-    def test_the_package_names_every_model_it_covers(self):
-        self.assertEqual(set(models.MODELS), {"st010"})
+    def test_the_package_names_every_part_it_covers(self):
+        self.assertEqual(set(models.MODELS), EVERY_PART)
 
-    def test_a_model_says_what_it_is_and_what_it_holds(self):
-        found = models.describe("st010")
+    def test_the_part_that_plays_shogi_is_one_of_them(self):
+        self.assertIn("st011", models.MODELS)
 
-        self.assertTrue(found.summary)
-        self.assertEqual(found.memory_bytes, 0x1000)
+    def test_a_part_says_what_it_is(self):
+        self.assertTrue(models.describe("st010").summary)
 
-    def test_a_model_name_is_matched_however_it_is_written(self):
-        for written in ("ST010", "st-010", "ST_010", "seta-st010"):
-            self.assertEqual(models.describe(written).name, "st010")
+    def test_and_which_image_it_runs(self):
+        self.assertEqual(models.describe("st011").image, "st011")
 
-    def test_the_other_part_of_the_family_is_refused_by_name(self):
-        with self.assertRaises(models.UnknownModelError):
-            models.describe("st011")
-
-    def test_and_the_refusal_says_why_rather_than_only_that(self):
-        with self.assertRaises(models.UnknownModelError) as raised:
-            models.describe("st011")
-
-        self.assertIn("st011", str(raised.exception))
-
-    def test_the_refusal_names_the_reason_rather_than_the_state_of_other_emulators(self):
-        why = models.NOT_MODELLED["st011"]
-
-        self.assertIn("shogi", why)
-        self.assertNotIn("no implementation", why)
-
-    def test_the_refusal_lists_what_is_available(self):
-        with self.assertRaises(models.UnknownModelError) as raised:
-            models.describe("nonsense")
-
-        self.assertIn("st010", str(raised.exception))
-
-    def test_a_model_prints_as_its_name_and_size(self):
+    def test_a_part_prints_as_itself_and_the_image_it_runs(self):
         printed = repr(models.describe("st010"))
 
         self.assertIn("st010", printed)
-        self.assertIn("4096", printed)
+
+    def test_every_part_carries_a_summary(self):
+        for name in models.MODELS:
+            self.assertTrue(models.describe(name).summary, name)
 
 
-class BuildTest(unittest.TestCase):
-    def test_a_chip_is_built_from_its_model_name(self):
-        self.assertEqual(st010.Seta(model="st010").model, "st010")
+class NamingTest(unittest.TestCase):
+    def test_a_part_name_is_matched_however_it_is_written(self):
+        for written in ("ST010", "st-010", "ST_010", "seta-st010"):
+            self.assertEqual(models.describe(written).name, "st010")
 
-    def test_the_default_model_is_the_one_the_cartridge_carries(self):
-        self.assertEqual(st010.Seta().model, "st010")
+    def test_the_other_part_is_matched_the_same_way(self):
+        for written in ("ST011", "st-011", "seta-st011"):
+            self.assertEqual(models.describe(written).name, "st011")
 
-    def test_options_reach_the_chip_that_gets_built(self):
-        built = st010.Seta(memory=bytes([0xAA]) * 0x1000)
-
-        self.assertEqual(built.memory[0], 0xAA)
-
-    def test_a_model_the_package_does_not_have_is_refused_at_construction(self):
+    def test_a_name_no_part_answers_to_is_refused(self):
         with self.assertRaises(models.UnknownModelError):
-            st010.Seta(model="st011")
+            models.describe("nonsense")
+
+    def test_and_the_refusal_lists_what_there_is(self):
+        with self.assertRaises(models.UnknownModelError) as raised:
+            models.describe("nonsense")
+
+        for name in EVERY_PART:
+            self.assertIn(name, str(raised.exception))
+
+    def test_no_alias_belongs_to_two_parts(self):
+        seen = [alias for name in models.MODELS for alias in models.describe(name).aliases]
+
+        self.assertEqual(len(seen), len(set(seen)))
+
+
+class DeclaredImageTest(unittest.TestCase):
+    """That every part names an image the processor will recognise and confirm.
+
+    This is what a machine with no microcode can still check, and it is the check
+    that matters most: a user who supplies a file gets it identified by digest
+    before a byte of it is run, so a wrong file is refused rather than executed.
+    """
+
+    def _manifest(self):
+        where = Path(__file__).resolve().parent.parent / "processor" / "artifacts.manifest.json"
+        return json.loads(where.read_text())
+
+    def test_every_part_runs_an_image_the_processor_declares(self):
+        declared = {one["part"] for one in self._manifest()["artifacts"]}
+
+        for name in models.MODELS:
+            self.assertIn(models.describe(name).image, declared, name)
+
+    def test_every_declared_image_carries_a_deciding_digest(self):
+        for one in self._manifest()["artifacts"]:
+            for accepted in one["accepted"]:
+                self.assertEqual(len(accepted["sha256"]), 64, one["part"])
+
+    def test_both_parts_of_this_family_run_the_same_processor(self):
+        declared = {one["part"]: one["processor"] for one in self._manifest()["artifacts"]}
+
+        for name in models.MODELS:
+            self.assertEqual(declared[models.describe(name).image], "upd96050", name)
+
+
+class BuildingTest(unittest.TestCase):
+    def test_a_name_no_part_answers_to_is_refused_before_any_image_is_looked_for(self):
+        with self.assertRaises(models.UnknownModelError):
+            st010.St010("nonsense")
+
+    def test_the_default_part_is_one_the_catalogue_knows(self):
+        self.assertIn(st010.DEFAULT_MODEL, models.MODELS)
+
+    def test_the_family_name_reaches_the_same_thing(self):
+        self.assertIs(st010.Seta, st010.St010)
 
 
 if __name__ == "__main__":

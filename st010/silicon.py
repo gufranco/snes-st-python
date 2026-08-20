@@ -59,6 +59,30 @@ START = 0x80
 
 NOT_ENABLED = 0x80
 
+COMMAND_LOOP = {
+    "st010": (3, 4, 5),
+    "st011": (2,),
+}
+"""Where each part's microcode sits while it waits to be given something to do.
+
+The ST010 reads the word holding the command and the start byte, tests its top
+bit, and goes round again while that bit is clear: the top bit of that word is
+the start bit, so the loop is the part being ready rather than the part being
+stuck. The ST011 waits in one word instead, because it is a different program.
+
+Measured on each part rather than assumed, and per part rather than shared,
+because the only thing the two have in common is the processor underneath.
+"""
+
+HANDSHAKE_READS = 2
+"""How many byte reads the console gives back to get the part past its first word.
+
+The microcode raises its attention bit immediately and waits for the console to
+take a word off the data port. A word is two byte reads, and until both have
+happened it never reaches the loop above: a part spoken to without them answers
+nothing and looks broken.
+"""
+
 BOOT_STEPS = 200000
 """Instructions to run before the part is spoken to.
 
@@ -191,12 +215,26 @@ class Silicon:
         self.chip = models.describe(identity.processor).build(fill=fill)
         firmware.load(self.chip, image, identity)
         self.console = ports.Console(self.chip)
-        self.chip.run(boot)
+        self.handshake(boot)
 
         self.reset()
         if memory is not None:
             for at, value in enumerate(bytes(memory)[:MEMORY_BYTES]):
                 self.chip.stores.write_byte(at, value)
+
+    def handshake(self, boot=None):
+        """Do what a console does at power-on, which the part waits for.
+
+        One instruction is enough to raise its attention bit; the console then
+        takes a word off the data port, and only then does the microcode go on to
+        the loop that watches for a command. Nothing about the part says this is
+        needed, and a part that has not had it is silent rather than broken.
+        """
+        self.chip.step()
+        for _ in range(HANDSHAKE_READS):
+            self.console.read(self._ports.DATA)
+        self.chip.run(self.boot if boot is None else boot)
+        return self
 
     def reset(self):
         """Forget that the console ever woke the part, without reloading it."""
