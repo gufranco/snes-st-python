@@ -1,0 +1,67 @@
+{
+  "comment": "Where each fact about these parts stands, given that the ROM is the part and the interface around it is not documented.",
+  "sources": {
+    "microcode": "The program masked into each part's ROM, run rather than described. Supplied by whoever holds it; nothing is carried here.",
+    "document": "NEC's uPD77C25 data sheet covers the smaller processor. No document for the uPD96050 was located.",
+    "reference": "The behavioural models in emulators, which is where the interface constants come from."
+  },
+  "divergences": [
+    {
+      "id": "a-derived-model-missed-the-handshake",
+      "parts": ["st010", "st011"],
+      "severity": "high",
+      "status": "closed",
+      "documentSays": "Nothing about how a console gets these parts' attention.",
+      "referenceDoes": "Derived models describe eight commands and account for a write that none of them explains, which is usually handled by treating an address as an enable switch.",
+      "packageFollows": "microcode",
+      "reasoning": "On the part there is no switch. Running the program shows what actually happens: it raises its attention bit on its very first instruction and waits for the console to take a word off the data port, and until that happens it never reaches the loop that watches for a command. A part spoken to without it answers nothing and reads as broken. This is the case that justifies the whole approach: a derived model covers the commands somebody thought to look at, and this was in none of them.",
+      "wouldReopenIt": "Finding an image whose program does not wait this way.",
+      "wouldSettleIt": "Already settled by running the program. A measurement on a real cartridge would confirm it."
+    },
+    {
+      "id": "the-interface-is-not-the-microcode",
+      "parts": ["st010", "st011"],
+      "severity": "medium",
+      "status": "open",
+      "documentSays": "Nothing.",
+      "referenceDoes": "Gives the enable bit, the two register addresses and the size of the shared window.",
+      "packageFollows": "reference",
+      "reasoning": "Running the microcode settles what the part computes and settles nothing about where the console reaches it. Those constants come from a reference and from the cartridge drivers that use them, which is the weakest evidence in this package and sits underneath everything else in it.",
+      "wouldSettleIt": "A cartridge board schematic, a continuity reading, or a die photograph."
+    },
+    {
+      "id": "the-two-parts-wait-differently",
+      "parts": ["st010", "st011"],
+      "severity": "low",
+      "status": "closed",
+      "documentSays": "Nothing.",
+      "referenceDoes": "Often treats the two as one part with two images.",
+      "packageFollows": "microcode",
+      "reasoning": "They are not the same. The ST010 watches words 3, 4 and 5 while it waits and the ST011 watches word 2, and each was measured by running its own program rather than assumed from the other. Assuming would have made one of the two silently wrong in a way that only shows on a cartridge nobody tested.",
+      "wouldReopenIt": "A third image whose wait differs again, which would mean the pattern is per image rather than per part.",
+      "wouldSettleIt": "Already settled by running each program."
+    },
+    {
+      "id": "no-image-is-carried-here",
+      "parts": ["st010", "st011"],
+      "severity": "low",
+      "status": "notADisagreement",
+      "documentSays": "n/a",
+      "referenceDoes": "n/a",
+      "packageFollows": "neither",
+      "reasoning": "The microcode belongs to whoever made the part. What is carried is a manifest: the length and four digests of each image, with SHA-256 deciding. A file that does not match is refused rather than run, because running the wrong image would report behaviour no hardware has.",
+      "wouldSettleIt": "n/a. This is a boundary rather than an unknown."
+    },
+    {
+      "id": "nothing-here-is-a-timing-claim",
+      "parts": ["st010", "st011"],
+      "severity": "medium",
+      "status": "notModelled",
+      "documentSays": "The uPD77C25 data sheet gives one instruction per clock for the smaller part.",
+      "referenceDoes": "Answers immediately.",
+      "packageFollows": "neither",
+      "reasoning": "How long a command takes on a real cartridge, and whether a console polling for an answer can outrun it, is unmodelled. Counting instructions would need the oscillator on the board, which is a figure nobody printed.",
+      "wouldSettleIt": "A measurement on a real cartridge, or a photograph of the board showing its crystal."
+    }
+  ]
+}

@@ -9,3 +9,4 @@ conformance/ref/driver
 # any directory named by UPD7725_FIRMWARE_DIR. None of it is ever committed.
 firmware/*.bin
 firmware/*.rom
+.mypy_cache/

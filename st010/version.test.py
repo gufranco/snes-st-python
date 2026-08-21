@@ -8,10 +8,10 @@ from st010 import version
 
 
 class VersionTest(unittest.TestCase):
-    def test_the_package_carries_a_version(self):
+    def test_the_package_carries_a_version(self) -> None:
         self.assertTrue(version.VERSION)
 
-    def test_and_it_is_written_by_the_release_job_rather_than_by_hand(self):
+    def test_and_it_is_written_by_the_release_job_rather_than_by_hand(self) -> None:
         self.assertIsInstance(version.VERSION, str)
 
 

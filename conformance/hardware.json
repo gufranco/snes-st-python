@@ -1,0 +1,63 @@
+{
+  "note": "What this package asserts about the ST010 and ST011, and where each assertion comes from. The parts themselves are a NEC uPD96050 and a mask ROM, so most of what matters is the ROM, and running it removes the need to describe it. What is left is the interface around the ROM, which is what this file is about.",
+  "authority": {
+    "order": [
+      "the microcode, which is the part: this package runs the program masked into the ROM rather than a description of it",
+      "the processor's own data sheet, by way of nec-upd7725-python, for anything NEC printed",
+      "the reference implementation, for the interface around the ROM"
+    ],
+    "why": "A derived model covers the commands somebody thought to look at, and the corners nobody characterised are exactly where it is silently wrong. Running the program removes that whole class of error. What running it cannot remove is the interface: where the shared memory sits, which addresses are registers, and how a console gets the part's attention in the first place.",
+    "whatIsMissing": "A data sheet for the uPD96050, the larger processor these parts are built on. None was located; nec-upd7725-python records that in its own divergence file and nothing is duplicated here."
+  },
+  "facts": {
+    "sharedMemoryBytes": {
+      "value": 4096,
+      "hex": "0x1000",
+      "verified": false,
+      "why": "The window of memory the console and the part both see.",
+      "evidence": "It is 2048 sixteen bit words, which is the data RAM the uPD96050 is asserted to have. That figure is itself unverified and is corroborated by the firmware images, which load at exactly the declared sizes and would not at any other.",
+      "howToSettleIt": "A uPD96050 data sheet, or a die photograph of the memory."
+    },
+    "enableBit": {
+      "value": 524288,
+      "hex": "0x80000",
+      "verified": false,
+      "why": "The address bit that separates the part's window from the cartridge's ROM.",
+      "evidence": "The reference implementation, corroborated by the driver in the cartridges that carry these parts.",
+      "howToSettleIt": "A cartridge board schematic, or a continuity reading."
+    },
+    "registers": {
+      "value": {
+        "command": "0x20",
+        "start": "0x21"
+      },
+      "verified": false,
+      "why": "The two addresses past the end of the shared memory that are not memory.",
+      "evidence": "The reference implementation, corroborated by the microcode itself: the program tests exactly these words in its command loop.",
+      "howToSettleIt": "A die photograph, or a disassembly of the microcode read independently."
+    },
+    "bootHandshake": {
+      "value": 2,
+      "verified": false,
+      "why": "How many words the console takes off the data port before the part reaches its command loop.",
+      "evidence": "The microcode itself. It raises its attention bit on its first instruction and waits, so a part spoken to without this answers nothing and reads as broken. This is the strongest evidence in the package: it comes from running the program rather than from anybody's description of it, and no derived model accounted for it.",
+      "howToSettleIt": "Already as settled as anything here. A measurement on a real cartridge would confirm it."
+    },
+    "waitWords": {
+      "value": {
+        "st010": [3, 4, 5],
+        "st011": [2]
+      },
+      "verified": false,
+      "why": "Which words of shared memory each program watches while it waits.",
+      "evidence": "Measured on each part by running its own microcode, rather than assumed to be the same.",
+      "howToSettleIt": "A disassembly of each image read independently."
+    }
+  },
+  "notStated": [
+    "Anything about timing. How long a command takes, and whether a console polling for an answer can outrun it, is unmodelled and unmeasured.",
+    "What either part does with a command number outside the eight, beyond what running the microcode shows.",
+    "The contents of either image, which belong to whoever made the part and are not carried here.",
+    "Whether the two registers past the shared memory are the only two."
+  ]
+}

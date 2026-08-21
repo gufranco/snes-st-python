@@ -40,6 +40,8 @@ memory is the processor's own data port, and the microcode is waiting for the
 console to speak to it.
 """
 
+from typing import Any
+
 from .models import MODELS, UnknownModelError, describe
 from .silicon import NeverFinished, NoFirmware, Silicon, available, why_not
 from .version import VERSION
@@ -49,7 +51,7 @@ __version__ = VERSION
 DEFAULT_MODEL = "st010"
 
 
-def St010(model=DEFAULT_MODEL, **options):  # noqa: N802
+def St010(model: str = DEFAULT_MODEL, **options: Any) -> Any:  # noqa: N802
     """One part of that name, running its own microcode.
 
     Refuses when there is no image for it rather than answering from somewhere

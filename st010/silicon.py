@@ -41,7 +41,9 @@ the start byte it was started with, so that is what is waited on.
 """
 
 import sys
+from collections.abc import Mapping
 from pathlib import Path
+from typing import Any, override
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -123,18 +125,18 @@ class NeverFinished(Exception):
     pass
 
 
-def _processor():
+def _processor() -> Any:
     """The processor package, or nothing when the submodule is absent."""
     if str(PROCESSOR) not in sys.path:
         sys.path.insert(0, str(PROCESSOR))
     try:
-        from upd7725 import firmware, models, ports
+        from upd7725 import firmware, models, ports  # type: ignore[import-not-found]
     except ImportError:
         return None
     return firmware, models, ports
 
 
-def available(held=None):
+def available(held: Mapping[str, Any] | None = None) -> dict[str, Any]:
     """Every part there is an image for, by the name the part is known as.
 
     `held` is what was found on disk, passed in so the decision that follows can
@@ -148,7 +150,7 @@ def available(held=None):
     return dict(held)
 
 
-def why_not(held=None):
+def why_not(held: Mapping[str, Any] | None = None) -> str | None:
     """Why this backend cannot run, or nothing when it can."""
     if _processor() is None:
         return WHY_NOT_PROCESSOR
@@ -174,15 +176,15 @@ class Silicon:
 
     def __init__(
         self,
-        part="st010",
-        memory=None,
-        fill=0,
-        patience=SETTLE_LIMIT,
-        boot=BOOT_STEPS,
-        image=None,
-        identity=None,
-        images=None,
-    ):
+        part: str = "st010",
+        memory: bytearray | None = None,
+        fill: int = 0,
+        patience: int = SETTLE_LIMIT,
+        boot: int = BOOT_STEPS,
+        image: Path | str | None = None,
+        identity: Any = None,
+        images: Any = None,
+    ) -> None:
         found = _processor()
         if found is None:
             raise NoFirmware(WHY_NOT_PROCESSOR)
@@ -222,7 +224,7 @@ class Silicon:
             for at, value in enumerate(bytes(memory)[:MEMORY_BYTES]):
                 self.chip.stores.write_byte(at, value)
 
-    def handshake(self, boot=None):
+    def handshake(self, boot: int | None = None) -> "Silicon":
         """Do what a console does at power-on, which the part waits for.
 
         One instruction is enough to raise its attention bit; the console then
@@ -236,25 +238,25 @@ class Silicon:
         self.chip.run(self.boot if boot is None else boot)
         return self
 
-    def reset(self):
+    def reset(self) -> "Silicon":
         """Forget that the console ever woke the part, without reloading it."""
         self.enabled = False
         return self
 
     @property
-    def memory(self):
+    def memory(self) -> bytes:
         """The shared memory as bytes, which is the processor's own scratch."""
         return bytes(self.chip.stores.read_byte(at) for at in range(MEMORY_BYTES))
 
     @property
-    def command(self):
-        return self.chip.stores.read_byte(COMMAND_REGISTER)
+    def command(self) -> int:
+        return int(self.chip.stores.read_byte(COMMAND_REGISTER))
 
     @property
-    def execute(self):
-        return self.chip.stores.read_byte(START_REGISTER)
+    def execute(self) -> int:
+        return int(self.chip.stores.read_byte(START_REGISTER))
 
-    def read(self, address):
+    def read(self, address: int) -> int:
         """One byte, out of the shared memory or out of the port beside it.
 
         The two register addresses are ordinary memory to the microcode, so they
@@ -262,10 +264,11 @@ class Silicon:
         the program watches them, not that the decode treats them apart.
         """
         if not address & ENABLE_BIT:
-            return self.console.read(self._ports.STATUS if address & 1 else self._ports.DATA)
-        return self.chip.stores.read_byte(address & (MEMORY_BYTES - 1))
+            found = self.console.read(self._ports.STATUS if address & 1 else self._ports.DATA)
+            return int(found)
+        return int(self.chip.stores.read_byte(address & (MEMORY_BYTES - 1)))
 
-    def write(self, address, value):
+    def write(self, address: int, value: int) -> None:
         """One byte in, which may also be the byte that starts a command.
 
         The write the model treats as a switch reaches the port here, which is
@@ -288,7 +291,7 @@ class Silicon:
         if self.enabled and self.execute & START:
             self._run()
 
-    def _run(self):
+    def _run(self) -> None:
         """Let the microcode work until it says it is done with the command.
 
         Done is the start byte going clear. The microcode clears it itself once
@@ -304,5 +307,6 @@ class Silicon:
             f" {self.patience} instructions"
         )
 
-    def __repr__(self):
+    @override
+    def __repr__(self) -> str:
         return f"<{self.part} on silicon, {self.processor}>"

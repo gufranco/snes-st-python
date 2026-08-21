@@ -25,12 +25,12 @@ PRESENT = silicon.available()
 class RealMicrocodeTest(unittest.TestCase):
     """The part itself, which only a machine holding its microcode can run."""
 
-    def test_the_handshake_leaves_it_waiting_for_a_command(self):
+    def test_the_handshake_leaves_it_waiting_for_a_command(self) -> None:
         chip = silicon.Silicon()
 
         self.assertIn(chip.chip.registers.pc, silicon.COMMAND_LOOP["st010"])
 
-    def test_and_it_stays_there_until_one_is_started(self):
+    def test_and_it_stays_there_until_one_is_started(self) -> None:
         chip = silicon.Silicon()
 
         for _ in range(4096):
@@ -38,7 +38,7 @@ class RealMicrocodeTest(unittest.TestCase):
 
         self.assertIn(chip.chip.registers.pc, silicon.COMMAND_LOOP["st010"])
 
-    def test_the_other_part_waits_in_its_own_place(self):
+    def test_the_other_part_waits_in_its_own_place(self) -> None:
         chip = silicon.Silicon("st011")
 
         for _ in range(4096):
@@ -46,13 +46,13 @@ class RealMicrocodeTest(unittest.TestCase):
 
         self.assertIn(chip.chip.registers.pc, silicon.COMMAND_LOOP["st011"])
 
-    def test_every_part_the_package_covers_reaches_a_wait_of_its_own(self):
+    def test_every_part_the_package_covers_reaches_a_wait_of_its_own(self) -> None:
         for name in models.MODELS:
             chip = silicon.Silicon(name)
 
             self.assertIn(chip.chip.registers.pc, silicon.COMMAND_LOOP[name], name)
 
-    def test_a_command_runs_and_answers(self):
+    def test_a_command_runs_and_answers(self) -> None:
         chip = silicon.Silicon()
         chip.write(0x000000, 0x00)
         for at, value in enumerate((0x00, 0x01, 0x00, 0x02)):
@@ -63,7 +63,7 @@ class RealMicrocodeTest(unittest.TestCase):
 
         self.assertEqual(chip.read(0x680010) | (chip.read(0x680011) << 8), 0x9300)
 
-    def test_and_the_start_byte_is_clear_once_it_has(self):
+    def test_and_the_start_byte_is_clear_once_it_has(self) -> None:
         chip = silicon.Silicon()
         chip.write(0x000000, 0x00)
         for at, value in enumerate((0x00, 0x01, 0x00, 0x02)):

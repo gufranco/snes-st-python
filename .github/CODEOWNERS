@@ -1,0 +1,13 @@
+# Every path, one owner. The repository has a single maintainer, so this file
+# exists to make review required rather than to route it: without an owner,
+# GitHub's branch protection has nobody to ask.
+*       @gufranco
+
+# The two files that decide what everything else is checked against. A change to
+# either one changes what "correct" means for the whole package.
+/conformance/hardware.json      @gufranco
+/conformance/divergences.json   @gufranco
+
+# The interface around the microcode, which is the part of this package that
+# does not come from running the program.
+/st010/silicon.py               @gufranco

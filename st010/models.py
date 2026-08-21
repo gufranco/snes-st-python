@@ -16,6 +16,9 @@ a part that computes a bearing are the same arrangement, a processor and a mask
 ROM, and both are reached the same way. So both are here, and neither is described.
 """
 
+from collections.abc import Sequence
+from typing import override
+
 
 class UnknownModelError(Exception):
     pass
@@ -24,17 +27,18 @@ class UnknownModelError(Exception):
 class Model:
     """One part: what it is, and which image it runs."""
 
-    def __init__(self, name, summary, aliases=()):
+    def __init__(self, name: str, summary: str, aliases: Sequence[str] = ()) -> None:
         self.name = name
         self.summary = summary
         self.aliases = tuple(aliases)
 
     @property
-    def image(self):
+    def image(self) -> str:
         """The name of the image this part runs, which is its own."""
         return self.name
 
-    def __repr__(self):
+    @override
+    def __repr__(self) -> str:
         return f"<Model {self.name}, running the {self.image} image>"
 
 
@@ -70,11 +74,11 @@ for _model in _CATALOGUE:
         _BY_ALIAS[_alias] = _model
 
 
-def _normalise(name):
+def _normalise(name: str) -> str:
     return str(name).strip().lower().replace("-", "").replace("_", "")
 
 
-def describe(name):
+def describe(name: str) -> "Model":
     """The model of that name, however it happens to be written."""
     wanted = _normalise(name)
     found = _BY_ALIAS.get(wanted)
