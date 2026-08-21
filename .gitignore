@@ -10,3 +10,4 @@ conformance/ref/driver
 firmware/*.bin
 firmware/*.rom
 .mypy_cache/
+docs/

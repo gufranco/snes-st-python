@@ -37,6 +37,7 @@ chip.write(0x680020, 0x01)
 chip.write(0x680021, 0x80)
 
 chip.read(0x680010) | (chip.read(0x680011) << 8)
+
 # 0x9300
 ```
 
@@ -123,6 +124,7 @@ Nothing is downloaded and nothing is shipped.
 
 ```bash
 python3 -c "import st010; print(sorted(st010.available()) or st010.why_not())"
+
 # ['st010', 'st011']
 ```
 
