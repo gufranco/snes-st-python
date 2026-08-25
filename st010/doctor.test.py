@@ -365,25 +365,38 @@ class WaitsTest(unittest.TestCase):
     """Where each part's program stops, and what happens when one will not build."""
 
     def test_a_part_that_will_not_build_is_reported_rather_than_raised(self) -> None:
+        """Driven with an image supplied, so the result does not depend on the machine.
+
+        Reading what happens to be on disk made this pass here and report success
+        on a runner with no image, which is the failure the whole doctor exists
+        to prevent.
+        """
+
         def boom(part: str, images: Any) -> Any:
             raise RuntimeError("the core exploded")
 
-        found = doctor._waits(boom)
+        found = doctor._waits(boom, {"st010": (None, Path("nowhere"))})
 
         self.assertFalse(found.ok)
         self.assertIn("RuntimeError: the core exploded", found.detail)
 
     def test_a_machine_with_no_image_says_nothing_was_run(self) -> None:
         """A fresh checkout has none, and that is not a fault to report."""
-        real = chip.available
-        chip.available = dict  # type: ignore[assignment]
-        try:
-            found = doctor._waits()
-        finally:
-            chip.available = real
+        found = doctor._waits(images={})
 
         self.assertTrue(found.ok)
         self.assertIn("nothing was run", found.detail)
+
+    def test_and_a_part_that_builds_reports_where_it_stopped(self) -> None:
+        """Also driven, so the happy path is checked on every machine too."""
+
+        def waiting(part: str, images: Any) -> Any:
+            return SimpleNamespace(core=SimpleNamespace(registers=SimpleNamespace(pc=3)))
+
+        found = doctor._waits(waiting, {"st010": (None, Path("nowhere"))})
+
+        self.assertTrue(found.ok)
+        self.assertIn("st010 waits at 3", found.detail)
 
 
 if __name__ == "__main__":

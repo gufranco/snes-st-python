@@ -150,15 +150,15 @@ jobs:
         run: |
           python -c "
           import st010
-          from st010 import models, silicon
-          reason = silicon.why_not()
+          from st010 import chip, models
+          reason = chip.why_not()
           if reason:
               print('  nothing was run:', reason)
               raise SystemExit(0)
           for name in sorted(models.MODELS):
-              chip = st010.St010(name)
-              where = chip.chip.registers.pc
+              part = st010.Chip(name)
+              where = part.core.registers.pc
               print(f'  {name}: booted, waiting at word {where}')
-              assert where in silicon.COMMAND_LOOP[name], (name, where)
+              assert where in chip.COMMAND_LOOP[name], (name, where)
           "
         shell: bash

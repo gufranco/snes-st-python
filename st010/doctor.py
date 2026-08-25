@@ -157,15 +157,20 @@ def _digest_of(wanted: str, images: Images | None) -> str:
     return f", sha256 {hashlib.sha256(raw).hexdigest()}"
 
 
-def _waits(build: Build | None = None) -> Finding:
+def _waits(build: Build | None = None, images: Images | None = None) -> Finding:
     """Where each part's shipped microcode stops, which is the thing measured here.
 
     Not a claim from any document. It is the address the program actually reaches
     on a copy a reader supplied, so a report that names a different one is a
     report about a different image.
+
+    `images` is passed in for the same reason it is elsewhere in this file: a
+    check that reads what happens to be on the machine running it is a check
+    whose result depends on the machine, and a test of the failure path passed
+    here and reported success on a runner with no image at all.
     """
     made = _default_build if build is None else build
-    held = chip.available()
+    held = chip.available() if images is None else images
     reached = []
     for name in sorted(models.MODELS):
         if name not in held:
