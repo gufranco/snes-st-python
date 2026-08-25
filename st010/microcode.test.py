@@ -16,62 +16,62 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from st010 import models, silicon
+from st010 import chip, models
 
-PRESENT = silicon.available()
+PRESENT = chip.available()
 
 
-@unittest.skipUnless(PRESENT, silicon.WHY_NOT_FIRMWARE)
+@unittest.skipUnless(PRESENT, chip.WHY_NOT_FIRMWARE)
 class RealMicrocodeTest(unittest.TestCase):
     """The part itself, which only a machine holding its microcode can run."""
 
     def test_the_handshake_leaves_it_waiting_for_a_command(self) -> None:
-        chip = silicon.Silicon()
+        part = chip.Chip()
 
-        self.assertIn(chip.chip.registers.pc, silicon.COMMAND_LOOP["st010"])
+        self.assertIn(part.core.registers.pc, chip.COMMAND_LOOP["st010"])
 
     def test_and_it_stays_there_until_one_is_started(self) -> None:
-        chip = silicon.Silicon()
+        part = chip.Chip()
 
         for _ in range(4096):
-            chip.chip.step()
+            part.core.step()
 
-        self.assertIn(chip.chip.registers.pc, silicon.COMMAND_LOOP["st010"])
+        self.assertIn(part.core.registers.pc, chip.COMMAND_LOOP["st010"])
 
     def test_the_other_part_waits_in_its_own_place(self) -> None:
-        chip = silicon.Silicon("st011")
+        part = chip.Chip("st011")
 
         for _ in range(4096):
-            chip.chip.step()
+            part.core.step()
 
-        self.assertIn(chip.chip.registers.pc, silicon.COMMAND_LOOP["st011"])
+        self.assertIn(part.core.registers.pc, chip.COMMAND_LOOP["st011"])
 
     def test_every_part_the_package_covers_reaches_a_wait_of_its_own(self) -> None:
         for name in models.MODELS:
-            chip = silicon.Silicon(name)
+            part = chip.Chip(name)
 
-            self.assertIn(chip.chip.registers.pc, silicon.COMMAND_LOOP[name], name)
+            self.assertIn(part.core.registers.pc, chip.COMMAND_LOOP[name], name)
 
     def test_a_command_runs_and_answers(self) -> None:
-        chip = silicon.Silicon()
-        chip.write(0x000000, 0x00)
+        part = chip.Chip()
+        part.write(0x000000, 0x00)
         for at, value in enumerate((0x00, 0x01, 0x00, 0x02)):
-            chip.write(0x680000 + at, value)
-        chip.write(0x680000 + silicon.COMMAND_REGISTER, 0x01)
+            part.write(0x680000 + at, value)
+        part.write(0x680000 + chip.COMMAND_REGISTER, 0x01)
 
-        chip.write(0x680000 + silicon.START_REGISTER, silicon.START)
+        part.write(0x680000 + chip.START_REGISTER, chip.START)
 
-        self.assertEqual(chip.read(0x680010) | (chip.read(0x680011) << 8), 0x9300)
+        self.assertEqual(part.read(0x680010) | (part.read(0x680011) << 8), 0x9300)
 
     def test_and_the_start_byte_is_clear_once_it_has(self) -> None:
-        chip = silicon.Silicon()
-        chip.write(0x000000, 0x00)
+        part = chip.Chip()
+        part.write(0x000000, 0x00)
         for at, value in enumerate((0x00, 0x01, 0x00, 0x02)):
-            chip.write(0x680000 + at, value)
-        chip.write(0x680000 + silicon.COMMAND_REGISTER, 0x01)
-        chip.write(0x680000 + silicon.START_REGISTER, silicon.START)
+            part.write(0x680000 + at, value)
+        part.write(0x680000 + chip.COMMAND_REGISTER, 0x01)
+        part.write(0x680000 + chip.START_REGISTER, chip.START)
 
-        self.assertFalse(chip.execute & silicon.START)
+        self.assertFalse(part.execute & chip.START)
 
 
 if __name__ == "__main__":

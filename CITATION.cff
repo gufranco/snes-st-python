@@ -1,0 +1,29 @@
+cff-version: 1.2.0
+title: snes-st010-python
+message: >-
+  If you use this work, or the microcode measurements it was settled against,
+  please cite it.
+type: software
+authors:
+  - given-names: Gustavo
+    family-names: Franco
+    alias: gufranco
+repository-code: https://github.com/gufranco/snes-st010-python
+url: https://github.com/gufranco/snes-st010-python
+abstract: >-
+  A model of the Seta ST010 and ST011, the two coprocessors Seta made for the
+  Super Nintendo. Both are a NEC uPD96050 carrying Seta's microcode, so this
+  runs the program of the part itself rather than a transcription of what
+  somebody believed the part computes, and models the interface Seta wrapped
+  around it.
+keywords:
+  - emulation
+  - super-nintendo
+  - st010
+  - st011
+  - seta
+  - upd96050
+  - hardware-model
+  - conformance
+license: MIT
+version: 3.0.0

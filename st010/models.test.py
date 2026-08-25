@@ -7,7 +7,7 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import st010
-from st010 import models
+from st010 import errors, models
 
 EVERY_PART = {"st010", "st011"}
 
@@ -45,11 +45,11 @@ class NamingTest(unittest.TestCase):
             self.assertEqual(models.describe(written).name, "st011")
 
     def test_a_name_no_part_answers_to_is_refused(self) -> None:
-        with self.assertRaises(models.UnknownModelError):
+        with self.assertRaises(errors.UnknownModelError):
             models.describe("nonsense")
 
     def test_and_the_refusal_lists_what_there_is(self) -> None:
-        with self.assertRaises(models.UnknownModelError) as raised:
+        with self.assertRaises(errors.UnknownModelError) as raised:
             models.describe("nonsense")
 
         for name in EVERY_PART:
@@ -70,11 +70,7 @@ class DeclaredImageTest(unittest.TestCase):
     """
 
     def _manifest(self) -> Any:
-        where = (
-            Path(__file__).resolve().parent.parent
-            / "nec-upd7725-python"
-            / "artifacts.manifest.json"
-        )
+        where = Path(__file__).resolve().parent / "artifacts.manifest.json"
         return json.loads(where.read_text())
 
     def test_every_part_runs_an_image_the_processor_declares(self) -> None:
@@ -97,14 +93,14 @@ class DeclaredImageTest(unittest.TestCase):
 
 class BuildingTest(unittest.TestCase):
     def test_a_name_no_part_answers_to_is_refused_before_any_image_is_looked_for(self) -> None:
-        with self.assertRaises(models.UnknownModelError):
-            st010.St010("nonsense")
+        with self.assertRaises(errors.UnknownModelError):
+            st010.Chip("nonsense")
 
     def test_the_default_part_is_one_the_catalogue_knows(self) -> None:
         self.assertIn(st010.DEFAULT_MODEL, models.MODELS)
 
     def test_the_family_name_reaches_the_same_thing(self) -> None:
-        self.assertIs(st010.Seta, st010.St010)
+        self.assertIs(st010.Chip, st010.Chip)
 
 
 if __name__ == "__main__":

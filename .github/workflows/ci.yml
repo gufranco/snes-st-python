@@ -115,6 +115,21 @@ jobs:
       - name: Coverage must be total
         run: python -m coverage report
 
+  speed:
+    name: Throughput
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: The part must still run faster than the floor
+        run: python -m conformance.speed
+
   microcode:
     name: Against the parts, when any microcode is present
     runs-on: ubuntu-latest

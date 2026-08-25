@@ -6,15 +6,15 @@ from typing import Any, override
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from st010 import silicon
+from st010 import chip, errors
 
-PRESENT = silicon.available()
+PRESENT = chip.available()
 
 
 def an_identity(part: str = "st010") -> Any:
     """What the processor needs to be told about an image, without an image."""
-    sys.path.insert(0, str(silicon.PROCESSOR))
-    from upd7725 import firmware  # type: ignore[import-not-found]
+    sys.path.insert(0, str(chip.PROCESSOR))
+    from st010 import firmware
 
     return firmware.Identity(part, "upd96050", "MADE UP", 16384, 2048)
 
@@ -25,7 +25,7 @@ def a_program() -> Any:
 
 
 def built(**options: Any) -> Any:
-    return silicon.Silicon(image=a_program(), identity=an_identity(), boot=64, **options)
+    return chip.Chip(image=a_program(), identity=an_identity(), boot=64, **options)
 
 
 class WithoutTest(unittest.TestCase):
@@ -33,49 +33,49 @@ class WithoutTest(unittest.TestCase):
 
     @override
     def setUp(self) -> None:
-        self.real = silicon._processor
+        self.real = chip._processor
 
     @override
     def tearDown(self) -> None:
-        silicon._processor = self.real
+        chip._processor = self.real
 
     def test_with_no_processor_it_offers_nothing(self) -> None:
-        silicon._processor = lambda: None
+        chip._processor = lambda: None
 
-        self.assertEqual(silicon.available(), {})
+        self.assertEqual(chip.available(), {})
 
     def test_and_says_the_submodule_is_the_thing_that_is_missing(self) -> None:
-        silicon._processor = lambda: None
+        chip._processor = lambda: None
 
-        self.assertEqual(silicon.why_not(), silicon.WHY_NOT_PROCESSOR)
+        self.assertEqual(chip.why_not(), chip.WHY_NOT_PROCESSOR)
 
     def test_and_refuses_to_build_a_part(self) -> None:
-        silicon._processor = lambda: None
+        chip._processor = lambda: None
 
-        with self.assertRaises(silicon.NoFirmware):
-            silicon.Silicon()
+        with self.assertRaises(errors.NoFirmware):
+            chip.Chip()
 
     def test_with_a_processor_but_no_image_it_says_that_instead(self) -> None:
-        silicon._processor = lambda: (None, None)
+        chip._processor = lambda: (None, None)
 
-        self.assertEqual(silicon.why_not({}), silicon.WHY_NOT_FIRMWARE)
+        self.assertEqual(chip.why_not({}), chip.WHY_NOT_FIRMWARE)
 
     def test_a_part_with_no_image_is_refused_by_name(self) -> None:
-        with self.assertRaises(silicon.NoFirmware) as raised:
-            silicon.Silicon("st011", images={})
+        with self.assertRaises(errors.NoFirmware) as raised:
+            chip.Chip("st011", images={})
 
         self.assertIn("st011", str(raised.exception))
 
     def test_an_image_with_nothing_saying_what_it_is_is_refused(self) -> None:
-        with self.assertRaises(silicon.NoFirmware) as raised:
-            silicon.Silicon(image=a_program())
+        with self.assertRaises(errors.NoFirmware) as raised:
+            chip.Chip(image=a_program())
 
         self.assertIn("program", str(raised.exception))
 
     def test_the_refusals_say_what_to_do_about_them(self) -> None:
-        self.assertIn("submodule", silicon.WHY_NOT_PROCESSOR)
-        self.assertIn(silicon.PROCESSOR.name, str(silicon.PROCESSOR))
-        self.assertIn("firmware", silicon.WHY_NOT_FIRMWARE)
+        self.assertIn("submodule", chip.WHY_NOT_PROCESSOR)
+        self.assertIn(chip.PROCESSOR.name, str(chip.PROCESSOR))
+        self.assertIn("firmware", chip.WHY_NOT_FIRMWARE)
 
 
 class ImportTest(unittest.TestCase):
@@ -83,7 +83,7 @@ class ImportTest(unittest.TestCase):
         held = dict(sys.modules)
         sys.modules["upd7725"] = None  # type: ignore[assignment]
         try:
-            self.assertIsNone(silicon._processor())
+            self.assertIsNone(chip._processor())
         finally:
             sys.modules.clear()
             sys.modules.update(held)
@@ -104,29 +104,29 @@ class WhereTheImagesAreTest(unittest.TestCase):
         return {part: (an_identity(part), where)}
 
     def test_an_image_that_was_found_is_read_from_its_file(self) -> None:
-        chip = silicon.Silicon(images=self._catalogue(), boot=64)
+        part = chip.Chip(images=self._catalogue(), boot=64)
 
-        self.assertEqual(chip.part, "st010")
+        self.assertEqual(part.part, "st010")
 
     def test_the_other_part_is_reached_the_same_way(self) -> None:
-        chip = silicon.Silicon("st011", images=self._catalogue("st011"), boot=64)
+        part = chip.Chip("st011", images=self._catalogue("st011"), boot=64)
 
-        self.assertEqual(chip.part, "st011")
+        self.assertEqual(part.part, "st011")
 
     def test_with_an_image_present_there_is_no_reason_it_cannot_run(self) -> None:
-        self.assertIsNone(silicon.why_not(self._catalogue()))
+        self.assertIsNone(chip.why_not(self._catalogue()))
 
     def test_the_directory_can_be_named_from_outside_the_package(self) -> None:
-        sys.path.insert(0, str(silicon.PROCESSOR))
-        from upd7725 import firmware
+        sys.path.insert(0, str(chip.PROCESSOR))
+        from st010 import firmware
 
         named = Path(tempfile.mkdtemp())
 
         self.assertIn(named, firmware.directories({firmware.DIRECTORY_VARIABLE: str(named)}))
 
     def test_and_the_project_this_sits_inside_is_searched_without_being_named(self) -> None:
-        sys.path.insert(0, str(silicon.PROCESSOR))
-        from upd7725 import firmware
+        sys.path.insert(0, str(chip.PROCESSOR))
+        from st010 import firmware
 
         self.assertIn(firmware.ALONGSIDE, firmware.directories({}))
 
@@ -144,20 +144,20 @@ class ShapeTest(unittest.TestCase):
         self.assertEqual(built().processor, "upd96050")
 
     def test_it_prints_as_the_part_and_how_it_is_run(self) -> None:
-        self.assertIn("silicon", repr(built()))
+        self.assertIn("Chip", repr(built()))
 
     def test_the_shared_memory_is_the_size_the_model_shares(self) -> None:
-        self.assertEqual(len(built().memory), silicon.MEMORY_BYTES)
+        self.assertEqual(len(built().memory), chip.MEMORY_BYTES)
 
     def test_memory_can_be_handed_over_at_the_start(self) -> None:
-        chip = built(memory=bytes([0x5A]) * silicon.MEMORY_BYTES)
+        part = built(memory=bytes([0x5A]) * chip.MEMORY_BYTES)
 
-        self.assertEqual(chip.memory[0], 0x5A)
+        self.assertEqual(part.memory[0], 0x5A)
 
     def test_memory_longer_than_the_shared_memory_is_taken_up_to_it(self) -> None:
-        chip = built(memory=bytes([0x11]) * (silicon.MEMORY_BYTES * 2))
+        part = built(memory=bytes([0x11]) * (chip.MEMORY_BYTES * 2))
 
-        self.assertEqual(len(chip.memory), silicon.MEMORY_BYTES)
+        self.assertEqual(len(part.memory), chip.MEMORY_BYTES)
 
 
 class HandshakeTest(unittest.TestCase):
@@ -170,130 +170,130 @@ class HandshakeTest(unittest.TestCase):
     """
 
     def test_a_freshly_built_part_is_past_the_boot_exchange(self) -> None:
-        chip = built()
+        part = built()
 
-        self.assertFalse(chip.chip.registers.sr.rqm)
+        self.assertFalse(part.core.registers.sr.rqm)
 
     def test_the_exchange_can_be_asked_for_again_without_reloading(self) -> None:
-        chip = built()
+        part = built()
 
-        chip.handshake()
+        part.handshake()
 
-        self.assertFalse(chip.chip.registers.sr.rqm)
+        self.assertFalse(part.core.registers.sr.rqm)
 
 
 class DecodeTest(unittest.TestCase):
-    """The register decode, which is the cartridge's rather than the chip's."""
+    """The register decode, which is the cartridge's rather than the part's."""
 
     def test_the_window_with_the_bit_clear_is_the_port_rather_than_a_refusal(self) -> None:
-        chip = built()
+        part = built()
 
-        self.assertEqual(chip.read(0x000001), chip.console.read(1))
+        self.assertEqual(part.read(0x000001), part.console.read(1))
 
     def test_the_write_with_the_bit_clear_wakes_it_and_does_nothing_else(self) -> None:
-        chip = built()
+        part = built()
 
-        chip.write(0x000000, 0x00)
+        part.write(0x000000, 0x00)
 
-        self.assertTrue(chip.enabled)
+        self.assertTrue(part.enabled)
 
     def test_a_woken_part_reads_its_shared_memory(self) -> None:
-        chip = built()
-        chip.write(0x000000, 0x00)
+        part = built()
+        part.write(0x000000, 0x00)
 
-        chip.write(0x680100, 0x37)
+        part.write(0x680100, 0x37)
 
-        self.assertEqual(chip.read(0x680100), 0x37)
+        self.assertEqual(part.read(0x680100), 0x37)
 
     def test_the_command_address_holds_a_copy_of_the_command(self) -> None:
-        chip = built()
-        chip.write(0x000000, 0x00)
+        part = built()
+        part.write(0x000000, 0x00)
 
-        chip.write(0x680000 + silicon.COMMAND_REGISTER, 0x04)
+        part.write(0x680000 + chip.COMMAND_REGISTER, 0x04)
 
-        self.assertEqual(chip.command, 0x04)
+        self.assertEqual(part.command, 0x04)
 
     def test_the_start_address_holds_what_was_written_to_it(self) -> None:
-        chip = built()
-        chip.write(0x000000, 0x00)
+        part = built()
+        part.write(0x000000, 0x00)
 
-        chip.write(0x680000 + silicon.START_REGISTER, 0x01)
+        part.write(0x680000 + chip.START_REGISTER, 0x01)
 
-        self.assertEqual(chip.execute, 0x01)
+        self.assertEqual(part.execute, 0x01)
 
     def test_a_sleeping_part_takes_no_command(self) -> None:
-        chip = built()
+        part = built()
 
-        chip.write(0x680000 + silicon.COMMAND_REGISTER, 0x04)
+        part.write(0x680000 + chip.COMMAND_REGISTER, 0x04)
 
-        self.assertFalse(chip.enabled)
+        self.assertFalse(part.enabled)
 
     def test_forgetting_it_was_woken_does_not_reload_the_part(self) -> None:
-        chip = built()
-        chip.write(0x000000, 0x00)
-        chip.write(0x680100, 0x42)
+        part = built()
+        part.write(0x000000, 0x00)
+        part.write(0x680100, 0x42)
 
-        chip.reset()
+        part.reset()
 
-        self.assertFalse(chip.enabled)
-        self.assertEqual(chip.memory[0x100], 0x42)
+        self.assertFalse(part.enabled)
+        self.assertEqual(part.memory[0x100], 0x42)
 
 
 class RunningTest(unittest.TestCase):
     """Starting a command, with a program that will never answer one."""
 
     def test_a_program_that_never_clears_the_start_byte_is_given_up_on(self) -> None:
-        chip = built(patience=64)
-        chip.write(0x000000, 0x00)
+        part = built(patience=64)
+        part.write(0x000000, 0x00)
 
-        with self.assertRaises(silicon.NeverFinished):
-            chip.write(0x680000 + silicon.START_REGISTER, silicon.START)
+        with self.assertRaises(errors.NeverFinished):
+            part.write(0x680000 + chip.START_REGISTER, chip.START)
 
     def test_and_says_which_command_it_was_and_how_long_it_waited(self) -> None:
-        chip = built(patience=64)
-        chip.write(0x000000, 0x00)
-        chip.write(0x680000 + silicon.COMMAND_REGISTER, 0x03)
+        part = built(patience=64)
+        part.write(0x000000, 0x00)
+        part.write(0x680000 + chip.COMMAND_REGISTER, 0x03)
 
-        with self.assertRaises(silicon.NeverFinished) as raised:
-            chip.write(0x680000 + silicon.START_REGISTER, silicon.START)
+        with self.assertRaises(errors.NeverFinished) as raised:
+            part.write(0x680000 + chip.START_REGISTER, chip.START)
 
         self.assertIn("0x03", str(raised.exception))
         self.assertIn("64", str(raised.exception))
 
     def test_a_write_without_the_start_bit_starts_nothing(self) -> None:
-        chip = built(patience=64)
-        chip.write(0x000000, 0x00)
+        part = built(patience=64)
+        part.write(0x000000, 0x00)
 
-        chip.write(0x680000 + silicon.START_REGISTER, 0x01)
+        part.write(0x680000 + chip.START_REGISTER, 0x01)
 
-        self.assertEqual(chip.execute, 0x01)
+        self.assertEqual(part.execute, 0x01)
 
     def test_a_command_whose_start_byte_is_already_clear_ends_at_once(self) -> None:
-        chip = built(patience=64)
-        chip.write(0x000000, 0x00)
-        chip.chip.stores.write_byte(silicon.START_REGISTER, 0x00)
+        part = built(patience=64)
+        part.write(0x000000, 0x00)
+        part.core.stores.write_byte(chip.START_REGISTER, 0x00)
 
-        chip._run()
+        part._run()
 
-        self.assertEqual(chip.execute, 0x00)
+        self.assertEqual(part.execute, 0x00)
 
     def test_the_odd_address_in_the_port_window_is_the_status_side(self) -> None:
-        chip = built()
-        before = chip.chip.registers.pc
+        part = built()
+        before = part.core.registers.pc
 
-        chip.write(0x000001, 0x00)
+        part.write(0x000001, 0x00)
 
-        self.assertTrue(chip.enabled)
-        self.assertEqual(chip.chip.registers.pc, before)
+        self.assertTrue(part.enabled)
+        self.assertEqual(part.core.registers.pc, before)
 
     def test_a_program_that_clears_it_is_taken_at_its_word(self) -> None:
-        chip = built(patience=64)
-        chip.write(0x000000, 0x00)
-        chip.chip.stores.write_byte(silicon.START_REGISTER, 0x00)
+        part = built(patience=64)
+        part.write(0x000000, 0x00)
+        part.core.stores.write_byte(chip.START_REGISTER, 0x00)
 
-        chip.write(0x680100, 0x01)
+        part.write(0x680100, 0x01)
 
-        self.assertEqual(chip.read(0x680100), 0x01)
+        self.assertEqual(part.read(0x680100), 0x01)
 
 
 if __name__ == "__main__":

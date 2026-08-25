@@ -19,13 +19,13 @@ ROM, and both are reached the same way. So both are here, and neither is describ
 from collections.abc import Sequence
 from typing import override
 
-
-class UnknownModelError(Exception):
-    pass
+from st010.errors import UnknownModelError
 
 
 class Model:
     """One part: what it is, and which image it runs."""
+
+    __slots__ = ("aliases", "name", "summary")
 
     def __init__(self, name: str, summary: str, aliases: Sequence[str] = ()) -> None:
         self.name = name

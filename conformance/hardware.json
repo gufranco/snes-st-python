@@ -3,11 +3,15 @@
   "authority": {
     "order": [
       "the microcode, which is the part: this package runs the program masked into the ROM rather than a description of it",
-      "the processor's own data sheet, by way of nec-upd7725-python, for anything NEC printed",
+      "the processor's own data sheet, by way of nec-upd7725-96050-python, for anything NEC printed",
       "the reference implementation, for the interface around the ROM"
     ],
     "why": "A derived model covers the commands somebody thought to look at, and the corners nobody characterised are exactly where it is silently wrong. Running the program removes that whole class of error. What running it cannot remove is the interface: where the shared memory sits, which addresses are registers, and how a console gets the part's attention in the first place.",
-    "whatIsMissing": "A data sheet for the uPD96050, the larger processor these parts are built on. None was located; nec-upd7725-python records that in its own divergence file and nothing is duplicated here."
+    "whatIsMissing": "A data sheet for the uPD96050, the larger processor these parts are built on. None was located; nec-upd7725-96050-python records that in its own divergence file and nothing is duplicated here.",
+    "comparedAgainst": {
+      "runner": "st010/microcode.test.py",
+      "what": "The part's own microcode, run to the place it waits for a command, for both parts. The wait address is not derived from any description of the program: it is where the shipped program actually stops, on a copy a reader supplied and this repository confirmed by digest before a byte of it ran."
+    }
   },
   "facts": {
     "sharedMemoryBytes": {
@@ -52,6 +56,13 @@
       "why": "Which words of shared memory each program watches while it waits.",
       "evidence": "Measured on each part by running its own microcode, rather than assumed to be the same.",
       "howToSettleIt": "A disassembly of each image read independently."
+    },
+    "resetLine": {
+      "value": "the console's reset clears the part's memory of ever having been woken",
+      "verified": false,
+      "howToSettleIt": "A capture of the cartridge bus across a console reset, or a Seta document naming the pin.",
+      "appliesTo": ["st010", "st011"],
+      "evidence": "Seta published nothing, and no document names what a reset does to this part. What this model does is the narrow thing the interface makes observable: the part forgets that the console ever performed the handshake, and does not reload its program, because the program is masked into the ROM and nothing a reset does can reach it."
     }
   },
   "notStated": [
@@ -59,5 +70,15 @@
     "What either part does with a command number outside the eight, beyond what running the microcode shows.",
     "The contents of either image, which belong to whoever made the part and are not carried here.",
     "Whether the two registers past the shared memory are the only two."
-  ]
+  ],
+  "documents": {
+    "necDataSheet": {
+      "publisher": "NEC Electronics Inc.",
+      "title": "uPD7725/uPD96050 Digital Signal Processor data sheet",
+      "readOn": "2026-08-20",
+      "file": "upd7725.pdf",
+      "through": "nec-upd7725-96050-python",
+      "note": "Not read here. Every fact about the processor underneath these two parts is recorded in that member and reached through the submodule rather than repeated, because a fact repeated in two records is a fact that can disagree with itself. The sibling is named so nobody mistakes a reading done there for a reading done here."
+    }
+  }
 }

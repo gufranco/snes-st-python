@@ -1,0 +1,69 @@
+{
+  "note": "What a firmware image for each part is, so a copy you already own can be confirmed before it is run. Nothing here is any part of one: a digest identifies a file, and no set of digests reconstructs anything.",
+  "canonical": {
+    "layout": "program first, then data",
+    "programBytesPerWord": 3,
+    "dataBytesPerWord": 2,
+    "digest": "sha256 decides. crc32, md5 and sha1 are published beside it so a copy can be cross-checked against a database that keys on one of those, and none of them decides anything on its own: crc32 is a 32-bit error code, and md5 and sha1 are both collision-broken."
+  },
+  "artifacts": [
+    {
+      "part": "st010",
+      "processor": "upd96050",
+      "summary": "The ST010, which does navigation maths for a racing cartridge.",
+      "bytes": 53248,
+      "programWords": 16384,
+      "dataWords": 2048,
+      "accepted": [
+        {
+          "revision": "ST010",
+          "sha256": "55c697e864562445621cdf8a7bf6e84ae91361e393d382a3704e9aa55559041e",
+          "crc32": "8d136190",
+          "md5": "a1728c31df22b93e4bdae73718ba27a2",
+          "sha1": "75a3e5b5564ea251060dd35bff3dc468d4429e77",
+          "provenance": {
+            "kind": "localCopy",
+            "verifiedOn": "2026-08-20"
+          }
+        }
+      ],
+      "badDumps": []
+    },
+    {
+      "part": "st011",
+      "processor": "upd96050",
+      "summary": "The ST011, which plays shogi.",
+      "bytes": 53248,
+      "programWords": 16384,
+      "dataWords": 2048,
+      "accepted": [
+        {
+          "revision": "ST011",
+          "sha256": "651b82a1e26c4fa8dd549e91e7f923012ed2ca54c1d9fd858655ab30679c2f0e",
+          "crc32": "750c6012",
+          "md5": "2c56baddba22c6649c95c4c3b13adce3",
+          "sha1": "b2fdfa3edf08f76dbd30a0a4d3d0ef1e3d3f6905",
+          "provenance": {
+            "kind": "localCopy",
+            "verifiedOn": "2026-08-20"
+          }
+        }
+      ],
+      "badDumps": []
+    }
+  ],
+  "provenance": {
+    "note": "Where each digest below came from, because a digest without that is a claim about one machine rather than about the artifact.",
+    "kinds": {
+      "localCopy": "Computed from a copy the author holds, on the date given. The weakest provenance this project accepts, and the one every entry currently has. It says the file on one disk hashes to this, and nothing about whether that file is the right one.",
+      "database": "Taken from a published catalogue, named with its version. Stronger, because the catalogue was built from many copies. No entry here has this yet.",
+      "manufacturer": "Taken from the manufacturer. Does not exist for these, and never will: nobody published digests of microcode."
+    },
+    "howToStrengthen": "The interop digests are published beside the deciding one so anybody can cross-check an entry against a catalogue that keys on crc32 or sha1 without being handed the file. A confirmed catalogue entry, with its version, replaces a localCopy entry and is worth having."
+  },
+  "badDumps": {
+    "note": "Dumps known to be damaged, declared per artifact under badDumps so a file matching one is told it is corrupt rather than told it is unrecognised. The two are different problems with different answers: a wrong file means find the right one, and a corrupt file means the copy is damaged.",
+    "recorded": 0,
+    "why": "None have been recorded, because nobody has sent one. The list is real rather than decorative: the diagnosis reads it, and there is a test that a declared bad dump is named as damaged. When somebody reports one, its digests go in the artifact's badDumps and the message changes with no code change."
+  }
+}

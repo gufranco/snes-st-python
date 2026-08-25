@@ -14,7 +14,7 @@ from typing import Any, override
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from st010 import silicon
+from st010 import chip
 
 HERE = Path(__file__).resolve().parent
 
@@ -75,33 +75,33 @@ class ConstantTest(unittest.TestCase):
     def test_the_shared_memory_is_the_size_declared(self) -> None:
         shared = self.facts["sharedMemoryBytes"]
 
-        self.assertEqual(shared["value"], silicon.MEMORY_BYTES)
+        self.assertEqual(shared["value"], chip.MEMORY_BYTES)
 
     def test_and_it_is_the_data_ram_the_processor_is_asserted_to_have(self) -> None:
-        self.assertEqual(silicon.MEMORY_BYTES, DATA_RAM_WORDS * WORD_BYTES)
+        self.assertEqual(chip.MEMORY_BYTES, DATA_RAM_WORDS * WORD_BYTES)
 
     def test_the_enable_bit_is_the_one_declared(self) -> None:
         enable = self.facts["enableBit"]
 
-        self.assertEqual(enable["value"], silicon.ENABLE_BIT)
+        self.assertEqual(enable["value"], chip.ENABLE_BIT)
 
     def test_and_it_sits_above_the_shared_window(self) -> None:
-        self.assertGreater(silicon.ENABLE_BIT, silicon.MEMORY_BYTES)
+        self.assertGreater(chip.ENABLE_BIT, chip.MEMORY_BYTES)
 
     def test_both_registers_are_where_they_are_declared(self) -> None:
         registers = self.facts["registers"]["value"]
 
         found = (int(registers["command"], 16), int(registers["start"], 16))
 
-        self.assertEqual(found, (silicon.COMMAND_REGISTER, silicon.START_REGISTER))
+        self.assertEqual(found, (chip.COMMAND_REGISTER, chip.START_REGISTER))
 
     def test_and_they_are_adjacent(self) -> None:
-        self.assertEqual(silicon.START_REGISTER - silicon.COMMAND_REGISTER, 1)
+        self.assertEqual(chip.START_REGISTER - chip.COMMAND_REGISTER, 1)
 
     def test_the_handshake_takes_the_declared_number_of_reads(self) -> None:
         handshake = self.facts["bootHandshake"]
 
-        self.assertEqual(handshake["value"], silicon.HANDSHAKE_READS)
+        self.assertEqual(handshake["value"], chip.HANDSHAKE_READS)
 
     def test_and_the_record_says_it_came_from_running_the_program(self) -> None:
         handshake = self.facts["bootHandshake"]
@@ -113,7 +113,7 @@ class ConstantTest(unittest.TestCase):
 
         found = {name: tuple(words) for name, words in waits.items()}
 
-        self.assertEqual(found, dict(silicon.COMMAND_LOOP))
+        self.assertEqual(found, dict(chip.COMMAND_LOOP))
 
     def test_and_the_two_parts_do_not_wait_alike(self) -> None:
         waits = self.facts["waitWords"]["value"]

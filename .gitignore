@@ -1,13 +1,25 @@
 __pycache__/
 *.pyc
+.ruff_cache/
+.mypy_cache/
 .coverage
+coverage.json
 node_modules/
-conformance/ref/driver
+dist/
+build/
+*.egg-info/
+.venv/
+venv/
+uv.lock
+.DS_Store
 
-# Microcode belongs to whoever made the part. A copy you already own goes here,
-# or in the same directory of a project carrying this one as a submodule, or in
-# any directory named by UPD7725_FIRMWARE_DIR. None of it is ever committed.
+docs/
+specs/
+
+*.rom
+*.bin
+*.sfc
+*.smc
+conformance/ref/driver
 firmware/*.bin
 firmware/*.rom
-.mypy_cache/
-docs/

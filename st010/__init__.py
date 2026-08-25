@@ -1,14 +1,14 @@
 """The ST010 and ST011, run rather than described.
 
-    from st010 import St010
+    from st010 import Chip
 
-    chip = St010()
-    chip.write(0x000000, 0x00)
+    part = Chip()
+    part.write(0x000000, 0x00)
     for at, value in enumerate((0x00, 0x01, 0x00, 0x02)):
-        chip.write(0x680000 + at, value)
-    chip.write(0x680020, 0x01)
-    chip.write(0x680021, 0x80)
-    chip.read(0x680010) | (chip.read(0x680011) << 8)
+        part.write(0x680000 + at, value)
+    part.write(0x680020, 0x01)
+    part.write(0x680021, 0x80)
+    part.read(0x680010) | (part.read(0x680011) << 8)
     # 0x9300
 
 Both are a NEC uPD96050 with microcode masked into it, so what a command computes
@@ -42,8 +42,17 @@ console to speak to it.
 
 from typing import Any
 
-from .models import MODELS, UnknownModelError, describe
-from .silicon import NeverFinished, NoFirmware, Silicon, available, why_not
+from . import chip as chip
+from .chip import available, why_not
+from .errors import (
+    Corrupt,
+    NeverFinished,
+    NoFirmware,
+    UnknownModelError,
+    Unrecognised,
+    WrongShape,
+)
+from .models import MODELS, Model, describe
 from .version import VERSION
 
 __version__ = VERSION
@@ -51,27 +60,37 @@ __version__ = VERSION
 DEFAULT_MODEL = "st010"
 
 
-def St010(model: str = DEFAULT_MODEL, **options: Any) -> Any:  # noqa: N802
-    """One part of that name, running its own microcode.
+def Chip(model: str = DEFAULT_MODEL, **options: Any) -> "chip.Chip":  # noqa: N802
+    """A chip of the named model, sharing one interface across the family.
 
-    Refuses when there is no image for it rather than answering from somewhere
-    else, because an answer that did not come from the part is worse than none.
+    The model comes first because it is the thing a caller always knows. There
+    is no second positional argument here and there is nothing for one to carry:
+    what this part runs on is a program read from a file, not a store a caller
+    hands over, so the shape stops at the argument every member takes.
+
+    The same shape as `Cpu(model, memory)` on the members that run a program, and
+    named for what this is rather than for what it does. This part answers the
+    accesses a cartridge makes; the cycles are spent inside the processor it
+    composes, and that member is the one that reports them.
+
+    Refuses when there is no image for the named part rather than answering from
+    somewhere else, because an answer that did not come from the part is worse
+    than none.
     """
-    return Silicon(describe(model).name, **options)
-
-
-Seta = St010
-"""The family name, for a caller who prefers to say which family they mean."""
+    return chip.Chip(describe(model).name, **options)
 
 
 __all__ = [
+    "DEFAULT_MODEL",
     "MODELS",
+    "Chip",
+    "Corrupt",
+    "Model",
     "NeverFinished",
     "NoFirmware",
-    "Seta",
-    "Silicon",
-    "St010",
     "UnknownModelError",
+    "Unrecognised",
+    "WrongShape",
     "__version__",
     "available",
     "describe",

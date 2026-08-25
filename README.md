@@ -23,12 +23,12 @@
   <a href="https://github.com/gufranco/snes-st010-python/issues">Issues</a>
 </p>
 
-**2** parts · **1** processor underneath both · **4 KB** of memory shared with the console · **0** commands described by hand · **60** tests · **100%** statement and branch coverage · every image confirmed by **SHA-256** before a byte of it runs
+**2** parts · **1** processor underneath both · **4 KB** of memory shared with the console · **0** commands described by hand · both waits measured on the shipped microcode, **0** disagreements · **399** tests · **100%** statement and branch coverage · every image confirmed by **SHA-256** before a byte of it runs · no dependencies
 
 ```python
-from st010 import St010
+from st010 import Chip
 
-chip = St010()
+chip = Chip()
 
 chip.write(0x000000, 0x00)
 for at, value in enumerate((0x00, 0x01, 0x00, 0x02)):
@@ -47,8 +47,81 @@ registers just past the end of it. The answer comes back out of the same memory.
 
 ---
 
-## The problem
+## Install
+```bash
+git clone --recurse-submodules https://github.com/gufranco/snes-st010-python.git
+cd snes-st010-python
+```
 
+Python 3.12 or newer, and the submodule. Nothing else.
+
+The submodule sits at the repository root as
+[`nec-upd7725-96050-python/`](https://github.com/gufranco/nec-upd7725-96050-python),
+named after itself rather than buried under a generic folder, because it is the
+processor both of these parts are built on. Without it nothing here can run.
+
+The microcode is a separate matter and is not carried here. Where to put a copy
+you already own is under [the microcode you supply](#the-microcode-you-supply).
+
+## The interface
+Everything a caller touches. Nothing else is public.
+
+| Name | What it is |
+|:--|:--|
+| `Chip(model, **options)` | A part of that model, running its own microcode |
+| `describe(model)`, `MODELS`, `DEFAULT_MODEL` | The catalogue, without building anything |
+| `available()` | Every part there is an image for on this machine |
+| `why_not()` | Why the backend cannot run, or nothing when it can |
+| `read(address)`, `write(address, value)` | The two accesses a cartridge makes |
+| `handshake()` | What the console does to wake the part |
+| `reset()` | Back to a part that has not been woken, handed back for chaining |
+| `step(count)` | Run the processor for a number of its own instructions |
+| `UnknownModelError`, `NoFirmware`, `NeverFinished` | What a caller can catch |
+| `Unrecognised`, `Corrupt`, `WrongShape` | What a supplied image can be refused for |
+
+`Chip` takes the model first, which is the argument every member of the family
+takes first. The name is the kind rather than the chip, so a traceback says what
+sort of thing it was rather than which of two parts happened to raise.
+
+```python
+from st010 import Chip, describe
+
+describe("seta011").name
+
+# 'st011'
+```
+
+Either part is reached the same way, by the name it is known as:
+
+```python
+from st010 import Chip
+
+print(Chip("st010").part, Chip("st011").part)
+
+# st010 st011
+```
+
+A name no part answers to is refused rather than quietly building the default:
+
+```python
+from st010 import Chip, UnknownModelError
+
+try:
+    Chip("st012")
+except UnknownModelError as refused:
+    print(str(refused).split(";")[0])
+
+# st012 is not a part this package covers
+```
+
+### The two parts
+
+| Name | Also answers to | What it does |
+|:--|:--|:--|
+| `st010` | `st-010`, `seta010`, `setast010` | Eight commands for a racing cartridge |
+| `st011` | `st-011`, `seta011`, `setast011` | A shogi opponent |
+
+## The problem
 This chip has no port. It shares four kilobytes of battery-backed memory with the
 console: every command reads its arguments out of fixed addresses in that memory
 and writes its answers back into other fixed addresses in the same memory.
@@ -65,7 +138,6 @@ So carrying them means carrying the chip's content, and deriving them means bein
 slightly wrong everywhere.
 
 ## The solution
-
 Run the program. Neither problem survives it: nothing needs deriving, and nothing
 of the chip's content is carried.
 
@@ -79,59 +151,12 @@ fall back to a guess, because an answer that did not come from the part is worse
 than no answer.
 
 ## Why there is no model here
-
 This used to carry a hand-written implementation of the ST010's eight commands
 and fifteen hundred lines of the tables they worked from. Its own opening said
 none of those tables could be restated as a formula. All of it is gone, along
 with the corpus recorded from another implementation that existed to check it.
 
-## Quick start
-
-### Prerequisites
-
-| Tool | Version | Install |
-|:-----|:--------|:--------|
-| Python | 3.12, 3.13 or 3.14 | [python.org](https://www.python.org/downloads/) |
-| Git | any | [git-scm.com](https://git-scm.com/) |
-
-### Setup
-
-```bash
-git clone --recurse-submodules https://github.com/gufranco/snes-st010-python.git
-cd snes-st010-python
-```
-
-The submodule sits at the repository root as
-[`nec-upd7725-python/`](https://github.com/gufranco/nec-upd7725-python), named
-after itself rather than buried under a generic folder, because it carries the
-NEC uPD96050 both of these parts are built on and anybody browsing this should
-see that immediately.
-
-### Supply the microcode
-
-A copy of the microcode you already own goes in one of these, and the first one
-that has it wins:
-
-1. any directory named by `UPD7725_FIRMWARE_DIR`, several separated the way your
-   system separates a path
-2. the `firmware/` directory of the project this one sits inside, which is what a
-   parent project uses when it carries this as a submodule
-3. this project's own `firmware/` directory
-
-Nothing is downloaded and nothing is shipped.
-
-### Verify
-
-```bash
-python3 -c "import st010; print(sorted(st010.available()) or st010.why_not())"
-
-# ['st010', 'st011']
-```
-
-Without an image that prints the reason instead, naming where to put one.
-
 ## The microcode you supply
-
 Every image is identified before a byte of it is executed. SHA-256 decides; the
 other values are there so you can cross-check against a database that keys on
 them.
@@ -152,7 +177,6 @@ certutil -hashfile firmware\st0010.bin SHA256   # Windows
 A file that does not match is refused rather than run.
 
 ## The handshake nothing documents
-
 The model this replaced treated one write as a switch. A write below the shared
 window made the chip start listening, and until it arrived the two registers past
 the end of memory could not be set at all.
@@ -173,14 +197,23 @@ each part sits in a wait of its own, measured on each rather than assumed.
 | ST010 | words 3, 4 and 5, testing the top bit of the word holding the command and the start byte |
 | ST011 | word 2 |
 
-## What is checked without one
+Measured rather than asserted, on whichever images are on this machine:
 
+```python
+from st010 import Chip, available
+
+for name in sorted(available()):
+    print(name, Chip(name).core.registers.pc)
+```
+
+
+## Is it right
 A machine holding no microcode still checks everything this package can get
 wrong, because the part-specific knowledge is no longer in the code.
 
 | Layer | What is checked | Needs an image |
 |:--|:--|:--:|
-| The processor | Every instruction, in [`nec-upd7725-python`](https://github.com/gufranco/nec-upd7725-python) | No |
+| The processor | Every instruction, in [`nec-upd7725-96050-python`](https://github.com/gufranco/nec-upd7725-96050-python) | No |
 | The decode | The wake write, the two registers past memory, the shared window, driven by a program of zeroes | No |
 | Identity | That both parts name an image with a deciding digest, so a supplied file is confirmed rather than trusted | No |
 | The catalogue | Both parts, every name they answer to, and which image each runs | No |
@@ -189,22 +222,40 @@ wrong, because the part-specific knowledge is no longer in the code.
 That last one is the only check that needs an image, and it reports as skipped
 rather than as passed when there is none.
 
-## Project structure
+**Open questions** are listed with the measurement that would close each one:
+[`OPEN-QUESTIONS.md`](OPEN-QUESTIONS.md). Where two sources part, both are kept
+in [`conformance/divergences.json`](conformance/divergences.json) with what would
+settle it.
+
+## Working on it
+```bash
+python -m coverage erase
+for file in $(find st010 conformance -name '*.test.py' | sort); do
+  python -m coverage run -a "$file"
+done
+python -m coverage report
+```
+
+`python3 st010/doctor.py` says what is actually on this machine: both parts, which image each wants, where each one's program stops waiting, and the state of the processor underneath. It is run as a file rather than with `-m` so that it still runs when the package itself will not import, which is the case it exists for.
+
+[`AGENTS.md`](AGENTS.md) is the document for an agent working here. [`FAMILY.md`](FAMILY.md) is the standard this repository shares with the rest of the family, kept identical in every member.
+
+### Project structure
 
 ```text
 st010/
   __init__.py       the package, and the part chosen at construction
   models.py         which parts exist, what they answer to, which image each runs
-  silicon.py        loading an image, the handshake, and driving the part
+  chip.py        loading an image, the handshake, and driving the part
   microcode.test.py the checks that need a real image, kept out of the gate
   version.py        rewritten by the release job and by nothing else
-nec-upd7725-python/ the processor both of these are, as a submodule at the root
+nec-upd7725-96050-python/ the processor both of these are, as a submodule at the root
 ```
 
 Each module has its tests beside it as `<module>.test.py`, so a module and the
 cases that pin its behaviour are read together.
 
-## Tests
+### Tests
 
 ```bash
 for f in st010/*.test.py; do python3 "$f"; done
@@ -213,14 +264,14 @@ for f in st010/*.test.py; do python3 "$f"; done
 | Area | File | What it pins |
 |:--|:--|:--|
 | The catalogue | [`st010/models.test.py`](st010/models.test.py) | Both parts, their names, their images, and that each image is declared with a digest |
-| The part | [`st010/silicon.test.py`](st010/silicon.test.py) | Loading, the handshake, the decode, the shared memory, refusing |
+| The part | [`st010/chip.test.py`](st010/chip.test.py) | Loading, the handshake, the decode, the shared memory, refusing |
 | The microcode | [`st010/microcode.test.py`](st010/microcode.test.py) | That each part reaches its own wait and answers a command. Needs an image |
 
 Coverage is enforced at 100% of statements and branches by
 [`pyproject.toml`](pyproject.toml), so a new branch without a test fails the
 build rather than quietly lowering the number.
 
-## Development
+### Development
 
 | Command | Description |
 |:--|:--|
@@ -231,7 +282,7 @@ build rather than quietly lowering the number.
 | `python3 st010/microcode.test.py -v` | Run the checks that need an image |
 | `pnpm run format:check` | Check that every JSON file is formatted, which CI also does |
 
-## Project conventions
+### Project conventions
 
 | Convention | Source |
 |:--|:--|
@@ -240,13 +291,13 @@ build rather than quietly lowering the number.
 | Versioning | [semantic-release](https://semantic-release.gitbook.io/), from the commit history |
 | Tests | Beside the module, named `<module>.test.py` |
 
-## Versioning
+### Versioning
 
 This project follows [Semantic Versioning](https://semver.org/). Every release is
 tagged. See [releases](https://github.com/gufranco/snes-st010-python/releases) for
 the changelog and upgrade notes.
 
-## FAQ
+### FAQ
 
 <details>
 <summary><strong>Why will it not work without a firmware image?</strong></summary>
@@ -278,6 +329,23 @@ both parts are a processor and a mask ROM, and both are reached the same way.
 
 </details>
 
-## License
+## References
+This repository carries no documents and no microcode. Every claim is traced to
+something published elsewhere, listed here so a reader can fetch the same file
+and check the same page.
 
+Seta published nothing about either part. The top rung of the authority ladder is
+empty here and [`conformance/hardware.json`](conformance/hardware.json) says so
+rather than promoting the rung below it.
+
+| Source | Used for |
+|:-------|:---------|
+| [nec-upd7725-96050-python](https://github.com/gufranco/nec-upd7725-96050-python) | The processor itself: its data sheet, its record, its divergences and its corpus |
+| [snes-driver-python](https://github.com/gufranco/snes-driver-python) | Reading a cartridge's own code to find what it says to its coprocessor |
+| The microcode a reader supplies | Every answer this package gives. Confirmed by digest before a byte of it runs |
+
+## Citing this
+[CITATION.cff](CITATION.cff) is kept in step with the released version by the same script that stamps the package, so the version it names is the version that shipped. GitHub renders it as a Cite this repository button.
+
+## License
 [MIT](LICENSE)
