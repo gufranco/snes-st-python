@@ -1,29 +1,10 @@
-<div align="center">
+# Seta ST010 and ST011
 
-<h1>Seta ST010 and ST011</h1>
-
-<strong>The two coprocessors Seta made for the Super Nintendo, running the microcode you supply rather than a description of it.</strong>
-
-<br>
-<br>
+The two coprocessors Seta made for the Super Nintendo, running the microcode you supply rather than a description of it.
 
 [![CI](https://github.com/gufranco/snes-st-python/actions/workflows/ci.yml/badge.svg)](https://github.com/gufranco/snes-st-python/actions/workflows/ci.yml)
-[![Coverage](https://img.shields.io/badge/coverage-100%25%20statement%20%2B%20branch-brightgreen)](#tests)
-[![Python](https://img.shields.io/badge/python-3.12%20%7C%203.13%20%7C%203.14-blue)](pyproject.toml)
-[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-</div>
-
-<p align="center">
-  <a href="#quick-start">Quick start</a> &nbsp;|&nbsp;
-  <a href="#why-there-is-no-model-here">Why there is no model</a> &nbsp;|&nbsp;
-  <a href="#the-microcode-you-supply">The microcode you supply</a> &nbsp;|&nbsp;
-  <a href="#the-handshake-nothing-documents">The handshake</a> &nbsp;|&nbsp;
-  <a href="#what-is-checked-without-one">What is checked without one</a> &nbsp;|&nbsp;
-  <a href="https://github.com/gufranco/snes-st-python/issues">Issues</a>
-</p>
-
-**2** parts · **1** processor underneath both · **4 KB** of memory shared with the console · **0** commands described by hand · both waits measured on the shipped microcode, **0** disagreements · **494** tests · **100%** statement and branch coverage · every image confirmed by **SHA-256** before a byte of it runs · no dependencies
+**2** parts, **1** processor underneath both, **4 KB** of memory shared with the console, **0** commands described by hand, both waits measured on the shipped microcode, **0** disagreements, **494** tests, **100%** statement and branch coverage, every image confirmed by **SHA-256** before a byte of it runs, no dependencies
 
 ```python
 from snesst import Chip
@@ -45,7 +26,6 @@ The first write wakes the part. The four after it are a point at `(0x0100,
 0x0200)` in the shared memory, then a command number and a start bit in the two
 registers just past the end of it. The answer comes back out of the same memory.
 
----
 
 ## Install
 ```bash
