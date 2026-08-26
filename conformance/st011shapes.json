@@ -1,0 +1,86 @@
+{
+  "note": "The shapes real cartridges use to drive this part: which accesses each routine makes, in what order, how wide each one was and where in the shared memory it landed. No byte any cartridge carries is recorded here and none can be recovered from this. Read out of the games named below, every one of them confirmed against all four of its digests first.",
+  "part": "st011",
+  "producedBy": "https://github.com/gufranco/snes-driver-python",
+  "readFrom": [
+    {
+      "title": "2DAN MORITA SHOUGI",
+      "bytes": 524288,
+      "layout": "lorom",
+      "chipset": "0xf6",
+      "name": "Hayazashi Nidan Morita Shougi (Japan).sfc",
+      "shapes": 13,
+      "crc32": "81e822ad",
+      "md5": "ea342f4da33bf6eb3dc1fd2f89aa751f",
+      "sha1": "82b4bca58918a18707f932ec6afc0a12a3c4b872",
+      "sha256": "85825a75ef662b28d0111c0462ec3c34234da1d78d10472b8022fcba3b9eaed5"
+    }
+  ],
+  "shapes": [
+    {
+      "shape": "poll1@0x600001 write1@0x600000 poll1@0x600001 read1@0x68012c",
+      "seen": 3,
+      "cartridges": 1
+    },
+    {
+      "shape": "poll1@0x600001 write1@0x600000 poll1@0x600001",
+      "seen": 2,
+      "cartridges": 1
+    },
+    {
+      "shape": "poll1@0x600001 write1@0x600000 poll1@0x600001 read1@0x68012c read1@0x68012e",
+      "seen": 2,
+      "cartridges": 1
+    },
+    {
+      "shape": "poll1@0x600001 write1@0x600000 poll1@0x600001 read2@0x68012c read2@0x68012e",
+      "seen": 2,
+      "cartridges": 1
+    },
+    {
+      "shape": "poll1@0x600001 read1@0x600000",
+      "seen": 1,
+      "cartridges": 1
+    },
+    {
+      "shape": "poll1@0x600001 write1@0x600000",
+      "seen": 1,
+      "cartridges": 1
+    },
+    {
+      "shape": "poll1@0x600001 write1@0x600000 poll1@0x600001 read2@0x68012c",
+      "seen": 1,
+      "cartridges": 1
+    },
+    {
+      "shape": "poll1@0x600001 write1@0x600000 poll1@0x600001 write1@0x600000 write1@0x600000",
+      "seen": 1,
+      "cartridges": 1
+    },
+    {
+      "shape": "poll1@0x600001 write1@0x600000 write1@0x600000 write1@0x600000 write1@0x600000 write1@0x600000 poll1@0x600001",
+      "seen": 1,
+      "cartridges": 1
+    },
+    {
+      "shape": "read1@0x6b0017",
+      "seen": 1,
+      "cartridges": 1
+    },
+    {
+      "shape": "read1@0x6e0264",
+      "seen": 1,
+      "cartridges": 1
+    },
+    {
+      "shape": "write1@0x6c07b8",
+      "seen": 1,
+      "cartridges": 1
+    },
+    {
+      "shape": "write1@0x6d0c00",
+      "seen": 1,
+      "cartridges": 1
+    }
+  ]
+}

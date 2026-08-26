@@ -1,0 +1,243 @@
+{
+  "note": "The shapes real cartridges use to drive this part: which accesses each routine makes, in what order, how wide each one was and where in the shared memory it landed. No byte any cartridge carries is recorded here and none can be recovered from this. Read out of the games named below, every one of them confirmed against all four of its digests first.",
+  "part": "st010",
+  "producedBy": "https://github.com/gufranco/snes-driver-python",
+  "readFrom": [
+    {
+      "title": "EXHAUST HEAT2",
+      "bytes": 1048576,
+      "layout": "lorom",
+      "chipset": "0xf6",
+      "name": "Exhaust Heat II - F1 Driver e no Michi (Japan).sfc",
+      "shapes": 42,
+      "crc32": "e2c8e535",
+      "md5": "9b0dffe0222a9b7b7c8dcb98cc8ca058",
+      "sha1": "3600f81d5a7e2ec41f362cc22a16a58ce2612048",
+      "sha256": "1c78d8208a05cbfe88ee019edbc3a0c9cdabfd2b62089ca119215bbc7e581611"
+    },
+    {
+      "title": "F1 ROC II",
+      "bytes": 1048576,
+      "layout": "lorom",
+      "chipset": "0xf6",
+      "name": "F1-ROC II - Race of Champions (USA).sfc",
+      "shapes": 42,
+      "crc32": "3447609e",
+      "md5": "000ba16a5a4c08992ec93d0309d8ed6c",
+      "sha1": "fb81dd15b8a9ddf8f5564d3d2fb934c6f8bfb392",
+      "sha256": "405c33f64701faf40963a4e6a2d0d69420e6751caf436387ddd3e145b25ed46c"
+    }
+  ],
+  "shapes": [
+    {
+      "shape": "read1@0x6c0268",
+      "seen": 18,
+      "cartridges": 2
+    },
+    {
+      "shape": "read1@0x6f0f7f",
+      "seen": 10,
+      "cartridges": 2
+    },
+    {
+      "shape": "write1@0x6d0359",
+      "seen": 10,
+      "cartridges": 2
+    },
+    {
+      "shape": "write1@0x680000 write1@0x680002",
+      "seen": 8,
+      "cartridges": 2
+    },
+    {
+      "shape": "poll1@0x680020 poll1@0x680020 read1@0x680010",
+      "seen": 6,
+      "cartridges": 2
+    },
+    {
+      "shape": "poll1@0x680020 poll1@0x680020 read1@0x680010 read1@0x680012",
+      "seen": 6,
+      "cartridges": 2
+    },
+    {
+      "shape": "write1@0x680004 write1@0x680000 write1@0x680002",
+      "seen": 6,
+      "cartridges": 2
+    },
+    {
+      "shape": "read1@0x6f00e8",
+      "seen": 4,
+      "cartridges": 2
+    },
+    {
+      "shape": "poll1@0x680020",
+      "seen": 2,
+      "cartridges": 2
+    },
+    {
+      "shape": "poll1@0x680020 poll1@0x680020",
+      "seen": 2,
+      "cartridges": 2
+    },
+    {
+      "shape": "poll1@0x680020 poll1@0x680020 read1@0x680011",
+      "seen": 2,
+      "cartridges": 2
+    },
+    {
+      "shape": "read1@0x600000 write1@0x600000",
+      "seen": 2,
+      "cartridges": 2
+    },
+    {
+      "shape": "read1@0x680015",
+      "seen": 2,
+      "cartridges": 2
+    },
+    {
+      "shape": "read1@0x68026c",
+      "seen": 2,
+      "cartridges": 2
+    },
+    {
+      "shape": "read1@0x6803f0",
+      "seen": 2,
+      "cartridges": 2
+    },
+    {
+      "shape": "read1@0x680829",
+      "seen": 2,
+      "cartridges": 2
+    },
+    {
+      "shape": "read1@0x68086e",
+      "seen": 2,
+      "cartridges": 2
+    },
+    {
+      "shape": "read1@0x680889",
+      "seen": 2,
+      "cartridges": 2
+    },
+    {
+      "shape": "read1@0x6808ce",
+      "seen": 2,
+      "cartridges": 2
+    },
+    {
+      "shape": "read1@0x6808e9",
+      "seen": 2,
+      "cartridges": 2
+    },
+    {
+      "shape": "read1@0x68092e",
+      "seen": 2,
+      "cartridges": 2
+    },
+    {
+      "shape": "read1@0x6809f0",
+      "seen": 2,
+      "cartridges": 2
+    },
+    {
+      "shape": "read1@0x6809f2",
+      "seen": 2,
+      "cartridges": 2
+    },
+    {
+      "shape": "read1@0x690407",
+      "seen": 2,
+      "cartridges": 2
+    },
+    {
+      "shape": "read1@0x6d0fd5",
+      "seen": 2,
+      "cartridges": 2
+    },
+    {
+      "shape": "write1@0x680000",
+      "seen": 2,
+      "cartridges": 2
+    },
+    {
+      "shape": "write1@0x680024",
+      "seen": 2,
+      "cartridges": 2
+    },
+    {
+      "shape": "write1@0x680810",
+      "seen": 2,
+      "cartridges": 2
+    },
+    {
+      "shape": "write1@0x680810 write1@0x680870 write1@0x6808d0",
+      "seen": 2,
+      "cartridges": 2
+    },
+    {
+      "shape": "write1@0x68086e",
+      "seen": 2,
+      "cartridges": 2
+    },
+    {
+      "shape": "write1@0x680870",
+      "seen": 2,
+      "cartridges": 2
+    },
+    {
+      "shape": "write1@0x6808ce",
+      "seen": 2,
+      "cartridges": 2
+    },
+    {
+      "shape": "write1@0x6808d0",
+      "seen": 2,
+      "cartridges": 2
+    },
+    {
+      "shape": "write1@0x68092e",
+      "seen": 2,
+      "cartridges": 2
+    },
+    {
+      "shape": "write1@0x6809f0",
+      "seen": 2,
+      "cartridges": 2
+    },
+    {
+      "shape": "write1@0x6809f2",
+      "seen": 2,
+      "cartridges": 2
+    },
+    {
+      "shape": "write1@0x6b0111",
+      "seen": 2,
+      "cartridges": 2
+    },
+    {
+      "shape": "write1@0x6b047d",
+      "seen": 2,
+      "cartridges": 2
+    },
+    {
+      "shape": "write1@0x6b09a0",
+      "seen": 2,
+      "cartridges": 2
+    },
+    {
+      "shape": "write1@0x6b0cff",
+      "seen": 2,
+      "cartridges": 2
+    },
+    {
+      "shape": "write1@0x6c0700",
+      "seen": 2,
+      "cartridges": 2
+    },
+    {
+      "shape": "write1@0x6d0fd5",
+      "seen": 2,
+      "cartridges": 2
+    }
+  ]
+}

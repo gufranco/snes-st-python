@@ -97,9 +97,6 @@ jobs:
       - name: Install coverage
         run: python -m pip install --disable-pip-version-check coverage==7.6.10
 
-
-
-
       - name: Run every test file, under coverage
         run: |
           python -m coverage erase
@@ -166,6 +163,31 @@ jobs:
           set -e
           if [ "${status}" -eq 2 ]; then
             echo "::notice title=No microcode present::The checks that start a part's own program did not run. They are not failures; they had nothing to run."
+            exit 0
+          fi
+          exit "${status}"
+        shell: bash
+
+      # What the part says back when it is driven the way a cartridge drives it.
+      # The exchanges come out of the three retail cartridges that carry these
+      # parts, read out of their own code rather than guessed at, and are checked
+      # in beside the conformance suite with the digests of the cartridges they
+      # came from. A part that answers nothing to every one of them is what a
+      # wrong image or a broken decode looks like.
+      - name: Play the exchanges real cartridges make
+        run: |
+          set +e
+          status=0
+          for part in st010 st011; do
+            echo "::group::${part}"
+            python -m conformance.against_cartridges "${part}"
+            here=$?
+            echo "::endgroup::"
+            [ "${here}" -eq 0 ] || status="${here}"
+          done
+          set -e
+          if [ "${status}" -eq 2 ]; then
+            echo "::notice title=No microcode present::The exchanges were not played. They are not failures; there was no part to play them at."
             exit 0
           fi
           exit "${status}"

@@ -23,7 +23,7 @@
   <a href="https://github.com/gufranco/snes-st-python/issues">Issues</a>
 </p>
 
-**2** parts · **1** processor underneath both · **4 KB** of memory shared with the console · **0** commands described by hand · both waits measured on the shipped microcode, **0** disagreements · **418** tests · **100%** statement and branch coverage · every image confirmed by **SHA-256** before a byte of it runs · no dependencies
+**2** parts · **1** processor underneath both · **4 KB** of memory shared with the console · **0** commands described by hand · both waits measured on the shipped microcode, **0** disagreements · **494** tests · **100%** statement and branch coverage · every image confirmed by **SHA-256** before a byte of it runs · no dependencies
 
 ```python
 from snesst import Chip
