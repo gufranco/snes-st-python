@@ -4,7 +4,7 @@ The two coprocessors Seta made for the Super Nintendo, running the microcode you
 
 [![CI](https://github.com/gufranco/snes-st-python/actions/workflows/ci.yml/badge.svg)](https://github.com/gufranco/snes-st-python/actions/workflows/ci.yml)
 
-**2** parts, **0** commands described by hand, both waits measured on the shipped microcode, **0** disagreements, **498** tests, **100%** statement and branch coverage, no dependencies
+**2** parts, **0** commands described by hand, both waits measured on the shipped microcode, **0** disagreements, **501** tests, **100%** statement and branch coverage, no dependencies
 
 ```python
 from snesst import Chip
@@ -49,7 +49,9 @@ Everything a caller touches. Nothing else is public.
 | Name | What it is |
 |:--|:--|
 | `Chip(model, **options)` | A part of that model, running its own microcode |
+| `Chip(model, image=...)` | The same, with the bytes handed straight in and no directory searched |
 | `MODELS` | Every part this package covers, by the name it goes by |
+| `Model` | One entry of that catalogue: its name, its aliases and what it is |
 | `available()` | Every part there is an image for on this machine |
 | `why_not()` | Why the backend cannot run, or nothing when it can |
 | `read(address)`, `write(address, value)` | The two accesses a cartridge makes |
@@ -145,6 +147,19 @@ them.
 |:--|--:|:--|:--|
 | `st010` | 53,248 | `8d136190` | `55c697e864562445621cdf8a7bf6e84ae91361e393d382a3704e9aa55559041e` |
 | `st011` | 53,248 | `750c6012` | `651b82a1e26c4fa8dd549e91e7f923012ed2ca54c1d9fd858655ab30679c2f0e` |
+
+A copy you already own goes in `firmware/` in this project, or in the `firmware/`
+of the project this one sits inside when it is checked out as a submodule, or in
+any directory named by `SNES_ST_FIRMWARE_DIR`. That variable is read first and
+may name more than one directory at once, separated the way the operating system
+separates a path. `UPD7725_FIRMWARE_DIR` is read after it and still works: this
+member and [snes-dsp-python](https://github.com/gufranco/snes-dsp-python) shared
+that one name until somebody wanted to point them at two different sets. Nothing
+is downloaded.
+
+A caller who already holds the bytes hands them straight over as
+`Chip("st010", image=...)`, and then no directory is searched at all and no
+variable is read.
 
 Confirm one you hold:
 

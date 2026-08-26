@@ -25,7 +25,8 @@ everywhere. Running the program is neither.
 What it costs is the microcode, which belongs to whoever made the part and is
 never carried here. A copy you already own goes in the firmware directory of this
 project, or of the project this one sits inside, or in any directory named by
-`UPD7725_FIRMWARE_DIR`. Without one this refuses and says so.
+`SNES_ST_FIRMWARE_DIR`, which is read before the older `UPD7725_FIRMWARE_DIR`
+that still works. Without one this refuses and says so.
 
 Four kilobytes of memory shared with the console, and two registers just past the
 end of it. The console writes the arguments in, names a command, sets a bit, and

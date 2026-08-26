@@ -18,7 +18,8 @@ turns its fidelity from a claim into a measurement.
 
 Where the image is looked for belongs to the processor package, and is worth
 naming here because this package is meant to be checked out inside another one:
-`UPD7725_FIRMWARE_DIR` names any number of directories, then the project this
+`SNES_ST_FIRMWARE_DIR` names any number of directories, then the older
+`UPD7725_FIRMWARE_DIR` does the same, then the project this
 package sits inside is searched, then the package itself. A project carrying
 this as a submodule keeps its images in its own tree and tells neither side.
 
@@ -116,7 +117,7 @@ WHY_NOT_FIRMWARE = (
     "no firmware image was found: this backend runs the part's own microcode, and"
     " that microcode belongs to whoever made the part, so a copy you already own"
     " goes in the firmware directory of this project or of the project this one"
-    " sits inside, or in any directory named by UPD7725_FIRMWARE_DIR"
+    " sits inside, or in any directory named by SNES_ST_FIRMWARE_DIR"
 )
 
 
