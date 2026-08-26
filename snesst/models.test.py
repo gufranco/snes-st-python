@@ -20,43 +20,43 @@ class CatalogueTest(unittest.TestCase):
         self.assertIn("st011", models.MODELS)
 
     def test_a_part_says_what_it_is(self) -> None:
-        self.assertTrue(models.describe("st010").summary)
+        self.assertTrue(models.lookup("st010").summary)
 
     def test_and_which_image_it_runs(self) -> None:
-        self.assertEqual(models.describe("st011").image, "st011")
+        self.assertEqual(models.lookup("st011").image, "st011")
 
     def test_a_part_prints_as_itself_and_the_image_it_runs(self) -> None:
-        printed = repr(models.describe("st010"))
+        printed = repr(models.lookup("st010"))
 
         self.assertIn("st010", printed)
 
     def test_every_part_carries_a_summary(self) -> None:
         for name in models.MODELS:
-            self.assertTrue(models.describe(name).summary, name)
+            self.assertTrue(models.lookup(name).summary, name)
 
 
 class NamingTest(unittest.TestCase):
     def test_a_part_name_is_matched_however_it_is_written(self) -> None:
         for written in ("ST010", "st-010", "ST_010", "seta-st010"):
-            self.assertEqual(models.describe(written).name, "st010")
+            self.assertEqual(models.lookup(written).name, "st010")
 
     def test_the_other_part_is_matched_the_same_way(self) -> None:
         for written in ("ST011", "st-011", "seta-st011"):
-            self.assertEqual(models.describe(written).name, "st011")
+            self.assertEqual(models.lookup(written).name, "st011")
 
     def test_a_name_no_part_answers_to_is_refused(self) -> None:
         with self.assertRaises(errors.UnknownModelError):
-            models.describe("nonsense")
+            models.lookup("nonsense")
 
     def test_and_the_refusal_lists_what_there_is(self) -> None:
         with self.assertRaises(errors.UnknownModelError) as raised:
-            models.describe("nonsense")
+            models.lookup("nonsense")
 
         for name in EVERY_PART:
             self.assertIn(name, str(raised.exception))
 
     def test_no_alias_belongs_to_two_parts(self) -> None:
-        seen = [alias for name in models.MODELS for alias in models.describe(name).aliases]
+        seen = [alias for name in models.MODELS for alias in models.lookup(name).aliases]
 
         self.assertEqual(len(seen), len(set(seen)))
 
@@ -77,7 +77,7 @@ class DeclaredImageTest(unittest.TestCase):
         declared = {one["part"] for one in self._manifest()["artifacts"]}
 
         for name in models.MODELS:
-            self.assertIn(models.describe(name).image, declared, name)
+            self.assertIn(models.lookup(name).image, declared, name)
 
     def test_every_declared_image_carries_a_deciding_digest(self) -> None:
         for one in self._manifest()["artifacts"]:
@@ -88,7 +88,7 @@ class DeclaredImageTest(unittest.TestCase):
         declared = {one["part"]: one["processor"] for one in self._manifest()["artifacts"]}
 
         for name in models.MODELS:
-            self.assertEqual(declared[models.describe(name).image], "upd96050", name)
+            self.assertEqual(declared[models.lookup(name).image], "upd96050", name)
 
 
 class BuildingTest(unittest.TestCase):
@@ -97,10 +97,32 @@ class BuildingTest(unittest.TestCase):
             snesst.Chip("nonsense")
 
     def test_the_default_part_is_one_the_catalogue_knows(self) -> None:
-        self.assertIn(snesst.DEFAULT_MODEL, models.MODELS)
+        self.assertIn("st010", models.MODELS)
 
     def test_the_family_name_reaches_the_same_thing(self) -> None:
         self.assertIs(snesst.Chip, snesst.Chip)
+
+
+class NamingNoneTest(unittest.TestCase):
+    """That leaving the model out is refused, and refused usefully."""
+
+    def test_building_without_naming_a_model_is_refused(self) -> None:
+        with self.assertRaises(errors.UnknownModelError):
+            snesst.Chip()
+
+    def test_and_the_refusal_names_every_model_there_is(self) -> None:
+        with self.assertRaises(errors.UnknownModelError) as caught:
+            snesst.Chip()
+
+        missing = [name for name in snesst.MODELS if name not in str(caught.exception)]
+
+        self.assertEqual(missing, [])
+
+    def test_nothing_named_describe_is_published(self) -> None:
+        self.assertFalse(hasattr(snesst, "describe"))
+
+    def test_and_no_default_model_is_published_either(self) -> None:
+        self.assertFalse(hasattr(snesst, "DEFAULT_MODEL"))
 
 
 if __name__ == "__main__":

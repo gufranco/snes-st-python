@@ -39,25 +39,25 @@ class DigestTest(unittest.TestCase):
 
 class HeaderTest(unittest.TestCase):
     def test_the_title_comes_back_off_a_low_cartridge(self) -> None:
-        found = record.describe(_a_cartridge())
+        found = record.what_it_says_about_itself(_a_cartridge())
 
         self.assertEqual(found["title"], "EXHAUST HEAT2")
 
     def test_and_the_chipset_byte_the_cartridge_declares(self) -> None:
-        found = record.describe(_a_cartridge())
+        found = record.what_it_says_about_itself(_a_cartridge())
 
         self.assertEqual(found["chipset"], "0xf6")
 
     def test_a_file_too_short_to_hold_a_header_is_refused(self) -> None:
         with self.assertRaises(record.NotACartridge):
-            record.describe(b"\x00" * 16)
+            record.what_it_says_about_itself(b"\x00" * 16)
 
     def test_a_file_declaring_no_seta_part_is_refused(self) -> None:
         held = bytearray(_a_cartridge())
         held[0x7FD6] = 0x03
 
         with self.assertRaises(record.NotACartridge):
-            record.describe(bytes(held))
+            record.what_it_says_about_itself(bytes(held))
 
 
 class PartTest(unittest.TestCase):

@@ -25,7 +25,7 @@ def a_program() -> Any:
 
 
 def built(**options: Any) -> Any:
-    return chip.Chip(image=a_program(), identity=an_identity(), boot=64, **options)
+    return chip.Chip("st010", image=a_program(), identity=an_identity(), boot=64, **options)
 
 
 class WithoutTest(unittest.TestCase):
@@ -53,7 +53,7 @@ class WithoutTest(unittest.TestCase):
         chip._processor = lambda: None
 
         with self.assertRaises(errors.NoFirmware):
-            chip.Chip()
+            chip.Chip("st010")
 
     def test_with_a_processor_but_no_image_it_says_that_instead(self) -> None:
         chip._processor = lambda: (None, None)
@@ -68,7 +68,7 @@ class WithoutTest(unittest.TestCase):
 
     def test_an_image_with_nothing_saying_what_it_is_is_refused(self) -> None:
         with self.assertRaises(errors.NoFirmware) as raised:
-            chip.Chip(image=a_program())
+            chip.Chip("st010", image=a_program())
 
         self.assertIn("program", str(raised.exception))
 
@@ -104,7 +104,7 @@ class WhereTheImagesAreTest(unittest.TestCase):
         return {part: (an_identity(part), where)}
 
     def test_an_image_that_was_found_is_read_from_its_file(self) -> None:
-        part = chip.Chip(images=self._catalogue(), boot=64)
+        part = chip.Chip("st010", images=self._catalogue(), boot=64)
 
         self.assertEqual(part.part, "st010")
 

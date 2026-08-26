@@ -64,7 +64,7 @@ def digests_of(image: bytes) -> dict[str, str]:
     }
 
 
-def describe(image: bytes) -> dict[str, Any]:
+def what_it_says_about_itself(image: bytes) -> dict[str, Any]:
     """What the cartridge says about itself, or a refusal naming why not."""
     if len(image) < HEADER_AT + 32:
         raise NotACartridge("too short to hold a header where a low cartridge keeps one")
@@ -146,7 +146,7 @@ def assemble(part: str, gathered: "Sequence[tuple[bytes, str, dict[str, int]]]")
     carried: collections.Counter[str] = collections.Counter()
     where = []
     for image, name, found in gathered:
-        row = describe(image)
+        row = what_it_says_about_itself(image)
         row["name"] = name
         row["shapes"] = len(found)
         row.update(digests_of(image))
@@ -196,7 +196,7 @@ def main(
     gathered: dict[str, list[tuple[bytes, str, dict[str, int]]]] = collections.defaultdict(list)
     for image, name in _images(source):
         try:
-            describe(image)
+            what_it_says_about_itself(image)
         except NotACartridge:
             continue
         part = part_of(len(image))

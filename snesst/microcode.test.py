@@ -26,12 +26,12 @@ class RealMicrocodeTest(unittest.TestCase):
     """The part itself, which only a machine holding its microcode can run."""
 
     def test_the_handshake_leaves_it_waiting_for_a_command(self) -> None:
-        part = chip.Chip()
+        part = chip.Chip("st010")
 
         self.assertIn(part.core.registers.pc, chip.COMMAND_LOOP["st010"])
 
     def test_and_it_stays_there_until_one_is_started(self) -> None:
-        part = chip.Chip()
+        part = chip.Chip("st010")
 
         for _ in range(4096):
             part.core.step()
@@ -53,7 +53,7 @@ class RealMicrocodeTest(unittest.TestCase):
             self.assertIn(part.core.registers.pc, chip.COMMAND_LOOP[name], name)
 
     def test_a_command_runs_and_answers(self) -> None:
-        part = chip.Chip()
+        part = chip.Chip("st010")
         part.write(0x000000, 0x00)
         for at, value in enumerate((0x00, 0x01, 0x00, 0x02)):
             part.write(0x680000 + at, value)
@@ -64,7 +64,7 @@ class RealMicrocodeTest(unittest.TestCase):
         self.assertEqual(part.read(0x680010) | (part.read(0x680011) << 8), 0x9300)
 
     def test_and_the_start_byte_is_clear_once_it_has(self) -> None:
-        part = chip.Chip()
+        part = chip.Chip("st010")
         part.write(0x000000, 0x00)
         for at, value in enumerate((0x00, 0x01, 0x00, 0x02)):
             part.write(0x680000 + at, value)

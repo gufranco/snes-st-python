@@ -4,12 +4,12 @@ The two coprocessors Seta made for the Super Nintendo, running the microcode you
 
 [![CI](https://github.com/gufranco/snes-st-python/actions/workflows/ci.yml/badge.svg)](https://github.com/gufranco/snes-st-python/actions/workflows/ci.yml)
 
-**2** parts, **1** processor underneath both, **4 KB** of memory shared with the console, **0** commands described by hand, both waits measured on the shipped microcode, **0** disagreements, **494** tests, **100%** statement and branch coverage, every image confirmed by **SHA-256** before a byte of it runs, no dependencies
+**2** parts, **1** processor underneath both, **4 KB** of memory shared with the console, **0** commands described by hand, both waits measured on the shipped microcode, **0** disagreements, **498** tests, **100%** statement and branch coverage, every image confirmed by **SHA-256** before a byte of it runs, no dependencies
 
 ```python
 from snesst import Chip
 
-chip = Chip()
+chip = Chip("st010")
 
 chip.write(0x000000, 0x00)
 for at, value in enumerate((0x00, 0x01, 0x00, 0x02)):
@@ -49,7 +49,7 @@ Everything a caller touches. Nothing else is public.
 | Name | What it is |
 |:--|:--|
 | `Chip(model, **options)` | A part of that model, running its own microcode |
-| `describe(model)`, `MODELS`, `DEFAULT_MODEL` | The catalogue, without building anything |
+| `MODELS` | Every part this package covers, by the name it goes by |
 | `available()` | Every part there is an image for on this machine |
 | `why_not()` | Why the backend cannot run, or nothing when it can |
 | `read(address)`, `write(address, value)` | The two accesses a cartridge makes |
@@ -64,9 +64,9 @@ takes first. The name is the kind rather than the chip, so a traceback says what
 sort of thing it was rather than which of two parts happened to raise.
 
 ```python
-from snesst import Chip, describe
+from snesst import Chip
 
-describe("seta011").name
+Chip("seta011").model
 
 # 'st011'
 ```

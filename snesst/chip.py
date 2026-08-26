@@ -222,7 +222,7 @@ class Chip:
         self.boot = boot
 
         self._ports = ports
-        self.core = models.describe(identity.processor).build(fill=fill)
+        self.core = models.lookup(identity.processor).build(fill=fill)
         firmware.load(self.core, image, identity)
         self.core.reset()
         self.console = ports.Host(self.core)

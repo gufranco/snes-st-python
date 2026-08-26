@@ -2,7 +2,7 @@
 
     from snesst import Chip
 
-    part = Chip()
+    part = Chip("st010")
     part.write(0x000000, 0x00)
     for at, value in enumerate((0x00, 0x01, 0x00, 0x02)):
         part.write(0x680000 + at, value)
@@ -43,6 +43,7 @@ console to speak to it.
 from typing import Any
 
 from . import chip as chip
+from . import models as models
 from .chip import available, why_not
 from .errors import (
     Corrupt,
@@ -52,15 +53,13 @@ from .errors import (
     Unrecognised,
     WrongShape,
 )
-from .models import MODELS, Model, describe
+from .models import MODELS, Model
 from .version import VERSION
 
 __version__ = VERSION
 
-DEFAULT_MODEL = "st010"
 
-
-def Chip(model: str = DEFAULT_MODEL, **options: Any) -> "chip.Chip":  # noqa: N802
+def Chip(model: str | None = None, **options: Any) -> "chip.Chip":  # noqa: N802
     """A chip of the named model, sharing one interface across the family.
 
     The model comes first because it is the thing a caller always knows. There
@@ -77,11 +76,10 @@ def Chip(model: str = DEFAULT_MODEL, **options: Any) -> "chip.Chip":  # noqa: N8
     somewhere else, because an answer that did not come from the part is worse
     than none.
     """
-    return chip.Chip(describe(model).name, **options)
+    return chip.Chip(models.lookup(model).name, **options)
 
 
 __all__ = [
-    "DEFAULT_MODEL",
     "MODELS",
     "Chip",
     "Corrupt",
@@ -93,6 +91,5 @@ __all__ = [
     "WrongShape",
     "__version__",
     "available",
-    "describe",
     "why_not",
 ]
