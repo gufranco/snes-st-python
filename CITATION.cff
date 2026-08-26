@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-title: snes-st010-python
+title: snes-st-python
 message: >-
   If you use this work, or the microcode measurements it was settled against,
   please cite it.
@@ -8,8 +8,8 @@ authors:
   - given-names: Gustavo
     family-names: Franco
     alias: gufranco
-repository-code: https://github.com/gufranco/snes-st010-python
-url: https://github.com/gufranco/snes-st010-python
+repository-code: https://github.com/gufranco/snes-st-python
+url: https://github.com/gufranco/snes-st-python
 abstract: >-
   A model of the Seta ST010 and ST011, the two coprocessors Seta made for the
   Super Nintendo. Both are a NEC uPD96050 carrying Seta's microcode, so this

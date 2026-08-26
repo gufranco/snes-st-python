@@ -35,8 +35,8 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from st010 import chip, models  # noqa: E402
-from st010.version import VERSION  # noqa: E402
+from snesst import chip, models  # noqa: E402
+from snesst.version import VERSION  # noqa: E402
 
 if TYPE_CHECKING:  # pragma: no cover
     from collections.abc import Callable, Iterable, Sequence
@@ -91,11 +91,11 @@ def _python() -> Finding:
 def _package() -> Finding:
     """The distribution, labelled so it cannot be mistaken for the part.
 
-    This package and one of the parts it models share the name `st010`, so
-    labelling both with it puts two different things under one word in a report
-    somebody else has to read.
+    The package is named for the family and the parts for themselves, which is
+    the whole reason this repository stopped being called after one of its two
+    chips. Labelling the distribution with a part's name would put that back.
     """
-    return Finding("package", True, f"st010 {VERSION}")
+    return Finding("package", True, f"snesst {VERSION}")
 
 
 def _processor() -> Finding:
@@ -260,7 +260,7 @@ def examine(
 def report(found: Sequence[Finding]) -> list[str]:
     """The lines a person pastes into an issue."""
     unwell = [one for one in found if not one.ok]
-    lines = [f"st010 {VERSION} on {platform.python_version()}, {platform.system()}", ""]
+    lines = [f"snesst {VERSION} on {platform.python_version()}, {platform.system()}", ""]
     lines.extend(one.report for one in found)
     lines.append("")
     if unwell:

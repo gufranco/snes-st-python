@@ -4,7 +4,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from st010 import version
+from snesst import version
 
 
 class VersionTest(unittest.TestCase):

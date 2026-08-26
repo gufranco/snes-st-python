@@ -15,7 +15,7 @@ body:
     attributes:
       label: What the doctor says
       description: |
-        Run `python3 -m st010.doctor` from the repository and paste all of it,
+        Run `python3 -m snesst.doctor` from the repository and paste all of it,
         including any line that did not pass. Do not trim it: the lines that
         failed are the ones worth reading.
       render: text
@@ -56,7 +56,7 @@ body:
       description: Python we can run as it stands, with no editing.
       render: python
       placeholder: |
-        from st010 import Chip
+        from snesst import Chip
 
         chip = Chip("dsp1")
         chip.write(0x28)

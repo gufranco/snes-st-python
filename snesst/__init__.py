@@ -1,6 +1,6 @@
 """The ST010 and ST011, run rather than described.
 
-    from st010 import Chip
+    from snesst import Chip
 
     part = Chip()
     part.write(0x000000, 0x00)

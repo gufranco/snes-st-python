@@ -28,7 +28,7 @@ import sys
 import time
 from typing import TYPE_CHECKING
 
-import st010
+import snesst
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -90,7 +90,7 @@ def measure(calls: int = CALLS, repeats: int = REPEATS) -> Timed:  # pragma: no 
     machine that has one runs a path a machine without one cannot, and a gate
     that demands the impossible gets switched off rather than met.
     """
-    part = st010.Chip(MODEL)
+    part = snesst.Chip(MODEL)
     seconds = []
     for _ in range(repeats):
         started = time.perf_counter()
@@ -127,7 +127,7 @@ def on_this_machine(calls: int, repeats: int, floor: int) -> int:  # pragma: no 
     A gate that demands the impossible gets switched off rather than met, so the
     reason is written here instead.
     """
-    missing = st010.why_not()
+    missing = snesst.why_not()
     if missing is not None:
         print(f"  nothing measured: {missing}")
         return 0

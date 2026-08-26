@@ -7,7 +7,7 @@
 <br>
 <br>
 
-[![CI](https://github.com/gufranco/snes-st010-python/actions/workflows/ci.yml/badge.svg)](https://github.com/gufranco/snes-st010-python/actions/workflows/ci.yml)
+[![CI](https://github.com/gufranco/snes-st-python/actions/workflows/ci.yml/badge.svg)](https://github.com/gufranco/snes-st-python/actions/workflows/ci.yml)
 [![Coverage](https://img.shields.io/badge/coverage-100%25%20statement%20%2B%20branch-brightgreen)](#tests)
 [![Python](https://img.shields.io/badge/python-3.12%20%7C%203.13%20%7C%203.14-blue)](pyproject.toml)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
@@ -20,13 +20,13 @@
   <a href="#the-microcode-you-supply">The microcode you supply</a> &nbsp;|&nbsp;
   <a href="#the-handshake-nothing-documents">The handshake</a> &nbsp;|&nbsp;
   <a href="#what-is-checked-without-one">What is checked without one</a> &nbsp;|&nbsp;
-  <a href="https://github.com/gufranco/snes-st010-python/issues">Issues</a>
+  <a href="https://github.com/gufranco/snes-st-python/issues">Issues</a>
 </p>
 
 **2** parts · **1** processor underneath both · **4 KB** of memory shared with the console · **0** commands described by hand · both waits measured on the shipped microcode, **0** disagreements · **418** tests · **100%** statement and branch coverage · every image confirmed by **SHA-256** before a byte of it runs · no dependencies
 
 ```python
-from st010 import Chip
+from snesst import Chip
 
 chip = Chip()
 
@@ -49,8 +49,8 @@ registers just past the end of it. The answer comes back out of the same memory.
 
 ## Install
 ```bash
-git clone --recurse-submodules https://github.com/gufranco/snes-st010-python.git
-cd snes-st010-python
+git clone --recurse-submodules https://github.com/gufranco/snes-st-python.git
+cd snes-st-python
 ```
 
 Python 3.12 or newer, and the submodule. Nothing else.
@@ -84,7 +84,7 @@ takes first. The name is the kind rather than the chip, so a traceback says what
 sort of thing it was rather than which of two parts happened to raise.
 
 ```python
-from st010 import Chip, describe
+from snesst import Chip, describe
 
 describe("seta011").name
 
@@ -94,7 +94,7 @@ describe("seta011").name
 Either part is reached the same way, by the name it is known as:
 
 ```python
-from st010 import Chip
+from snesst import Chip
 
 print(Chip("st010").part, Chip("st011").part)
 
@@ -104,7 +104,7 @@ print(Chip("st010").part, Chip("st011").part)
 A name no part answers to is refused rather than quietly building the default:
 
 ```python
-from st010 import Chip, UnknownModelError
+from snesst import Chip, UnknownModelError
 
 try:
     Chip("st012")
@@ -200,7 +200,7 @@ each part sits in a wait of its own, measured on each rather than assumed.
 Measured rather than asserted, on whichever images are on this machine:
 
 ```python
-from st010 import Chip, available
+from snesst import Chip, available
 
 for name in sorted(available()):
     print(name, Chip(name).core.registers.pc)
@@ -236,14 +236,14 @@ done
 python -m coverage report
 ```
 
-`python3 st010/doctor.py` says what is actually on this machine: both parts, which image each wants, where each one's program stops waiting, and the state of the processor underneath. It is run as a file rather than with `-m` so that it still runs when the package itself will not import, which is the case it exists for.
+`python3 snesst/doctor.py` says what is actually on this machine: both parts, which image each wants, where each one's program stops waiting, and the state of the processor underneath. It is run as a file rather than with `-m` so that it still runs when the package itself will not import, which is the case it exists for.
 
 [`AGENTS.md`](AGENTS.md) is the document for an agent working here. [`FAMILY.md`](FAMILY.md) is the standard this repository shares with the rest of the family, kept identical in every member.
 
 ### Project structure
 
 ```text
-st010/
+snesst/
   __init__.py       the package, and the part chosen at construction
   models.py         which parts exist, what they answer to, which image each runs
   chip.py        loading an image, the handshake, and driving the part
@@ -258,14 +258,14 @@ cases that pin its behaviour are read together.
 ### Tests
 
 ```bash
-for f in st010/*.test.py; do python3 "$f"; done
+for f in snesst/*.test.py; do python3 "$f"; done
 ```
 
 | Area | File | What it pins |
 |:--|:--|:--|
-| The catalogue | [`st010/models.test.py`](st010/models.test.py) | Both parts, their names, their images, and that each image is declared with a digest |
-| The part | [`st010/chip.test.py`](st010/chip.test.py) | Loading, the handshake, the decode, the shared memory, refusing |
-| The microcode | [`st010/microcode.test.py`](st010/microcode.test.py) | That each part reaches its own wait and answers a command. Needs an image |
+| The catalogue | [`snesst/models.test.py`](snesst/models.test.py) | Both parts, their names, their images, and that each image is declared with a digest |
+| The part | [`snesst/chip.test.py`](snesst/chip.test.py) | Loading, the handshake, the decode, the shared memory, refusing |
+| The microcode | [`snesst/microcode.test.py`](snesst/microcode.test.py) | That each part reaches its own wait and answers a command. Needs an image |
 
 Coverage is enforced at 100% of statements and branches by
 [`pyproject.toml`](pyproject.toml), so a new branch without a test fails the
@@ -279,7 +279,7 @@ build rather than quietly lowering the number.
 | `ruff check .` | Lint |
 | `python3 -m coverage run -a <file>` | Run one test file under coverage |
 | `python3 -m coverage report` | Coverage, which fails below 100% |
-| `python3 st010/microcode.test.py -v` | Run the checks that need an image |
+| `python3 snesst/microcode.test.py -v` | Run the checks that need an image |
 | `pnpm run format:check` | Check that every JSON file is formatted, which CI also does |
 
 ### Project conventions
@@ -294,7 +294,7 @@ build rather than quietly lowering the number.
 ### Versioning
 
 This project follows [Semantic Versioning](https://semver.org/). Every release is
-tagged. See [releases](https://github.com/gufranco/snes-st010-python/releases) for
+tagged. See [releases](https://github.com/gufranco/snes-st-python/releases) for
 the changelog and upgrade notes.
 
 ### FAQ

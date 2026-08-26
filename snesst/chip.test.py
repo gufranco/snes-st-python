@@ -6,7 +6,7 @@ from typing import Any, override
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from st010 import chip, errors
+from snesst import chip, errors
 
 PRESENT = chip.available()
 
@@ -14,7 +14,7 @@ PRESENT = chip.available()
 def an_identity(part: str = "st010") -> Any:
     """What the processor needs to be told about an image, without an image."""
     sys.path.insert(0, str(chip.PROCESSOR))
-    from st010 import firmware
+    from snesst import firmware
 
     return firmware.Identity(part, "upd96050", "MADE UP", 16384, 2048)
 
@@ -118,7 +118,7 @@ class WhereTheImagesAreTest(unittest.TestCase):
 
     def test_the_directory_can_be_named_from_outside_the_package(self) -> None:
         sys.path.insert(0, str(chip.PROCESSOR))
-        from st010 import firmware
+        from snesst import firmware
 
         named = Path(tempfile.mkdtemp())
 
@@ -126,7 +126,7 @@ class WhereTheImagesAreTest(unittest.TestCase):
 
     def test_and_the_project_this_sits_inside_is_searched_without_being_named(self) -> None:
         sys.path.insert(0, str(chip.PROCESSOR))
-        from st010 import firmware
+        from snesst import firmware
 
         self.assertIn(firmware.ALONGSIDE, firmware.directories({}))
 

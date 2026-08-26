@@ -1,7 +1,7 @@
 blank_issues_enabled: false
 contact_links:
   - name: Where do I get the microcode?
-    url: https://github.com/gufranco/snes-st010-python#faq
+    url: https://github.com/gufranco/snes-st-python#faq
     about: Not from here, and nobody here will tell you. Dump it from hardware you own.
   - name: The processor underneath
     url: https://github.com/gufranco/nec-upd7725-96050-python

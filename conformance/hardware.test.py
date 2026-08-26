@@ -14,7 +14,7 @@ from typing import Any, override
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from st010 import chip
+from snesst import chip
 
 HERE = Path(__file__).resolve().parent
 

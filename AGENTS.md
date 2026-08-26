@@ -92,7 +92,7 @@ python3 -m conformance.speed
 And the run that reports what it could not check rather than passing quietly:
 
 ```bash
-python3 st010/doctor.py
+python3 snesst/doctor.py
 ```
 
 Everything under `conformance/` runs as a module. Run as a script, its own
@@ -110,7 +110,7 @@ the case it exists for.
   line, one act, blank line, assert, with no section labels.
 - 100% statement and branch coverage, enforced. `mypy` at strict, with every
   optional error class on.
-- Everything a caller can catch is defined once, in `st010/errors.py`, and
+- Everything a caller can catch is defined once, in `snesst/errors.py`, and
   imported from there.
 - A check nobody has seen fail is not known to work. Drive every new check
   against input that should fail it before keeping it.
@@ -118,7 +118,7 @@ the case it exists for.
 ## Layout
 
 ```text
-st010/
+snesst/
   __init__.py     the package, and the part chosen at construction
   models.py       the two parts, and the names each answers to
   chip.py         the interface Seta wrapped around the processor

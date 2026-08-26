@@ -6,8 +6,8 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-import st010
-from st010 import errors, models
+import snesst
+from snesst import errors, models
 
 EVERY_PART = {"st010", "st011"}
 
@@ -94,13 +94,13 @@ class DeclaredImageTest(unittest.TestCase):
 class BuildingTest(unittest.TestCase):
     def test_a_name_no_part_answers_to_is_refused_before_any_image_is_looked_for(self) -> None:
         with self.assertRaises(errors.UnknownModelError):
-            st010.Chip("nonsense")
+            snesst.Chip("nonsense")
 
     def test_the_default_part_is_one_the_catalogue_knows(self) -> None:
-        self.assertIn(st010.DEFAULT_MODEL, models.MODELS)
+        self.assertIn(snesst.DEFAULT_MODEL, models.MODELS)
 
     def test_the_family_name_reaches_the_same_thing(self) -> None:
-        self.assertIs(st010.Chip, st010.Chip)
+        self.assertIs(snesst.Chip, snesst.Chip)
 
 
 if __name__ == "__main__":

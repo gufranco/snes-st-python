@@ -108,7 +108,7 @@ jobs:
             echo "::group::${file}"
             python -m coverage run -a "${file}" || status=1
             echo "::endgroup::"
-          done < <(find st010 conformance -name '*.test.py' | sort)
+          done < <(find snesst conformance -name '*.test.py' | sort)
           exit "${status}"
         shell: bash
 
@@ -148,17 +148,49 @@ jobs:
       # test job above: this package has no behaviour of its own to get wrong.
       - name: Start every part and confirm it reaches its own wait
         run: |
+          set +e
           python -c "
-          import st010
-          from st010 import chip, models
+          import snesst
+          from snesst import chip, models
           reason = chip.why_not()
           if reason:
               print('  nothing was run:', reason)
-              raise SystemExit(0)
+              raise SystemExit(2)
           for name in sorted(models.MODELS):
-              part = st010.Chip(name)
+              part = snesst.Chip(name)
               where = part.core.registers.pc
               print(f'  {name}: booted, waiting at word {where}')
               assert where in chip.COMMAND_LOOP[name], (name, where)
           "
+          status=$?
+          set -e
+          if [ "${status}" -eq 2 ]; then
+            echo "::notice title=No microcode present::The checks that start a part's own program did not run. They are not failures; they had nothing to run."
+            exit 0
+          fi
+          exit "${status}"
+        shell: bash
+
+      # The tests that need a real image are skipped without one, and a skipped
+      # test and a passing one print the same thing at the end of a run. This
+      # says which happened, on the page a person actually opens.
+      - name: Say on the run page whether the part was driven at all
+        run: |
+          set +e
+          python -c "
+          import sys
+          sys.path.insert(0, '.')
+          from snesst import chip
+          reason = chip.why_not()
+          print(reason if reason else '')
+          raise SystemExit(2 if reason else 0)
+          " > reason.txt
+          status=$?
+          set -e
+          if [ "${status}" -eq 2 ]; then
+            echo "::notice title=No microcode present::$(cat reason.txt)"
+            exit 0
+          fi
+          echo "::notice title=Microcode present::Every part this package covers was built from its own image and driven."
+          exit "${status}"
         shell: bash

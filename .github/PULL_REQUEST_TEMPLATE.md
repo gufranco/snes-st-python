@@ -12,7 +12,7 @@ evidence that they did.
 
 - [ ] `ruff format --check .` and `ruff check .` are clean
 - [ ] Every test file runs, and coverage is 100% of statements and branches
-- [ ] `python3 -m st010.doctor` reports nothing on this machine
+- [ ] `python3 -m snesst.doctor` reports nothing on this machine
 - [ ] Where an image is present, `conformance/against_cartridges.py` was run for every part it touches
 - [ ] `conformance/documented.py` agrees, if any example in the README changed
 

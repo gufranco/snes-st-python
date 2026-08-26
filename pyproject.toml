@@ -3,14 +3,14 @@ requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "st010"
+name = "snesst"
 description = "The ST010, the navigation coprocessor one Super Nintendo racing cartridge carried, settled against its own reference implementation."
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
 requires-python = ">=3.12"
 dynamic = ["version"]
-keywords = ["snes", "st010", "coprocessor", "emulator", "conformance", "retrocomputing"]
+keywords = ["snes", "st010", "st011", "coprocessor", "emulator", "conformance", "retrocomputing"]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Intended Audience :: Developers",
@@ -22,21 +22,21 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/gufranco/snes-st010-python"
-Source = "https://github.com/gufranco/snes-st010-python"
-Issues = "https://github.com/gufranco/snes-st010-python/issues"
+Homepage = "https://github.com/gufranco/snes-st-python"
+Source = "https://github.com/gufranco/snes-st-python"
+Issues = "https://github.com/gufranco/snes-st-python/issues"
 
 [tool.setuptools]
-packages = ["st010"]
+packages = ["snesst"]
 
 [tool.setuptools.dynamic]
-version = { attr = "st010.version.VERSION" }
+version = { attr = "snesst.version.VERSION" }
 
 [tool.setuptools.package-data]
-st010 = ["artifacts.manifest.json"]
+snesst = ["artifacts.manifest.json"]
 
 [tool.setuptools.exclude-package-data]
-st010 = ["*.test.py"]
+snesst = ["*.test.py"]
 
 [tool.ruff]
 target-version = "py312"
@@ -78,7 +78,7 @@ ignore = [
 # narrower catch here would let an unforeseen failure escape as a traceback and
 # take the rest of the report with it, which is the one outcome it must avoid.
 # It prints for the same reason every tool here does: its output is the product.
-"st010/doctor.py" = ["BLE001", "T201"]
+"snesst/doctor.py" = ["BLE001", "T201"]
 
 [tool.mypy]
 # Every flag mypy has, plus the ones strict does not turn on. The errors that
@@ -99,16 +99,16 @@ enable_error_code = [
   "truthy-iterable",
   "unused-awaitable",
 ]
-files = ["st010", "conformance"]
+files = ["snesst", "conformance"]
 
 [tool.coverage.run]
-source = ["st010", "conformance"]
+source = ["snesst", "conformance"]
 # The checks that drive real microcode are measured out of the gate on purpose.
 # They depend on a file nobody may distribute, so a machine that has one runs a
 # set of paths a machine without one cannot. No single build can exercise both,
 # and a gate that demands the impossible gets switched off rather than met. What
 # they do instead is report as skipped, out loud.
-omit = ["st010/microcode.test.py"]
+omit = ["snesst/microcode.test.py"]
 branch = true
 
 [tool.coverage.report]

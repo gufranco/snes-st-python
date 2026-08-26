@@ -9,7 +9,7 @@
     "why": "A derived model covers the commands somebody thought to look at, and the corners nobody characterised are exactly where it is silently wrong. Running the program removes that whole class of error. What running it cannot remove is the interface: where the shared memory sits, which addresses are registers, and how a console gets the part's attention in the first place.",
     "whatIsMissing": "A data sheet for the uPD96050, the larger processor these parts are built on. None was located; nec-upd7725-96050-python records that in its own divergence file and nothing is duplicated here.",
     "comparedAgainst": {
-      "runner": "st010/microcode.test.py",
+      "runner": "snesst/microcode.test.py",
       "what": "The part's own microcode, run to the place it waits for a command, for both parts. The wait address is not derived from any description of the program: it is where the shipped program actually stops, on a copy a reader supplied and this repository confirmed by digest before a byte of it ran."
     }
   },

@@ -10,7 +10,7 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from st010 import chip, errors, firmware, models  # noqa: F401
+from snesst import chip, errors, firmware, models  # noqa: F401
 
 sys.path.append(str(chip.PROCESSOR))
 
@@ -43,7 +43,7 @@ class ShippedManifestTest(unittest.TestCase):
     def test_and_the_packaging_declares_it_as_package_data(self) -> None:
         pyproject = (Path(firmware.__file__).resolve().parent.parent / "pyproject.toml").read_text()
 
-        self.assertIn('st010 = ["artifacts.manifest.json"]', pyproject)
+        self.assertIn('snesst = ["artifacts.manifest.json"]', pyproject)
 
     def test_and_identify_needs_nothing_outside_the_package(self) -> None:
         package = Path(firmware.__file__).resolve().parent

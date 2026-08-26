@@ -45,8 +45,8 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any, override
 
-from st010 import firmware
-from st010.errors import NeverFinished, NoFirmware
+from snesst import firmware
+from snesst.errors import NeverFinished, NoFirmware
 
 ROOT = Path(__file__).resolve().parent.parent
 

@@ -9,7 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-import st010  # noqa: E402
+import snesst  # noqa: E402
 from conformance import speed  # noqa: E402
 
 
@@ -94,12 +94,12 @@ class MainTest(unittest.TestCase):
         nothing to time, and returning a failure would make every fresh checkout
         look like a regression.
         """
-        real = st010.why_not
-        st010.why_not = lambda *_, **__: "no image is on this machine"
+        real = snesst.why_not
+        snesst.why_not = lambda *_, **__: "no image is on this machine"
         try:
             code, output = self.run_main(repeats=1, calls=200, floor=1)
         finally:
-            st010.why_not = real
+            snesst.why_not = real
 
         self.assertEqual(code, 0)
         self.assertIn("nothing measured", output)

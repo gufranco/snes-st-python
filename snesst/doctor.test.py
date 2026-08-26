@@ -6,7 +6,7 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from st010 import chip, doctor, errors
+from snesst import chip, doctor, errors
 
 
 def an_image(part: str = "st010") -> "dict[str, tuple[str, Path]]":
@@ -75,7 +75,7 @@ class RunTest(unittest.TestCase):
         self.assertIn("processor", [one.name for one in doctor.examine()])
 
     def test_and_one_finding_per_part_it_covers(self) -> None:
-        from st010 import models
+        from snesst import models
 
         names = [one.name for one in doctor.examine()]
 
@@ -121,7 +121,7 @@ class PresentImageTest(unittest.TestCase):
         return where
 
     def _held(self, where: Path) -> "dict[str, tuple[object, Path]]":
-        from st010 import models
+        from snesst import models
 
         return dict.fromkeys(models.MODELS, ("identity", where))
 
@@ -199,7 +199,7 @@ class DigestTest(unittest.TestCase):
         import sys as system
 
         system.path.insert(0, str(chip.PROCESSOR))
-        from st010 import firmware
+        from snesst import firmware
 
         return {"st010": (firmware.Identity("st010", "upd7725", "MADE UP", 8, 8), where)}
 
@@ -316,7 +316,7 @@ class ReportTest(unittest.TestCase):
         self.assertGreaterEqual(len(lines), len(found))
 
     def test_it_opens_with_something_that_says_what_it_is(self) -> None:
-        self.assertIn("st010", doctor.report(doctor.examine())[0])
+        self.assertIn("snesst", doctor.report(doctor.examine())[0])
 
     def test_it_can_be_pasted_into_an_issue_as_it_stands(self) -> None:
         text = "\n".join(doctor.report(doctor.examine()))

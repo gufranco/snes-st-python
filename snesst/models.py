@@ -19,7 +19,7 @@ ROM, and both are reached the same way. So both are here, and neither is describ
 from collections.abc import Sequence
 from typing import override
 
-from st010.errors import UnknownModelError
+from snesst.errors import UnknownModelError
 
 
 class Model:

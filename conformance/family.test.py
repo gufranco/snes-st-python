@@ -31,7 +31,7 @@ from typing import Any, Protocol
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-import st010  # noqa: E402
+import snesst  # noqa: E402
 
 FAMILY = (ROOT / "FAMILY.md").read_text()
 
@@ -51,7 +51,7 @@ calling itself something else.
 
 CLOCKED = KIND == "Clocked part"
 
-PACKAGE: Any = st010
+PACKAGE: Any = snesst
 """The package under test, deliberately untyped.
 
 What a member publishes depends on what it models: a clocked part has a `Cpu`,
@@ -124,7 +124,7 @@ Interrupt lines are not in here, because they are not universal and pretending
 they are produces stubs. They are declared below instead.
 """
 
-INTERRUPT_LINES = ("irq", "nmi")
+INTERRUPT_LINES: tuple[str, ...] = ()
 """The interrupt lines this member's part actually has, one method each.
 
 Three shapes exist in the family and each is what the silicon has. A Z80 and a
@@ -1533,7 +1533,7 @@ class ClaimedCountTest(unittest.TestCase):
         """
         return sum(
             len(re.findall(r"^\s+def test_", found.read_text(), re.M))
-            for directory in ("st010", "conformance")
+            for directory in ("snesst", "conformance")
             for found in sorted((ROOT / directory).glob("**/*.test.py"))
         )
 
