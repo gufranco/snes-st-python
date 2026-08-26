@@ -125,6 +125,25 @@ So the boundary is visible rather than implied:
 - **Everything about the processor.** Settled in the member that models it,
   against NEC's own data sheet.
 
+## The third chip Seta made, and why it is not here
+
+**The ST018 is not modelled and does not belong in this member as it stands.**
+The name says otherwise, which is the trap: it shares a vendor and a prefix with
+the two parts here and shares no silicon with them. The ST010 and ST011 are NEC
+uPD96050 digital signal processors, which is why this member consumes
+[nec-upd7725-96050-python](https://github.com/gufranco/nec-upd7725-96050-python)
+and runs their microcode. The ST018 is a thirty two bit ARMv3 processor clocked
+at 21.47 MHz.
+
+Putting it here would put two unrelated processors in one member. What fits the
+shape this family already has is a clocked member for the ARM core, after which
+this one becomes the three coprocessors Seta made rather than the two, consuming
+two processor members instead of one.
+
+Its firmware was dumped in 2012, so the rule that a part with a ROM runs its ROM
+could be met. What is missing is the core, and that is a clocked part at this
+family's standard rather than a wrapper.
+
 ## What is deliberately not modelled
 
 Absent rather than unknown, and absent on purpose:
