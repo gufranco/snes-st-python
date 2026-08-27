@@ -174,6 +174,31 @@ that, the member would publish cycle counts in the manufacturer's own S, N, I an
 C terms and refuse to convert them to ticks, the way this family already refuses
 to convert between the console and the audio unit.
 
+**What running the firmware already shows.** On 2026-08-27 the dumped firmware
+was driven against [arm6-python](https://github.com/gufranco/arm6-python), which
+is the clocked member this needs. It is 163,840 bytes and opens with an ARM
+exception vector table, eight consecutive branches beginning `EA00002A`. The
+model executes the boot sequence without a special case: the reset vector
+branches to `0x0000B0`, which sets a register to `0x4000002C` and stores 2 there,
+loads `0xD3` and writes it to the whole CPSR, which is supervisor mode with both
+interrupt disables set, loads the stack pointer PC-relative from a literal at
+`0x0008A4`, and calls `0x000100`, which opens by pushing with `STMDB SP!`.
+
+That gives three regions, read off the part's own program rather than from any
+implementation of it:
+
+| Address | What the firmware does with it |
+|:--|:--|
+| `0x00000000` | The program it is executing |
+| `0x40000000` | Registers, written at offsets `0x20` through `0x2D`, and `0x20` read once |
+| `0xE0000000` | Work RAM. The stack pointer is loaded with `0xE0004000`, so sixteen kilobytes, and the repeated reads at `0xE0003FE0` upward are its stack |
+
+What this does not show is what any of those registers answer, because the model
+has none: it runs 1,271 instructions across 35 addresses and then spins in the
+routine at `0x000100`, reading zeros where the part would read a port. The map is
+what the firmware asks for, not what the silicon replies, and the difference is
+the whole of what a member would still have to establish.
+
 ## What is deliberately not modelled
 
 Absent rather than unknown, and absent on purpose:
