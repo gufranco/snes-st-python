@@ -199,6 +199,87 @@ routine at `0x000100`, reading zeros where the part would read a port. The map i
 what the firmware asks for, not what the silicon replies, and the difference is
 the whole of what a member would still have to establish.
 
+**What the cartridge's own code shows.** On 2026-08-27 the other half of that
+interface was read off the cartridge, which is the same tier of authority as the
+firmware: the artifact itself. The copy read is 524,288 bytes, sha256
+`40cec32f4c1b5a2564b8bb2e825ca1314d2171edb8e934956a74827e14bc9972`, crc32
+`dd852671`. Its header reports LoROM, chipset `0xF5`, 512 KB of program and 8 KB
+of save RAM, titled `NIDAN MORITASHOGI2`. The method was a reachability walk from
+the reset vector, following calls, branches and jumps and tracking the accumulator
+and index widths through `SEP` and `REP`, so every address below is one that
+reached execution rather than one that matched a pattern in the file. Blind
+scanning was tried first and discarded: it answers without instruction boundaries,
+so it reports operand bytes as addresses.
+
+Three console-side addresses answer, and no others in `$2000` through `$5FFF`
+outside the console's own registers:
+
+| Address | What the cartridge does with it |
+|:--|:--|
+| `$3800` | Read only. One byte in from the part |
+| `$3802` | Written only. One byte out to the part |
+| `$3804` | Read for status, and written to drive the part's reset |
+
+Five routines in bank `$00` are the whole of the console side, and every other
+site calls one of them:
+
+| Routine | File offset | What it does |
+|:--|:--|:--|
+| `$E717` | `0x006717` | Writes `0`, then `1`, then `0` to `$3804`, with a full index-register countdown between each. A reset pulse |
+| `$E862` | `0x006862` | Writes `0` to `$3804`, counts down, then polls `$3804` until bit 7 sets |
+| `$E873` | `0x006873` | Sends: checks the guard, and writes the accumulator to `$3802` only if it passes |
+| `$E87E` | `0x00687E` | Receives: checks the guard, polls `$3804` until bit 0 sets, then reads `$3800` |
+| `$E892` | `0x006892` | The guard: reads `$3804` and returns carry set when bit 4 is set, which is what both transfer routines abandon on |
+
+That gives four bits of `$3804` a role the cartridge can be seen to rely on:
+
+| Bit | How the cartridge reads it |
+|:--|:--|
+| 0 | Polled before every read of `$3800`. A byte is waiting |
+| 4 | Polled before every transfer in either direction. Set means the transfer is abandoned |
+| 6 | Read once beside bit 7, in the routine at `$EFBD` that decides between two paths |
+| 7 | Polled after the reset pulse until it sets |
+
+**What this still does not settle.** The names above are the cartridge's usage,
+never the part's documentation, and no document for this part exists. Nothing here
+says which ARM-side address each console-side address appears at, and pairing the
+two halves is the next thing a member would have to do rather than something these
+two artifacts state. Bit 4 is the sharpest case: the cartridge abandons a transfer
+on it and never sets it, so whether it means busy, faulted or absent cannot be read
+off the console side at all. The remaining bits of `$3804` are never examined, which
+is documented silence rather than a claim that they are unused.
+
+**The two halves do not pair, and that is the ceiling.** With the console side
+read off the cartridge and the ARM side read off the firmware, the obvious next
+step is to say which console-side address appears at which ARM-side address.
+Neither artifact says. Traced from reset, the firmware writes the word `2` to
+`0x4000002C` exactly once, then writes zero to `0x40000020`, `0x40000024` and
+`0x40000028` and reads one byte back from `0x40000020`, repeating that group for
+as long as it is stepped. So the ARM has one byte it polls and one word it
+announces itself with, and the console has one byte it sends, one byte it receives
+and one status byte it polls. The counts match at three against three, and a
+matching count is not a mapping.
+
+The specific thing that will not close is the console's wait after the reset pulse.
+It polls `$3804` until bit 7 sets. The only one-shot thing the firmware does is
+write `2` to `0x4000002C`, and `2` is bit 1. Either the two are unrelated, or the
+interface hardware between the two register files transforms one into the other,
+and no artifact here describes that hardware. The part's ROM is on the die and the
+interface is inside the same package, so there is no bus to probe.
+
+**What would settle it, and why it was not done.** Feeding the firmware invented
+port answers until the handshake completes would produce a mapping, and the mapping
+would be whatever made the run proceed rather than whatever the silicon does. Two
+different mappings can both get the firmware past its wait. That is calibration
+against a guess, which is the failure this whole standard exists to prevent, so it
+was not run. Settling this needs the package opened and the interface probed, which
+is a permanent ceiling here. Recorded and stopped.
+
+Until then the ST018 stays out of this member as a modelled part. What exists is
+the two halves above, each read off an artifact, and a named gap between them.
+
+
+
 ## What is deliberately not modelled
 
 Absent rather than unknown, and absent on purpose:
