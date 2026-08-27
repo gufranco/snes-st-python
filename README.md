@@ -4,7 +4,7 @@ The two coprocessors Seta made for the Super Nintendo, running the microcode you
 
 [![CI](https://github.com/gufranco/snes-st-python/actions/workflows/ci.yml/badge.svg)](https://github.com/gufranco/snes-st-python/actions/workflows/ci.yml)
 
-**2** parts, **0** commands described by hand, both waits measured on the shipped microcode, **0** disagreements, **511** tests, **100%** statement and branch coverage, no dependencies
+**2** parts, **0** commands described by hand, both waits measured on the shipped microcode, **0** disagreements, **553** tests, **100%** statement and branch coverage, no dependencies
 
 ```python
 from snesst import Chip
@@ -73,7 +73,9 @@ Chip("seta011").model
 # 'st011'
 ```
 
-Either part is reached the same way, by the name it is known as:
+Every part is reached the same way, by the name it is known as. The third one
+needs an image nobody can carry, so the line below builds the two whose images
+this machine happens to hold:
 
 ```python
 from snesst import Chip
@@ -82,6 +84,11 @@ print(Chip("st010").part, Chip("st011").part)
 
 # st010 st011
 ```
+
+`Chip("st018")` and `Chip("setast018")` reach the third, which is an ARM rather
+than a signal processor and is `snesst.ST018` underneath. The factory decides
+which arrangement a name means, so a caller who knows the part does not have to
+know which silicon is under it.
 
 A name no part answers to is refused rather than quietly building the default:
 
@@ -96,12 +103,27 @@ except UnknownModelError as refused:
 # st012 is not a part this package covers
 ```
 
-### The two parts
+### The three parts
 
 | Name | Also answers to | What it does |
 |:--|:--|:--|
 | `st010` | `st-010`, `seta010`, `setast010` | Eight commands for a racing cartridge |
 | `st011` | `st-011`, `seta011`, `setast011` | A shogi opponent |
+| `st018` | `st-018`, `seta018`, `setast018` | A shogi opponent, on an ARM |
+
+The first two are NEC uPD96050 signal processors and share one class. The third
+shares a vendor and a prefix with them and shares no silicon: it is a 32 bit ARM
+on the cartridge's own crystal, reached through three addresses and one byte at
+a time rather than through four kilobytes of shared memory, so it has a class of
+its own.
+
+```python
+from snesst import ST018
+
+sorted(one for one in dir(ST018) if not one.startswith("_"))
+
+# ['drive', 'model', 'part', 'port', 'processor', 'read', 'reset', 'status', 'step', 'write']
+```
 
 ## The problem
 This chip has no port. It shares four kilobytes of battery-backed memory with the

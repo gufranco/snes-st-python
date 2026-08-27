@@ -63,6 +63,17 @@ _CATALOGUE = (
         ),
         aliases=("st-011", "seta011", "setast011"),
     ),
+    Model(
+        name="st018",
+        summary=(
+            "The Seta ST018, shipped in exactly one shogi cartridge and sharing no "
+            "silicon with the two above it: a 32 bit ARM on the cartridge's own "
+            "crystal rather than a digital signal processor. It answers a table of "
+            "twenty-eight commands over a one byte mailbox, and what it does with "
+            "them is the same thing the ST011 does, which is play the game."
+        ),
+        aliases=("st-018", "seta018", "setast018"),
+    ),
 )
 
 MODELS = {model.name: model for model in _CATALOGUE}

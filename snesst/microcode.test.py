@@ -16,7 +16,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from snesst import chip, models
+from snesst import chip
 
 PRESENT = chip.available()
 
@@ -46,8 +46,12 @@ class RealMicrocodeTest(unittest.TestCase):
 
         self.assertIn(part.core.registers.pc, chip.COMMAND_LOOP["st011"])
 
-    def test_every_part_the_package_covers_reaches_a_wait_of_its_own(self) -> None:
-        for name in models.MODELS:
+    def test_every_part_this_class_covers_reaches_a_wait_of_its_own(self) -> None:
+        """The two that run a signal processor. The third runs an ARM and is
+        driven by `snesst.ST018`, which has no shared memory and no command loop
+        to wait in: it idles across thirty-four addresses instead.
+        """
+        for name in chip.COMMAND_LOOP:
             part = chip.Chip(name)
 
             self.assertIn(part.core.registers.pc, chip.COMMAND_LOOP[name], name)

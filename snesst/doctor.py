@@ -35,7 +35,7 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from snesst import chip, models  # noqa: E402
+from snesst import chip, models, st018  # noqa: E402
 from snesst.version import VERSION  # noqa: E402
 
 
@@ -56,6 +56,9 @@ EXCHANGES = ROOT / "conformance"
 OLDEST_PYTHON = (3, 12)
 
 PROCESSOR_NAME = "nec-upd7725-96050-python"
+
+HALTING_PROCESSOR = "upd96050"
+"""The processor whose microcode stops at an address. The ARM does not."""
 """What the project underneath is called, which is what its findings are filed under."""
 
 
@@ -115,7 +118,27 @@ def _processor() -> Finding:
     )
 
 
-def _default_build(part: str, images: Images) -> chip.Chip:
+def _arm() -> Finding:
+    """The other processor, which only the third part needs."""
+    found = st018.PROCESSOR.is_dir() and any(st018.PROCESSOR.iterdir())
+    return Finding(
+        "arm",
+        found,
+        f"{st018.PROCESSOR.name} {'is checked out' if found else 'is missing'}",
+        "run git submodule update --init --recursive",
+    )
+
+
+def _default_build(part: str, images: Images) -> Any:
+    """Whichever of the two arrangements this part is.
+
+    Two of the three run a digital signal processor and the third runs an ARM,
+    so there are two classes and the doctor has to know which it is asking for.
+    Dispatching here rather than in `_part` keeps the report identical for all
+    three: found or not, starts or not, and the digest of what is on disk.
+    """
+    if part == st018.PART:
+        return st018.ST018(images=iter(images.values()))
     return chip.Chip(part, images=images)
 
 
@@ -182,12 +205,21 @@ def _waits(build: Build | None = None, images: Images | None = None) -> Finding:
     check that reads what happens to be on the machine running it is a check
     whose result depends on the machine, and a test of the failure path passed
     here and reported success on a runner with no image at all.
+
+    Only the parts that stop are asked. The ARM part does not: it idles in a
+    loop of thirty-four addresses waiting for a command, so one address off it
+    would be a point in a cycle rather than a place it came to rest, and naming
+    that as where it waits would be a claim about the wrong thing. A part whose
+    identity says nothing is asked anyway, because refusing to ask is how a
+    check reports success by not running.
     """
     made = _default_build if build is None else build
     held = chip.available() if images is None else images
     reached = []
     for name in sorted(models.MODELS):
         if name not in held:
+            continue
+        if getattr(held[name][0], "processor", HALTING_PROCESSOR) != HALTING_PROCESSOR:
             continue
         try:
             part = made(name, held)
@@ -264,7 +296,7 @@ def examine(
     and both are here because either can be the reason nothing works.
     """
     held = chip.available() if images is None else images
-    found = [_python(), _package(), _processor()]
+    found = [_python(), _package(), _processor(), _arm()]
     found.extend(_part(name, held, build) for name in sorted(models.MODELS))
     found.append(_waits())
     found.extend(_beneath(beneath))

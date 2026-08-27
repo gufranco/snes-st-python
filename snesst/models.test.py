@@ -9,7 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import snesst
 from snesst import errors, models
 
-EVERY_PART = {"st010", "st011"}
+EVERY_PART = {"st010", "st011", "st018"}
 
 
 class CatalogueTest(unittest.TestCase):
@@ -84,11 +84,29 @@ class DeclaredImageTest(unittest.TestCase):
             for accepted in one["accepted"]:
                 self.assertEqual(len(accepted["sha256"]), 64, one["part"])
 
-    def test_both_parts_of_this_family_run_the_same_processor(self) -> None:
+    def test_the_two_signal_processor_parts_run_the_same_processor(self) -> None:
+        """And the third does not, which is the whole reason it is modelled apart.
+
+        The name is the trap: three parts under one vendor prefix, two of them the
+        same digital signal processor and the third a 32 bit ARM.
+        """
         declared = {one["part"]: one["processor"] for one in self._manifest()["artifacts"]}
 
-        for name in models.MODELS:
-            self.assertEqual(declared[models.lookup(name).image], "upd96050", name)
+        found = {name: declared[models.lookup(name).image] for name in models.MODELS}
+
+        self.assertEqual(found, {"st010": "upd96050", "st011": "upd96050", "st018": "arm60"})
+
+
+class DispatchTest(unittest.TestCase):
+    """That one factory reaches both arrangements, which is what a caller wants."""
+
+    def test_the_arm_part_is_built_by_the_class_that_runs_an_arm(self) -> None:
+        from snesst import errors
+
+        with self.assertRaises(errors.NoFirmware) as raised:
+            snesst.Chip("setast018")
+
+        self.assertIn("st018", str(raised.exception))
 
 
 class BuildingTest(unittest.TestCase):

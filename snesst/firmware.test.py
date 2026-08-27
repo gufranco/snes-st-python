@@ -58,7 +58,7 @@ class ManifestTest(unittest.TestCase):
     def test_the_manifest_names_every_part_the_package_can_run(self) -> None:
         named = {entry["part"] for entry in firmware.manifest()["artifacts"]}
 
-        self.assertEqual(named, {"st010", "st011"})
+        self.assertEqual(named, {"st010", "st011", "st018"})
 
     def test_and_nothing_another_member_is_responsible_for(self) -> None:
         """The manifest split when this layer moved out of the processor package.
@@ -71,15 +71,35 @@ class ManifestTest(unittest.TestCase):
 
         self.assertEqual(named & {"dsp1", "dsp1b", "dsp2", "dsp3", "dsp4"}, set())
 
-    def test_each_part_names_the_processor_it_runs_on(self) -> None:
+    def test_each_signal_processor_part_names_the_processor_it_runs_on(self) -> None:
         for entry in firmware.manifest()["artifacts"]:
+            if "programWords" not in entry:
+                continue
             self.assertIn(entry["processor"], upd_models.MODELS, entry["part"])
 
+    def test_and_the_part_that_runs_an_arm_names_that_instead(self) -> None:
+        found = {
+            entry["part"]: entry["processor"]
+            for entry in firmware.manifest()["artifacts"]
+            if "programBytes" in entry
+        }
+
+        self.assertEqual(found, {"st018": "arm60"})
+
     def test_each_part_names_a_size_its_two_stores_add_up_to(self) -> None:
+        """In whichever unit its own processor stores things in.
+
+        The signal processors keep a program as words three bytes wide and a
+        table as words two wide. The ARM has no word-wide store, so its image is
+        measured in bytes and its entry says so rather than converting.
+        """
         for entry in firmware.manifest()["artifacts"]:
-            self.assertEqual(
-                entry["programWords"] * 3 + entry["dataWords"] * 2, entry["bytes"], entry["part"]
-            )
+            if "programWords" in entry:
+                found = entry["programWords"] * 3 + entry["dataWords"] * 2
+            else:
+                found = entry["programBytes"] + entry["dataBytes"]
+
+            self.assertEqual(found, entry["bytes"], entry["part"])
 
     def test_each_part_carries_at_least_one_digest(self) -> None:
         for entry in firmware.manifest()["artifacts"]:

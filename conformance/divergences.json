@@ -62,6 +62,18 @@
       "packageFollows": "neither",
       "reasoning": "How long a command takes on a real cartridge, and whether a console polling for an answer can outrun it, is unmodelled. Counting instructions would need the oscillator on the board, which is a figure nobody printed.",
       "wouldSettleIt": "A measurement on a real cartridge, or a photograph of the board showing its crystal."
+    },
+    {
+      "id": "nothing-sets-the-bit-the-console-waits-on",
+      "parts": ["st018"],
+      "severity": "medium",
+      "status": "open",
+      "documentSays": "Nothing. No document for this part exists.",
+      "referenceDoes": "ares owns the bit in its own bridge, as a flag neither side writes.",
+      "packageFollows": "neither",
+      "reasoning": "Both halves of the mailbox were read off artifacts and they pair: the console writes $3802 and the part reads 0x40000010, the part writes 0x40000000 and the console reads $3800, each gated by one bit of a status register the other side never touches. Bit 7 of $3804 is the exception. The cartridge polls it after the reset pulse and no instruction in the firmware sets it, so it is the interface hardware answering rather than the program. This package raises it when the part is reset, which is what makes the part usable and is not something either artifact says. An independent implementation does the same, which is consistent and is not evidence: an implementation is free to invent a flag that satisfies the firmware it was tested against. The two guard bits are the same shape and are named in st018.py and never set, because setting them would be a claim.",
+      "wouldSettleIt": "The package opened and the interface probed. There is no bus to reach it on: the ROM is on the die and the interface is inside the same package.",
+      "wouldReopenIt": "A document for this part, which nobody has published."
     }
   ]
 }

@@ -4,3 +4,6 @@
 [submodule "snes-driver-python"]
 	path = snes-driver-python
 	url = https://github.com/gufranco/snes-driver-python.git
+[submodule "arm6-python"]
+	path = arm6-python
+	url = https://github.com/gufranco/arm6-python.git

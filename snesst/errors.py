@@ -61,6 +61,17 @@ class Corrupt(Exception):
     """
 
 
+class UnknownPort(Exception):
+    """An address in the window that neither artifact describes.
+
+    The cartridge reaches three addresses and no others, so what the rest of the
+    window does is unestablished rather than known-and-unimplemented. Answering
+    would be inventing a register; raising says which addresses are real.
+    """
+
+    __slots__ = ()
+
+
 class WrongShape(Exception):
     """The image is not a whole number of words of the width the part reads.
 

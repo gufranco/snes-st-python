@@ -1,9 +1,17 @@
 {
   "note": "What a firmware image for each part is, so a copy you already own can be confirmed before it is run. Nothing here is any part of one: a digest identifies a file, and no set of digests reconstructs anything.",
   "canonical": {
-    "layout": "program first, then data",
-    "programBytesPerWord": 3,
-    "dataBytesPerWord": 2,
+    "note": "An image's shape is a fact about the processor inside the part, so it is stated per processor rather than once for the file.",
+    "upd96050": {
+      "layout": "program first, then data",
+      "programBytesPerWord": 3,
+      "dataBytesPerWord": 2
+    },
+    "arm60": {
+      "layout": "program first, then data, both measured in bytes because this processor has no word-wide store",
+      "programBytes": 131072,
+      "dataBytes": 32768
+    },
     "digest": "sha256 decides. crc32, md5 and sha1 are published beside it so a copy can be cross-checked against a database that keys on one of those, and none of them decides anything on its own: crc32 is a 32-bit error code, and md5 and sha1 are both collision-broken."
   },
   "artifacts": [
@@ -46,6 +54,28 @@
           "provenance": {
             "kind": "localCopy",
             "verifiedOn": "2026-08-20"
+          }
+        }
+      ],
+      "badDumps": []
+    },
+    {
+      "part": "st018",
+      "processor": "arm60",
+      "summary": "The ST018, which plays shogi on an ARM rather than on a digital signal processor.",
+      "bytes": 163840,
+      "programBytes": 131072,
+      "dataBytes": 32768,
+      "accepted": [
+        {
+          "revision": "ST018",
+          "sha256": "6df209ab5d2524d1839c038be400ae5eb20dafc14a3771a3239cd9e8acd53806",
+          "crc32": "5c403cc5",
+          "md5": "dafae0e0c71c924075811c595c61a30e",
+          "sha1": "91383b92745cc7cc4f15409ac5bc2c2f699a43f1",
+          "provenance": {
+            "kind": "localCopy",
+            "verifiedOn": "2026-08-27"
           }
         }
       ],

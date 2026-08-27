@@ -90,23 +90,43 @@ def digests_of(image: bytes) -> dict[str, str]:
 
 
 class Identity:
-    """What an image turned out to be."""
+    """What an image turned out to be.
 
-    __slots__ = ("data_words", "part", "processor", "program_words", "revision")
+    A shape is stated in the unit its own processor uses. The digital signal
+    processors store a program as words three bytes wide and a table as words two
+    wide, so their images are measured in words. The ARM has no word-wide store
+    and its image is measured in bytes. An identity carries whichever pair its
+    entry declared and leaves the other at zero, rather than converting one into
+    the other and losing which was written down.
+    """
+
+    __slots__ = (
+        "data_bytes",
+        "data_words",
+        "part",
+        "processor",
+        "program_bytes",
+        "program_words",
+        "revision",
+    )
 
     def __init__(
         self,
         part: str,
         processor: str,
         revision: str,
-        program_words: int,
-        data_words: int,
+        program_words: int = 0,
+        data_words: int = 0,
+        program_bytes: int = 0,
+        data_bytes: int = 0,
     ) -> None:
         self.part = part
         self.processor = processor
         self.revision = revision
         self.program_words = program_words
         self.data_words = data_words
+        self.program_bytes = program_bytes
+        self.data_bytes = data_bytes
 
     @override
     def __repr__(self) -> str:
@@ -174,8 +194,10 @@ def identify(image: bytes, catalogue: dict[str, Any] | None = None) -> Identity:
                 part=entry["part"],
                 processor=entry["processor"],
                 revision=accepted["revision"],
-                program_words=entry["programWords"],
-                data_words=entry["dataWords"],
+                program_words=entry.get("programWords", 0),
+                data_words=entry.get("dataWords", 0),
+                program_bytes=entry.get("programBytes", 0),
+                data_bytes=entry.get("dataBytes", 0),
             )
 
     raise Unrecognised(_diagnosis(image, found[DECIDES], entries))

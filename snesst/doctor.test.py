@@ -74,6 +74,28 @@ class RunTest(unittest.TestCase):
     def test_and_whether_the_processor_is_checked_out(self) -> None:
         self.assertIn("processor", [one.name for one in doctor.examine()])
 
+    def test_and_whether_the_other_one_is(self) -> None:
+        """Two processors, because the third part shares no silicon with the two."""
+        self.assertIn("arm", [one.name for one in doctor.examine()])
+
+    def test_the_part_that_runs_an_arm_is_built_by_the_class_that_runs_one(self) -> None:
+        """`_default_build` is the only place that knows there are two arrangements."""
+        from snesst import st018
+
+        with self.assertRaises(Exception) as raised:
+            doctor._default_build(st018.PART, {})
+
+        self.assertIsInstance(raised.exception, errors.NoFirmware)
+
+    def test_a_part_whose_processor_does_not_stop_is_left_out_of_the_waits(self) -> None:
+        from snesst import firmware
+
+        identity = firmware.Identity(part="st018", processor="arm60", revision="ST018")
+
+        found = doctor._waits(images={"st018": (identity, Path("nowhere"))})
+
+        self.assertEqual(found.detail, "no image is here, so nothing was run")
+
     def test_and_one_finding_per_part_it_covers(self) -> None:
         from snesst import models
 

@@ -45,22 +45,25 @@ from typing import Any
 
 from . import chip as chip
 from . import models as models
+from . import st018 as st018
 from .chip import available, why_not
 from .errors import (
     Corrupt,
     NeverFinished,
     NoFirmware,
     UnknownModelError,
+    UnknownPort,
     Unrecognised,
     WrongShape,
 )
 from .models import MODELS, Model
+from .st018 import ST018
 from .version import VERSION
 
 __version__ = VERSION
 
 
-def Chip(model: str | None = None, **options: Any) -> "chip.Chip":  # noqa: N802
+def Chip(model: str | None = None, **options: Any) -> "chip.Chip | st018.ST018":  # noqa: N802
     """A chip of the named model, sharing one interface across the family.
 
     The model comes first because it is the thing a caller always knows. There
@@ -76,18 +79,30 @@ def Chip(model: str | None = None, **options: Any) -> "chip.Chip":  # noqa: N802
     Refuses when there is no image for the named part rather than answering from
     somewhere else, because an answer that did not come from the part is worse
     than none.
+
+    Two arrangements sit behind it. Two of the three parts run a NEC uPD96050
+    and share `chip.Chip`; the third runs an ARM and has `st018.ST018` to
+    itself, because a console reaches it through three addresses and one byte at
+    a time rather than through four kilobytes of shared memory. Which one a name
+    means is decided here so that a caller who knows the part does not have to
+    know which silicon is under it.
     """
-    return chip.Chip(models.lookup(model).name, **options)
+    name = models.lookup(model).name
+    if name == st018.PART:
+        return st018.ST018(**options)
+    return chip.Chip(name, **options)
 
 
 __all__ = [
     "MODELS",
+    "ST018",
     "Chip",
     "Corrupt",
     "Model",
     "NeverFinished",
     "NoFirmware",
     "UnknownModelError",
+    "UnknownPort",
     "Unrecognised",
     "WrongShape",
     "__version__",

@@ -125,10 +125,10 @@ So the boundary is visible rather than implied:
 - **Everything about the processor.** Settled in the member that models it,
   against NEC's own data sheet.
 
-## The third chip Seta made, and why it is not here
+## The third chip Seta made, and how it got here
 
-**The ST018 is not modelled and does not belong in this member as it stands.**
-The name says otherwise, which is the trap: it shares a vendor and a prefix with
+**The ST018 is modelled, as `snesst.ST018`, and it is a separate class rather
+than a third model behind `Chip`.** The name is the trap: it shares a vendor and a prefix with
 the two parts here and shares no silicon with them. The ST010 and ST011 are NEC
 uPD96050 digital signal processors, which is why this member consumes
 [nec-upd7725-96050-python](https://github.com/gufranco/nec-upd7725-96050-python)
@@ -149,14 +149,17 @@ marking: the program uses a 32 bit program counter and the CPSR, and never uses
 BX, LDRH, System mode or Thumb. That is good evidence for ARMv3 and it is not the
 same as knowing which ARM6 family core is inside. Nobody has published one.
 
-Putting it here would put two unrelated processors in one member. What fits the
-shape this family already has is a clocked member for the ARM core, after which
-this one becomes the three coprocessors Seta made rather than the two, consuming
-two processor members instead of one.
+Putting it behind `Chip` would put two unrelated processors behind one interface
+that describes neither, so the class is its own and the factory decides which a
+name means. This member now consumes two processor members rather than one:
+[nec-upd7725-96050-python](https://github.com/gufranco/nec-upd7725-96050-python)
+for the two signal processors and
+[arm6-python](https://github.com/gufranco/arm6-python) for the ARM.
 
-Its firmware was dumped in 2012, so the rule that a part with a ROM runs its ROM
-could be met. What is missing is the core, and that is a clocked part at this
-family's standard rather than a wrapper.
+What is modelled is what the two artifacts establish. Bit 7 of `$3804` is the one
+thing the model answers that neither states, and it is recorded in
+[conformance/divergences.json](conformance/divergences.json) under
+`nothing-sets-the-bit-the-console-waits-on` rather than left to look derived.
 
 **What that member could and could not reach.** ARM published a datasheet for the
 ARM60 whose chapter 10 gives, per instruction and per cycle, the address driven
