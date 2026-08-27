@@ -249,36 +249,55 @@ on it and never sets it, so whether it means busy, faulted or absent cannot be r
 off the console side at all. The remaining bits of `$3804` are never examined, which
 is documented silence rather than a claim that they are unused.
 
-**The two halves do not pair, and that is the ceiling.** With the console side
-read off the cartridge and the ARM side read off the firmware, the obvious next
-step is to say which console-side address appears at which ARM-side address.
-Neither artifact says. Traced from reset, the firmware writes the word `2` to
-`0x4000002C` exactly once, then writes zero to `0x40000020`, `0x40000024` and
-`0x40000028` and reads one byte back from `0x40000020`, repeating that group for
-as long as it is stepped. So the ARM has one byte it polls and one word it
-announces itself with, and the console has one byte it sends, one byte it receives
-and one status byte it polls. The counts match at three against three, and a
-matching count is not a mapping.
+**The two halves pair, and the pairing was derived before it was tested.** The
+first attempt at this stopped and recorded a ceiling, on the grounds that feeding
+the firmware invented port answers until the handshake completed would produce
+whichever mapping made the run proceed. That reasoning was right about searching
+and wrong about the situation: the mapping did not have to be searched for,
+because the firmware states it. Reading it needed a disassembler the ARM member
+did not have, and once
+[arm6-python](https://github.com/gufranco/arm6-python) had one the two routines
+that matter read straight off.
 
-The specific thing that will not close is the console's wait after the reset pulse.
-It polls `$3804` until bit 7 sets. The only one-shot thing the firmware does is
-write `2` to `0x4000002C`, and `2` is bit 1. Either the two are unrelated, or the
-interface hardware between the two register files transforms one into the other,
-and no artifact here describes that hardware. The part's ROM is on the die and the
-interface is inside the same package, so there is no bus to probe.
+At `0x000300` the part sends a byte: it waits until bit 0 of `0x40000020` is
+clear, stores the byte at `0x40000000`, and settles. At `0x00031C` it receives
+one: it waits until bit 3 of `0x40000020` is set, reads the byte from
+`0x40000010`, and settles. Both wait through a common helper at `0x0002C0` that
+polls `0x40000020` under a mask, and both bracket the transfer with a
+sixty-four iteration delay at `0x0002B0`. The guard at `0x00011C` tests bit 5 of
+the same register and is the counterpart of the console's guard at `$E892`.
 
-**What would settle it, and why it was not done.** Feeding the firmware invented
-port answers until the handshake completes would produce a mapping, and the mapping
-would be whatever made the run proceed rather than whatever the silicon does. Two
-different mappings can both get the firmware past its wait. That is calibration
-against a guess, which is the failure this whole standard exists to prevent, so it
-was not run. Settling this needs the package opened and the interface probed, which
-is a permanent ceiling here. Recorded and stopped.
+That leaves one arrangement, because each side has exactly one port it writes and
+one it reads:
 
-Until then the ST018 stays out of this member as a modelled part. What exists is
-the two halves above, each read off an artifact, and a named gap between them.
+| Direction | Console | Part | What gates it |
+|:--|:--|:--|:--|
+| Console to part | writes `$3802` | reads `0x40000010` | part waits for bit 3 of `0x40000020` to set |
+| Part to console | reads `$3800` | writes `0x40000000` | part waits for bit 0 of `0x40000020` to clear |
+| Abandon | `$3804` bit 4 | `0x40000020` bit 5 | both give up on it |
 
+**Tested as a prediction rather than searched for.** Driven with a memory
+implementing exactly that mapping and nothing else, the firmware reads the
+offered byte, reaches 75 distinct addresses instead of the 34 it reaches with
+nothing offered, and writes bytes back through `0x40000000`. Offered a byte that
+is not a command it knows, it answers `0xEE`, which is the value its own
+unknown-command path loads at `0x0001E8`.
 
+**The part has twenty-eight commands.** They are a table at `0x00023C`, four
+bytes per entry, terminated by `0xFF`: `0xF1` through `0xF6`, then `0xA0`
+through `0xA5`, `0xA8` through `0xAF`, and `0xB0` through `0xB7`. Each entry
+carries the command byte, a second byte, and a handler address. Two of them are
+confirmed by the other artifact: the cartridge sends `0xF1` at `$F030` and `0xF2`
+at `$F089`, which is two independent sources agreeing on the same values.
+
+**What is still not paired.** The console waits on bit 7 of `$3804` after the
+reset pulse, and nothing the firmware executes sets it. The firmware writes the
+word `2` to `0x4000002C` once at boot and never touches it again, and `2` is bit
+1. Either they are unrelated or the interface hardware between the two register
+files transforms one into the other. The remaining bits of both status registers
+are never read by either side, which is documented silence rather than a claim
+that they are unused. That part needs the package opened and probed and is a
+permanent ceiling here; the data path is not, and it is now established.
 
 ## What is deliberately not modelled
 
