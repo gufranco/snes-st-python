@@ -132,8 +132,22 @@ The name says otherwise, which is the trap: it shares a vendor and a prefix with
 the two parts here and shares no silicon with them. The ST010 and ST011 are NEC
 uPD96050 digital signal processors, which is why this member consumes
 [nec-upd7725-96050-python](https://github.com/gufranco/nec-upd7725-96050-python)
-and runs their microcode. The ST018 is a thirty two bit ARMv3 processor clocked
-at 21.47 MHz.
+and runs their microcode. The ST018 is a thirty two bit ARM processor on the
+cartridge's own oscillator.
+
+**It is not clocked at 21.47 MHz.** That figure is the console's master clock and
+it circulates widely as the ST018's. The board carries its own crystal: the
+component list for PCB SHVC-1DE3B-01 reads `X1 3pin [M]21440C 21.44MHz (plastic
+oscillator)`, beside a 160 pin Seta ST018 marked (C)1994-5. So the part is
+independently clocked, exactly as the S-SMP is, and no figure here converts one
+clock to the other. Whether anything divides or multiplies that oscillator before
+it reaches the core is not known.
+
+**The architecture is inferred, not read.** Every source calls it ARMv3, and the
+basis is what the firmware happens to use rather than a die reading or a part
+marking: the program uses a 32 bit program counter and the CPSR, and never uses
+BX, LDRH, System mode or Thumb. That is good evidence for ARMv3 and it is not the
+same as knowing which ARM6 family core is inside. Nobody has published one.
 
 Putting it here would put two unrelated processors in one member. What fits the
 shape this family already has is a clocked member for the ARM core, after which
@@ -143,6 +157,22 @@ two processor members instead of one.
 Its firmware was dumped in 2012, so the rule that a part with a ROM runs its ROM
 could be met. What is missing is the core, and that is a clocked part at this
 family's standard rather than a wrapper.
+
+**What that member could and could not reach.** ARM published a datasheet for the
+ARM60 whose chapter 10 gives, per instruction and per cycle, the address driven
+and the state of Nbw, Nrw, seq, Nmreq and Nopc. That is the resolution the clocked
+members of this family are held to, and it comes from the manufacturer. What no
+document gives is how many of this cartridge's oscillator ticks one of those
+cycles costs. The ARM60 datasheet puts that on a pin, `Nwait`, and says the clock
+may be stretched without limit. ARM's own reference design for the family runs the
+memory clock at half the processor clock. The ST018's answer is unknown, the 32 KB
+data ROM sits on an eight bit databus so a word read from it cannot be one access
+whatever the answer, and the part's ROM is on the die so there is no bus to probe.
+
+**How to settle it.** Decapping and probing, which is out of reach here. Short of
+that, the member would publish cycle counts in the manufacturer's own S, N, I and
+C terms and refuse to convert them to ticks, the way this family already refuses
+to convert between the console and the audio unit.
 
 ## What is deliberately not modelled
 
