@@ -100,6 +100,25 @@ class DeclaredImageTest(unittest.TestCase):
 class DispatchTest(unittest.TestCase):
     """That one factory reaches both arrangements, which is what a caller wants."""
 
+    def named(self, model: str) -> str:
+        """What the factory did with a name, on a machine with the image or without.
+
+        Both answers come through the same branch, which is the thing being
+        checked here. A runner holds no image and a reader's machine may hold
+        one, so a check that only worked on the second would be a check nobody
+        on the first has seen run.
+        """
+        from snesst import errors
+
+        try:
+            return str(snesst.Chip(model).part)
+        except errors.NoFirmware as refused:
+            found = str(refused)
+            return next((one for one in models.MODELS if one in found), found)
+
+    def test_the_signal_processor_parts_are_built_by_the_class_that_runs_one(self) -> None:
+        self.assertEqual(self.named("seta010"), "st010")
+
     def test_the_arm_part_is_built_by_the_class_that_runs_an_arm(self) -> None:
         from snesst import errors
 
