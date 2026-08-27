@@ -74,6 +74,18 @@
       "reasoning": "Both halves of the mailbox were read off artifacts and they pair: the console writes $3802 and the part reads 0x40000010, the part writes 0x40000000 and the console reads $3800, each gated by one bit of a status register the other side never touches. Bit 7 of $3804 is the exception. The cartridge polls it after the reset pulse and no instruction in the firmware sets it, so it is the interface hardware answering rather than the program. This package raises it when the part is reset, which is what makes the part usable and is not something either artifact says. An independent implementation does the same, which is consistent and is not evidence: an implementation is free to invent a flag that satisfies the firmware it was tested against. The two guard bits are the same shape and are named in st018.py and never set, because setting them would be a claim.",
       "wouldSettleIt": "The package opened and the interface probed. There is no bus to reach it on: the ROM is on the die and the interface is inside the same package.",
       "wouldReopenIt": "A document for this part, which nobody has published."
+    },
+    {
+      "id": "no-shape-writes-the-byte-that-starts-a-command",
+      "parts": ["st010", "st011"],
+      "severity": "medium",
+      "status": "open",
+      "documentSays": "Nothing. Seta published nothing about either part.",
+      "referenceDoes": "Reference implementations start a command on a write to $680021, which is what the microcode waits on rather than something a driver was read for.",
+      "packageFollows": "cartridges",
+      "reasoning": "A command needs two writes and the record carries one. Five ST010 shapes write $680020, the command register, and no shape on either part writes $680021, the byte that starts the command running. Both games work, so the start happens and the reading misses it: past a computed jump, inside a callee, or in a routine the sweep found no way into. The command write itself was invisible until the driver stopped recording every access to a status range as a poll whichever way it went; the same fix left the start write absent, so it is not the same cause. The cost is that no command sweep is possible here: setting a command without starting it would answer from whatever the part was already doing.",
+      "wouldSettleIt": "Following calls into their callees, or a capture of a real console driving either part.",
+      "wouldReopenIt": "A cartridge whose start write a straight walk does reach."
     }
   ]
 }

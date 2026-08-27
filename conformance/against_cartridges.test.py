@@ -13,6 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from conformance import against_cartridges as against
 from conformance import shapes
+from snesst import errors, st018
 
 
 class Silent:
@@ -196,6 +197,63 @@ class MainTest(unittest.TestCase):
         against.main([], why_not=lambda: None, build=lambda part: Echoing(), say=said.append)
 
         self.assertIn(against.DEFAULT_PART, said[0])
+
+
+def arm(*words: int) -> bytes:
+    """A program at the reset vector, padded to the shape an image has."""
+    body = b"".join(word.to_bytes(4, "little") for word in words)
+    program = body.ljust(st018.PROGRAM_BYTES, b"\x00")
+    return program + bytes(st018.DATA_BYTES)
+
+
+IDLE = arm(0xEAFFFFFE)
+"""Branch to itself. The part is powered and doing nothing, which is all a run of
+the recorded shapes needs underneath it: what is being checked is which addresses
+the cartridge reaches, not what the program behind them computes.
+"""
+
+
+class SurfaceTest(unittest.TestCase):
+    def test_the_cartridge_reaches_every_port_the_third_part_declares(self) -> None:
+        found = {address for address, _ in against.surface("st018")}
+
+        self.assertEqual(sorted(found), sorted(st018.CONSOLE_PORTS))
+
+    def test_the_third_part_answers_every_access_its_cartridge_makes(self) -> None:
+        part = st018.ST018(IDLE)
+
+        refused = [one for one in against.surface("st018") if not _answers(part, *one)]
+
+        self.assertEqual(refused, [])
+
+    def test_the_send_port_is_written_and_never_read(self) -> None:
+        found = [one for one in against.surface("st018") if one[0] == st018.TO_PART]
+
+        self.assertEqual(found, [(st018.TO_PART, shapes.WRITE)])
+
+    def test_a_part_refuses_an_address_no_cartridge_reaches(self) -> None:
+        part = st018.ST018(IDLE)
+
+        self.assertFalse(_answers(part, 0x3806, shapes.READ))
+
+    def test_every_recorded_exchange_plays_at_the_third_part(self) -> None:
+        held = shapes.interesting(shapes.recorded("st018"))
+
+        found = against.driven("st018", lambda part: st018.ST018(IDLE))
+
+        self.assertEqual(len(found), len(held))
+
+
+def _answers(part: "st018.ST018", address: int, what: str) -> bool:
+    """Whether the part has a register that side of the address, rather than refusing."""
+    try:
+        if what == shapes.WRITE:
+            part.write(address, 0)
+        else:
+            part.read(address)
+    except errors.UnknownPort:
+        return False
+    return True
 
 
 if __name__ == "__main__":

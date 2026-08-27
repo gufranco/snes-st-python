@@ -32,13 +32,15 @@ because nothing here can say what the count should be.
 
 **No command byte is swept, unlike the DSP's run.** There the first byte a shape
 writes is the command, so trying each of the 256 in turn asks the part every
-question it has. Here the first byte a shape writes is a parameter: across both
-cartridges no recorded shape writes the register that starts a command, and the
-one beside it is only ever polled. Sweeping would put a command byte where a
-number belongs and report the result as though a question had been asked. Why the
-starting write is absent from the record is written down in the open questions,
-and it is a limit of what a walk can see rather than something the games do not
-do.
+question it has. Here a command needs two writes and the record carries one of
+them. Five ST010 shapes write `$680020`, which is the command register, and no
+shape on either part writes `$680021`, which is the byte that starts the command
+running. A sweep of the first would put a command number in place and never start
+it, so every answer would come back from whatever the part was doing already.
+
+The command write was invisible until the driver stopped recording any access to
+a status range as a poll whichever way it went. The register that starts the
+command is still absent, and that one is in the open questions.
 
 Needs an image, so on a machine without one it says so and stops rather than
 reporting a pass.
@@ -121,6 +123,27 @@ class Played:
     @override
     def __repr__(self) -> str:
         return f"<Played {self.shape}, {len(self.said)} answers>"
+
+
+def surface(part: str, where: Path | str | None = None) -> tuple[tuple[int, str], ...]:
+    """Every address the cartridges reach for that part, and which way they reach it.
+
+    A shape says what an exchange looked like. This says where it landed and in
+    which direction, which is the question a model's declared registers have to
+    answer to. Direction belongs in it because a port is not always both: the
+    ST018 takes a byte at `$3802` and never gives one back there, so an address
+    on its own would ask the model for a register that side of it does not have.
+
+    A part declaring a register no cartridge reaches has an untested register,
+    and a cartridge reaching one the part does not declare has a register nobody
+    modelled. Both are worth seeing, and neither shows without this.
+    """
+    found = {
+        (step.address, shapes.READ if step.what == shapes.POLL else step.what)
+        for steps, _ in shapes.recorded(part, where)
+        for step in steps
+    }
+    return tuple(sorted(found))
 
 
 def _silicon(part: str) -> "shapes.Addressed":  # pragma: no cover

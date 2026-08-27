@@ -70,6 +70,32 @@ a third does not exist; it establishes that no shipped program uses one.
 **What would settle or reopen it.** A cartridge that addresses a third, or a
 schematic.
 
+### Why no recorded shape writes the byte that starts a command.
+
+**The document says.** Nothing.
+
+**What this project follows.** The record, which is what the cartridges do. Five
+ST010 shapes write `$680020`, the command register, and no shape on either part
+writes `$680021`, the byte that starts the command running. Every recorded
+routine that names a command hands the part a number and then ends.
+
+**Why it is a limit of the reading rather than of the games.** A game that never
+started a command would never get an answer, and both of these games work. The
+start is somewhere a straight walk does not reach: past a computed jump, inside
+a callee, or in a routine the sweep found no way into. One half of this closed
+when the driver stopped recording every access to a status range as a poll,
+which made the command write visible; the same fix did not make the start write
+appear, so it is not the same cause.
+
+**What this costs.** No command sweep. The DSP's run tries all 256 command
+numbers because there the first byte a shape writes is the command and writing it
+is the whole gesture. Here a sweep would set a command and never start it, so
+every answer would come from whatever the part was doing already.
+
+**What would settle or reopen it.** Following calls into their callees, a capture
+of a real console driving either part, or a cartridge whose start write a
+straight walk does reach.
+
 ### What either part does with a command number outside the eight.
 
 **The document says.** Nothing.

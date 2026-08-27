@@ -60,30 +60,67 @@ class HeaderTest(unittest.TestCase):
             record.what_it_says_about_itself(bytes(held))
 
 
+def _named(*images: bytes) -> dict[str, dict[str, Any]]:
+    """A catalogue naming exactly the images a test made, so the gate lets them by."""
+    return {
+        record.digests_of(one)["sha256"]: {"name": f"made-up-{at}.sfc", **record.digests_of(one)}
+        for at, one in enumerate(images)
+    }
+
+
 class PartTest(unittest.TestCase):
     def test_a_megabyte_cartridge_carries_the_first_part(self) -> None:
-        self.assertEqual(record.part_of(0x100000), "st010")
+        self.assertEqual(record.part_of(0xF6, 0x100000), "st010")
 
     def test_a_half_megabyte_one_carries_the_second(self) -> None:
-        self.assertEqual(record.part_of(0x080000), "st011")
+        self.assertEqual(record.part_of(0xF6, 0x080000), "st011")
+
+    def test_the_same_length_declaring_the_other_chipset_carries_the_third(self) -> None:
+        self.assertEqual(record.part_of(0xF5, 0x080000), "st018")
 
     def test_and_any_other_length_names_neither(self) -> None:
-        self.assertIsNone(record.part_of(0x200000))
+        self.assertIsNone(record.part_of(0xF6, 0x200000))
+
+
+class ManifestTest(unittest.TestCase):
+    def test_the_published_list_names_the_cartridges_this_reads(self) -> None:
+        self.assertIn(record.digests_of(_a_cartridge())["sha256"], _named(_a_cartridge()))
+
+    def test_a_cartridge_the_manifest_names_comes_back_with_its_row(self) -> None:
+        image = _a_cartridge()
+
+        found = record.confirmed(image, _named(image))
+
+        self.assertEqual((found or {}).get("name"), "made-up-0.sfc")
+
+    def test_a_cartridge_the_manifest_does_not_name_is_refused(self) -> None:
+        self.assertIsNone(record.confirmed(_a_cartridge(), _named(_a_cartridge(b"\x01"))))
+
+    def test_a_row_that_disagrees_with_itself_is_reported(self) -> None:
+        image = _a_cartridge()
+        catalogue = _named(image)
+        next(iter(catalogue.values()))["crc32"] = "00000000"
+
+        with self.assertRaises(record.Usage):
+            record.confirmed(image, catalogue)
+
+    def test_the_manifest_beside_this_one_names_every_cartridge_it_reads(self) -> None:
+        self.assertGreater(len(record.published()), 0)
 
 
 class GatherTest(unittest.TestCase):
     def test_a_recorded_file_names_the_part_it_is_for(self) -> None:
-        found = record.assemble("st010", [(_a_cartridge(), "one.sfc", {"write1@0x0000": 2})])
+        found = record.assemble("st010", [(_a_cartridge(), "one.sfc", {"write1@0x0000": 2}, True)])
 
         self.assertEqual(found["part"], "st010")
 
     def test_it_names_the_tool_that_produced_it(self) -> None:
-        found = record.assemble("st010", [(_a_cartridge(), "one.sfc", {"write1@0x0000": 2})])
+        found = record.assemble("st010", [(_a_cartridge(), "one.sfc", {"write1@0x0000": 2}, True)])
 
         self.assertIn("snes-driver-python", found["producedBy"])
 
     def test_every_cartridge_it_was_read_from_carries_four_digests(self) -> None:
-        found = record.assemble("st010", [(_a_cartridge(), "one.sfc", {"write1@0x0000": 2})])
+        found = record.assemble("st010", [(_a_cartridge(), "one.sfc", {"write1@0x0000": 2}, True)])
 
         for one in found["readFrom"]:
             self.assertEqual(
@@ -93,8 +130,8 @@ class GatherTest(unittest.TestCase):
 
     def test_a_shape_two_cartridges_share_is_counted_once_and_credited_twice(self) -> None:
         both = [
-            (_a_cartridge(), "one.sfc", {"write1@0x0000": 2}),
-            (_a_cartridge(b"\x01"), "two.sfc", {"write1@0x0000": 3}),
+            (_a_cartridge(), "one.sfc", {"write1@0x0000": 2}, True),
+            (_a_cartridge(b"\x01"), "two.sfc", {"write1@0x0000": 3}, True),
         ]
 
         found = record.assemble("st010", both)
@@ -102,7 +139,7 @@ class GatherTest(unittest.TestCase):
         self.assertEqual(found["shapes"], [{"shape": "write1@0x0000", "seen": 5, "cartridges": 2}])
 
     def test_the_shapes_it_writes_are_the_shapes_this_package_parses(self) -> None:
-        found = record.assemble("st010", [(_a_cartridge(), "one.sfc", {"read2@0x0010": 1})])
+        found = record.assemble("st010", [(_a_cartridge(), "one.sfc", {"read2@0x0010": 1}, True)])
 
         self.assertEqual(shapes.parse(found["shapes"][0]["shape"])[0].address, 0x0010)
 
@@ -115,7 +152,7 @@ class WrittenTest(unittest.TestCase):
     def test_the_file_this_writes_reads_back_as_the_shapes_it_holds(self) -> None:
         import tempfile
 
-        found = record.assemble("st010", [(_a_cartridge(), "one.sfc", {"write1@0x0020": 1})])
+        found = record.assemble("st010", [(_a_cartridge(), "one.sfc", {"write1@0x0020": 1}, True)])
         with tempfile.TemporaryDirectory() as where:
             path = Path(where) / "st010shapes.json"
             path.write_text(json.dumps(found, indent=2) + "\n")
@@ -154,10 +191,12 @@ class MainTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as where:
             (Path(where) / "one.sfc").write_bytes(_a_cartridge())
 
-            def _shapes(rom: bytes) -> dict[str, int]:
-                return {"write1@0x0000 read1@0x0010": 1}
+            def _shapes(rom: bytes, part: str) -> tuple[dict[str, int], bool]:
+                return {"write1@0x0000 read1@0x0010": 1}, True
 
-            code = record.main([where, where], say=said.append, read=_shapes)
+            code = record.main(
+                [where, where], say=said.append, read=_shapes, named=_named(_a_cartridge())
+            )
 
             self.assertEqual((code, (Path(where) / "st010shapes.json").is_file()), (0, True))
 
@@ -168,10 +207,12 @@ class MainTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as where:
             (Path(where) / "one.sfc").write_bytes(_a_cartridge())
 
-            def _nothing(rom: bytes) -> dict[str, int]:
-                return {}
+            def _nothing(rom: bytes, part: str) -> tuple[dict[str, int], bool]:
+                return {}, True
 
-            code = record.main([where, where], say=said.append, read=_nothing)
+            code = record.main(
+                [where, where], say=said.append, read=_nothing, named=_named(_a_cartridge())
+            )
 
         self.assertEqual((code, any("no exchange" in one for one in said)), (1, True))
 
@@ -185,12 +226,33 @@ class MainTest(unittest.TestCase):
 
             (Path(where) / "notes.txt").write_bytes(b"not a cartridge at all")
 
-            def _shapes(rom: bytes) -> dict[str, int]:
-                return {"write1@0x680000": 1}
+            def _shapes(rom: bytes, part: str) -> tuple[dict[str, int], bool]:
+                return {"write1@0x680000": 1}, True
 
-            code = record.main([where, where], say=said.append, read=_shapes)
+            code = record.main(
+                [where, where],
+                say=said.append,
+                read=_shapes,
+                named=_named(_a_cartridge(), b"\x00" * 0x100000),
+            )
 
         self.assertEqual(code, 0)
+
+    def test_a_cartridge_the_manifest_does_not_name_is_skipped(self) -> None:
+        import tempfile
+
+        said: list[str] = []
+        with tempfile.TemporaryDirectory() as where:
+            (Path(where) / "one.sfc").write_bytes(_a_cartridge())
+
+            code = record.main(
+                [where, where],
+                say=said.append,
+                read=lambda rom, part: ({"write1@0x0": 1}, True),
+                named=_named(_a_cartridge(b"\x01")),
+            )
+
+        self.assertEqual((code, any("no cartridge" in one for one in said)), (2, True))
 
     def test_a_cartridge_of_a_length_neither_part_has_is_skipped(self) -> None:
         import tempfile
@@ -200,7 +262,12 @@ class MainTest(unittest.TestCase):
             odd = _a_cartridge(length=0x30000)
             (Path(where) / "odd.sfc").write_bytes(odd)
 
-            code = record.main([where, where], say=said.append, read=lambda rom: {"write1@0x0": 1})
+            code = record.main(
+                [where, where],
+                say=said.append,
+                read=lambda rom, part: ({"write1@0x0": 1}, True),
+                named=_named(odd),
+            )
 
         self.assertEqual((code, any("no cartridge" in one for one in said)), (2, True))
 
@@ -219,15 +286,15 @@ def _a_routine() -> bytes:
 class ReadingTest(unittest.TestCase):
     def test_the_reader_finds_a_routine_that_pokes_both_windows(self) -> None:
         try:
-            found: Any = record.through_the_driver(_a_routine())
+            found: Any = record.through_the_driver(_a_routine())[0]
         except ImportError:  # pragma: no cover
             self.skipTest("the driver is not checked out beside this")
 
-        self.assertEqual(sorted(found), ["write1@0x600000 poll1@0x680020 read1@0x680010"])
+        self.assertEqual(sorted(found), ["write1@0x600000 write1@0x680020 read1@0x680010"])
 
     def test_a_cartridge_whose_code_pokes_neither_yields_nothing(self) -> None:
         try:
-            found: Any = record.through_the_driver(_a_cartridge())
+            found: Any = record.through_the_driver(_a_cartridge())[0]
         except ImportError:  # pragma: no cover
             self.skipTest("the driver is not checked out beside this")
 

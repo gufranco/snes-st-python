@@ -1,16 +1,17 @@
 """Read the shapes out of the cartridges that carry these parts.
 
-Run once, against copies you own, to produce the two files
-`conformance/st010shapes.json` and `conformance/st011shapes.json`. What it writes
-is the sequence of accesses each driver routine makes, with a name, a length and
-four digests for every cartridge it read. No byte any cartridge carries is
-recorded and none can be recovered from what is.
+Run once, against copies you own, to produce one file per part under
+`conformance/`. What it writes is the sequence of accesses each driver routine
+makes, with a name, a length and four digests for every cartridge it read. No
+byte any cartridge carries is recorded and none can be recovered from what is.
 
-**Which part a cartridge carries.** The header does not say. All three declare
-the same chipset byte and the same layout, so the length decides: the two racing
-games are a megabyte and carry the ST010, the shougi game is half that and
-carries the ST011. That is a rule rather than a reading, and it is written here
-rather than left implied.
+**Which part a cartridge carries.** The header does not say outright. The chipset
+byte and the length together do, and neither alone: see `PARTS`.
+
+**Which files it will read.** Only the ones the manifest names, matched on all
+four digests. The tree these are read from also holds fan translations and
+modified dumps, whose driver code is a copy of a shipped cartridge's rather than
+a second witness to what the part expects.
 
 **Why it is not run by the conformance suite.** It needs cartridges, which nobody
 can be assumed to hold, and its output is checked into the repository so that a
@@ -36,10 +37,22 @@ HEADER_AT = 0x7FC0
 
 TITLE_BYTES = 21
 
-SETA = 0xF6
-"""The chipset byte all three cartridges declare."""
+PARTS = {
+    (0xF6, 0x100000): "st010",
+    (0xF6, 0x080000): "st011",
+    (0xF5, 0x080000): "st018",
+}
+"""Which part a cartridge carries, by the chipset byte it declares and its length.
 
-BY_LENGTH = {0x100000: "st010", 0x080000: "st011"}
+Neither field decides alone. The two DSP cartridges and the first shougi game all
+declare `0xF6` and are told apart by length, a megabyte against half of one. The
+second shougi game is the same half megabyte and declares `0xF5`, so length alone
+would read it as the part it does not carry. Both fields together are exact for
+every cartridge on hand, and this is a rule rather than a reading, which is why
+it is written here rather than left implied.
+"""
+
+CHIPSETS = frozenset(chipset for chipset, _ in PARTS)
 
 DRIVER = "https://github.com/gufranco/snes-driver-python"
 
@@ -70,8 +83,9 @@ def what_it_says_about_itself(image: bytes) -> dict[str, Any]:
         raise NotACartridge("too short to hold a header where a low cartridge keeps one")
     title = image[HEADER_AT : HEADER_AT + TITLE_BYTES].decode("shift_jis", "replace")
     chipset = image[HEADER_AT + 22]
-    if chipset != SETA:
-        raise NotACartridge(f"declares chipset {chipset:#04x}, and a Seta part is {SETA:#04x}")
+    if chipset not in CHIPSETS:
+        named = ", ".join(f"{one:#04x}" for one in sorted(CHIPSETS))
+        raise NotACartridge(f"declares chipset {chipset:#04x}, and a Seta part is {named}")
     return {
         "title": title.strip("\x00 "),
         "bytes": len(image),
@@ -80,9 +94,9 @@ def what_it_says_about_itself(image: bytes) -> dict[str, Any]:
     }
 
 
-def part_of(length: int) -> str | None:
-    """Which part a cartridge of that length carries, if either."""
-    return BY_LENGTH.get(length)
+def part_of(chipset: int, length: int) -> str | None:
+    """Which part a cartridge declaring that and running that long carries, if any."""
+    return PARTS.get((chipset, length))
 
 
 LAYOUTS = ("lorom", "lorom-shared")
@@ -109,35 +123,107 @@ class Anywhere:
         return None
 
 
-def through_the_driver(image: bytes) -> dict[str, int]:
-    """Every distinct exchange in one image, read out of its own code.
+MANIFEST = (
+    Path(__file__).resolve().parent.parent / "snes-driver-python" / "cartridges.manifest.json"
+)
+"""The published list of cartridges, which lives with the tool that reads them.
 
-    Both windows in one pass. A routine that leaves a parameter in the shared
-    memory and then pokes the port is one exchange, and reading the two windows
-    separately would report it as two halves neither of which starts the part.
+One list rather than one per member, because a cartridge is a cartridge whichever
+part it carries and two lists would disagree the first time either moved.
+"""
+
+
+DIGESTS = ("crc32", "md5", "sha1", "sha256")
+
+
+def published() -> dict[str, dict[str, Any]]:
+    """Every cartridge the manifest names, by its sha256."""
+    held = json.loads(MANIFEST.read_text())
+    assert isinstance(held, dict), f"{MANIFEST} does not hold an object"
+    return {str(row["sha256"]): row for row in held["cartridges"]}
+
+
+def confirmed(image: bytes, named: dict[str, dict[str, Any]]) -> dict[str, Any] | None:
+    """The manifest row this image is, or nothing if the manifest does not name it.
+
+    All four digests, not the one the lookup used, because a manifest row that
+    disagrees with itself is worth reporting rather than half-checking. And a
+    manifest at all, because a directory of files is not an evidence base: the
+    tree this reads from also holds fan translations and modified dumps, whose
+    driver code is a copy of a shipped cartridge's. Counting one of those would
+    inflate agreement with a copy of the evidence rather than a second witness.
     """
+    found = digests_of(image)
+    row = named.get(found["sha256"])
+    if row is None:
+        return None
+    if any(str(row[one]) != found[one] for one in DIGESTS):
+        raise Usage(f"{row['name']} is named in the manifest with digests it does not have")
+    return row
+
+
+def _driver() -> Any:
     here = Path(__file__).resolve().parent.parent / "snes-driver-python"
     for where in (here, here / "mos65xx-python", here / "snes-mapper-python"):
         if str(where) not in sys.path:
             sys.path.insert(0, str(where))
-    from snesdriver import conversation, window_for
+    import snesdriver
 
-    reached = [window_for("st", layout) for layout in LAYOUTS]
-    assert all(one is not None for one in reached), "the driver is missing a window for these parts"
-    both = Anywhere([one for one in reached if one is not None])
+    return snesdriver
+
+
+def windows_for(part: str) -> "Anywhere":
+    """Where that part answers, asked as one question however many windows it has.
+
+    The two DSPs answer at a port in one bank range and through shared memory in
+    the next, and a routine that leaves a parameter in the second and then pokes
+    the first is one exchange. Reading the windows separately would report it as
+    two halves, neither of which starts the part.
+    """
+    driver = _driver()
+    known = "st018" if part == "st018" else "st"
+    named = ("lorom",) if part == "st018" else LAYOUTS
+    reached = [driver.window_for(known, one) for one in named]
+    assert all(one is not None for one in reached), f"the driver has no window for {part}"
+    return Anywhere([one for one in reached if one is not None])
+
+
+def through_the_driver(image: bytes, part: str = "st010") -> tuple[dict[str, int], bool]:
+    """Every distinct exchange in one image, read out of its own code.
+
+    How the accesses are found depends on how the part is reached. The two DSPs
+    are reached with a long store, whose four bytes spell a bank and an address
+    no other encoding puts there, so searching the image for those bytes is
+    exact. The ST018 is reached with an ordinary absolute access, whose two bytes
+    any pair of data bytes spells just as well, so that search would report
+    places the console never touched. For it the driver starts at the reset
+    vector and follows control flow instead.
+
+    The second value is whether every access carried the bank it reached. A long
+    one spells all three bytes; an absolute one takes its bank from a register
+    nothing here tracks, and a file that did not say so would claim more than it
+    knows.
+    """
+    driver = _driver()
+    reaching = windows_for(part)
+    find = driver.reached if part == "st018" else driver.conversation.sites
 
     counted: collections.Counter[str] = collections.Counter()
     seen: set[int] = set()
-    for site in conversation.sites(image, both):
+    banked = True
+    for site in find(image, reaching):
         if site in seen:
             continue
-        talk = conversation.at(image, site, both)
+        talk = driver.conversation.at(image, site, reaching)
         seen.update(talk.covered)
+        banked = banked and talk.banked
         counted[" ".join(f"{one.what}{one.width}@{one.whole:#08x}" for one in talk.steps)] += 1
-    return dict(counted)
+    return dict(counted), banked
 
 
-def assemble(part: str, gathered: "Sequence[tuple[bytes, str, dict[str, int]]]") -> dict[str, Any]:
+def assemble(
+    part: str, gathered: "Sequence[tuple[bytes, str, dict[str, int], bool]]"
+) -> dict[str, Any]:
     """One recorded file from everything read for one part."""
     if not gathered:
         raise Usage(f"no cartridge carrying {part} was read")
@@ -145,12 +231,14 @@ def assemble(part: str, gathered: "Sequence[tuple[bytes, str, dict[str, int]]]")
     counted: collections.Counter[str] = collections.Counter()
     carried: collections.Counter[str] = collections.Counter()
     where = []
-    for image, name, found in gathered:
+    banked = True
+    for image, name, found, carried_bank in gathered:
         row = what_it_says_about_itself(image)
         row["name"] = name
         row["shapes"] = len(found)
         row.update(digests_of(image))
         where.append(row)
+        banked = banked and carried_bank
         for shape, seen in found.items():
             counted[shape] += seen
             carried[shape] += 1
@@ -161,9 +249,11 @@ def assemble(part: str, gathered: "Sequence[tuple[bytes, str, dict[str, int]]]")
             "routine makes, in what order, how wide each one was and where in the "
             "shared memory it landed. No byte any cartridge carries is recorded here "
             "and none can be recovered from this. Read out of the games named below, "
-            "every one of them confirmed against all four of its digests first."
+            "every one of them named in the manifest and confirmed against all four "
+            "of its digests first."
         ),
         "part": part,
+        "banked": banked,
         "producedBy": DRIVER,
         "readFrom": sorted(where, key=lambda row: str(row["name"])),
         "shapes": [
@@ -182,7 +272,8 @@ def _images(where: Path) -> "Iterable[tuple[bytes, str]]":
 def main(
     argv: Sequence[str],
     say: Callable[[str], object] = print,
-    read: Callable[[bytes], dict[str, int]] = through_the_driver,
+    read: Callable[[bytes, str], tuple[dict[str, int], bool]] = through_the_driver,
+    named: dict[str, dict[str, Any]] | None = None,
 ) -> int:
     if len(argv) < 2:
         say("usage: record.py <directory of cartridges> <output directory>")
@@ -193,19 +284,25 @@ def main(
         say(f"  no such directory: {source}")
         return 2
 
-    gathered: dict[str, list[tuple[bytes, str, dict[str, int]]]] = collections.defaultdict(list)
+    catalogue = published() if named is None else named
+    gathered: dict[str, list[tuple[bytes, str, dict[str, int], bool]]] = collections.defaultdict(
+        list
+    )
     for image, name in _images(source):
+        if confirmed(image, catalogue) is None:
+            continue
         try:
             what_it_says_about_itself(image)
         except NotACartridge:
             continue
-        part = part_of(len(image))
+        part = part_of(image[HEADER_AT + 22], len(image))
         if part is None:
             continue
-        gathered[part].append((image, name, read(image)))
+        seen, banked = read(image, part)
+        gathered[part].append((image, name, seen, banked))
 
     if not gathered:
-        say(f"  no cartridge carrying either part was found under {source}")
+        say(f"  no cartridge carrying any of these parts was found under {source}")
         return 2
 
     quiet = 0

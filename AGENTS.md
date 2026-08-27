@@ -49,7 +49,7 @@ and the record says so.
 
 ## What is settled and what is not
 
-**Not settled: 5 things**, each in
+**Not settled: 6 things**, each in
 [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) with the measurement that would close it.
 They are all the interface rather than the behaviour: the memory map, the number
 of registers, timing, and what a reset does.

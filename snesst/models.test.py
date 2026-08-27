@@ -7,9 +7,21 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import snesst
-from snesst import errors, models
+from snesst import chip, errors, models, st018
 
 EVERY_PART = {"st010", "st011", "st018"}
+
+
+def _an_identity(part: str) -> Any:
+    """What the processor needs to be told about an image, without an image."""
+    from snesst import firmware
+
+    return firmware.Identity(part, "upd96050", "MADE UP", 16384, 2048)
+
+
+def _a_program() -> bytes:
+    """An image of zeroes, which belongs to nobody and computes nothing."""
+    return bytes(16384 * 3 + 2048 * 2)
 
 
 class CatalogueTest(unittest.TestCase):
@@ -100,32 +112,27 @@ class DeclaredImageTest(unittest.TestCase):
 class DispatchTest(unittest.TestCase):
     """That one factory reaches both arrangements, which is what a caller wants."""
 
-    def named(self, model: str) -> str:
-        """What the factory did with a name, on a machine with the image or without.
+    def built(self, model: str) -> object:
+        """What the factory built for a name, with the image handed to it.
 
-        Both answers come through the same branch, which is the thing being
-        checked here. A runner holds no image and a reader's machine may hold
-        one, so a check that only worked on the second would be a check nobody
-        on the first has seen run.
+        Handed over rather than looked for, because what the machine happens to
+        hold decides which way a search goes. A helper that answered one way with
+        an image present and another way without has two paths, and every machine
+        runs only one of them, so the other is a check nobody has seen run.
         """
-        from snesst import errors
-
-        try:
-            return str(snesst.Chip(model).part)
-        except errors.NoFirmware as refused:
-            found = str(refused)
-            return next((one for one in models.MODELS if one in found), found)
+        name = models.lookup(model).name
+        if name == "st018":
+            return snesst.Chip(model, image=bytes(st018.IMAGE_BYTES))
+        return snesst.Chip(model, image=_a_program(), identity=_an_identity(name), boot=1)
 
     def test_the_signal_processor_parts_are_built_by_the_class_that_runs_one(self) -> None:
-        self.assertEqual(self.named("seta010"), "st010")
+        self.assertIsInstance(self.built("seta010"), chip.Chip)
 
     def test_the_arm_part_is_built_by_the_class_that_runs_an_arm(self) -> None:
-        from snesst import errors
+        self.assertIsInstance(self.built("setast018"), st018.ST018)
 
-        with self.assertRaises(errors.NoFirmware) as raised:
-            snesst.Chip("setast018")
-
-        self.assertIn("st018", str(raised.exception))
+    def test_the_two_arrangements_are_not_the_same_class(self) -> None:
+        self.assertNotIsInstance(self.built("seta011"), st018.ST018)
 
 
 class BuildingTest(unittest.TestCase):

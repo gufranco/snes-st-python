@@ -1,10 +1,10 @@
-# Seta ST010 and ST011
+# Seta ST010, ST011 and ST018
 
-The two coprocessors Seta made for the Super Nintendo, running the microcode you supply rather than a description of it.
+The three coprocessors Seta made for the Super Nintendo, each running the program you supply rather than a description of it.
 
 [![CI](https://github.com/gufranco/snes-st-python/actions/workflows/ci.yml/badge.svg)](https://github.com/gufranco/snes-st-python/actions/workflows/ci.yml)
 
-**2** parts, **0** commands described by hand, both waits measured on the shipped microcode, **0** disagreements, **554** tests, **100%** statement and branch coverage, no dependencies
+**3** parts, **0** commands described by hand, both waits measured on the shipped microcode, **0** disagreements, **567** tests, **100%** statement and branch coverage, no dependencies
 
 ```python
 from snesst import Chip

@@ -127,7 +127,7 @@ class DivergenceTest(unittest.TestCase):
         self.entries: list[dict[str, Any]] = declared("divergences.json")["divergences"]
 
     def test_each_entry_says_which_source_the_package_follows(self) -> None:
-        allowed = {"document", "reference", "microcode", "neither"}
+        allowed = {"cartridges", "document", "reference", "microcode", "neither"}
 
         self.assertEqual({entry["packageFollows"] for entry in self.entries} - allowed, set())
 

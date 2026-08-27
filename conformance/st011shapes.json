@@ -1,6 +1,7 @@
 {
-  "note": "The shapes real cartridges use to drive this part: which accesses each routine makes, in what order, how wide each one was and where in the shared memory it landed. No byte any cartridge carries is recorded here and none can be recovered from this. Read out of the games named below, every one of them confirmed against all four of its digests first.",
+  "note": "The shapes real cartridges use to drive this part: which accesses each routine makes, in what order, how wide each one was and where in the shared memory it landed. No byte any cartridge carries is recorded here and none can be recovered from this. Read out of the games named below, every one of them named in the manifest and confirmed against all four of its digests first.",
   "part": "st011",
+  "banked": true,
   "producedBy": "https://github.com/gufranco/snes-driver-python",
   "readFrom": [
     {
