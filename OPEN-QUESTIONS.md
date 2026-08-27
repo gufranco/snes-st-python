@@ -290,14 +290,61 @@ carries the command byte, a second byte, and a handler address. Two of them are
 confirmed by the other artifact: the cartridge sends `0xF1` at `$F030` and `0xF2`
 at `$F089`, which is two independent sources agreeing on the same values.
 
+**What the independent implementations say.** Checked on 2026-08-27, after the
+derivation above rather than before it, because an independent implementation is
+the bottom rung of this family's ladder and cannot be the thing a mapping is
+taken from.
+
+No FPGA implementation of this part exists in the open. sd2snes carries CX4,
+GSU, OBC1, SA-1, S-DD1, SGB and a uPD77C25 whose program counter is eleven bits
+wide, so 2,048 words, which covers DSP1 through DSP4 and no Seta part at all.
+The MiSTer SNES core carries BSX, CX4, DSP, GSU, MSU1, SA-1, S-DD1, SPC7110,
+Sufami, RTC4513 and SRTC, and its DSP microcode image packs dsp1, dsp1b, dsp2,
+dsp3, dsp4 and st010 by name. So the ST010 has one FPGA implementation, the
+ST011 has none, and neither does this part.
+
+The one independent implementation is software: ares carries it as `armdsp`. It
+agrees with the mapping above on every point, having been written by somebody
+else from the same artifacts:
+
+| Derived here | ares |
+|:--|:--|
+| Console writes `$3802`, part reads `0x40000010` | `cputoarm` buffer, ready flag cleared on the read |
+| Part writes `0x40000000`, console reads `$3800` | `armtocpu` buffer, ready flag cleared on the read |
+| `$3804` read is status, written to drive reset | the same, with bit 0 of the written byte driving it |
+| `0x40000020` bit 3 set means a byte is waiting for the part | `cputoarm.ready` |
+| `0x40000020` bit 0 clear means the last outgoing byte was collected | `armtocpu.ready` |
+| `$3804` bit 7 is what the console waits for after reset | `ready` |
+
+**And it explains the write this record could not pair.** The firmware writes
+`0x40000020`, `0x40000024` and `0x40000028` and then `0x4000002C`, which was
+recorded here as a shape with no meaning attached. ares reads those four as a
+24-bit timer being loaded a byte at a time and then committed, which fits the
+order exactly. That reading is ares's rather than this project's: what the
+artifact establishes is the four writes and their order, and nothing here
+observes a timer counting.
+
+**Two regions the artifact names for itself.** The image is 163,840 bytes, which
+is 128 KiB then 32 KiB. The first region ends in zero padding from `0x01FFE0`,
+and the second is dense data rather than code. At `0x0010E4` the firmware loads
+the literal `0xA0000000`, adds an index and reads a byte, so the second region is
+a data ROM at `0xA0000000` and the split is the part's own. ares maps it the same
+way. A member has to load the image as two regions rather than one flat block.
+
 **What is still not paired.** The console waits on bit 7 of `$3804` after the
-reset pulse, and nothing the firmware executes sets it. The firmware writes the
-word `2` to `0x4000002C` once at boot and never touches it again, and `2` is bit
-1. Either they are unrelated or the interface hardware between the two register
-files transforms one into the other. The remaining bits of both status registers
-are never read by either side, which is documented silence rather than a claim
-that they are unused. That part needs the package opened and probed and is a
-permanent ceiling here; the data path is not, and it is now established.
+reset pulse and nothing the firmware executes sets it, so it is the interface
+hardware answering rather than the program. ares models it exactly that way, as a
+flag its bridge owns and neither side writes, which is consistent and is not
+evidence: an implementation is free to invent a flag that satisfies the firmware
+it was tested against. What would settle it is the package opened and probed, and
+that is a permanent ceiling here.
+
+The guard bits are the same shape. The console's routine at `$E892` abandons a
+transfer when bit 4 of `$3804` is set, and the firmware's at `0x00011C` abandons
+when bit 5 of `0x40000020` is set. Neither implementation ever sets either, so
+both are read by code that has never seen them set, and what they mean is
+unestablished on both sides. The remaining bits of both registers are never read
+at all, which is documented silence rather than a claim that they are unused.
 
 ## What is deliberately not modelled
 
