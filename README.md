@@ -4,7 +4,7 @@ The two coprocessors Seta made for the Super Nintendo, running the microcode you
 
 [![CI](https://github.com/gufranco/snes-st-python/actions/workflows/ci.yml/badge.svg)](https://github.com/gufranco/snes-st-python/actions/workflows/ci.yml)
 
-**2** parts, **0** commands described by hand, both waits measured on the shipped microcode, **0** disagreements, **501** tests, **100%** statement and branch coverage, no dependencies
+**2** parts, **0** commands described by hand, both waits measured on the shipped microcode, **0** disagreements, **502** tests, **100%** statement and branch coverage, no dependencies
 
 ```python
 from snesst import Chip
