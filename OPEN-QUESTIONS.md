@@ -82,14 +82,18 @@ routine that names a command hands the part a number and then ends.
 **Why it is a limit of the reading rather than of the games.** A game that never
 started a command would never get an answer, and both of these games work.
 
-Two readings have been tried and neither found it. Splitting the status range by
+Three readings have been tried and none found it. Splitting the status range by
 direction made the command write visible, which it had not been. Following calls
 into their callees made the exchanges much longer, the longest ST010 one going
-from two accesses to ten and the longest ST011 one from five to twelve, and it
-produced no write to `$680021` and no word-wide write to `$680020` that would
-cover both bytes at once. Every write to the pair is one byte at `$680020`, nine
-of them across the two ST010 cartridges. So the start is reached through
-something neither reading follows, most likely a computed jump.
+from two accesses to ten and the longest ST011 one from five to twelve. And a
+control-flow sweep seeded from all ten vectors, which is a different method from
+the byte search the other two used, reaches `$680020` eight times as a write and
+fourteen as a poll on F1-ROC II and `$680021` never.
+
+Every write to the pair is one byte wide, which also rules out the explanation
+that a word-wide write to `$680020` covers both bytes at once. So the start is
+reached through something no static reading follows, most likely a computed
+jump.
 
 **What this costs.** No command sweep. The DSP's run tries all 256 command
 numbers because there the first byte a shape writes is the command and writing it
