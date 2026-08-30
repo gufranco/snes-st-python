@@ -24,12 +24,12 @@
       "cartridges": 1
     },
     {
-      "shape": "poll1@0x600001 write1@0x600000 poll1@0x600001",
+      "shape": "poll1@0x600001 write1@0x600000 poll1@0x600001 poll1@0x600001 write1@0x600000 write1@0x600000 write1@0x600000 write1@0x600000 write1@0x600000 poll1@0x600001",
       "seen": 2,
       "cartridges": 1
     },
     {
-      "shape": "poll1@0x600001 write1@0x600000 poll1@0x600001 read1@0x68012c read1@0x68012e",
+      "shape": "poll1@0x600001 write1@0x600000 poll1@0x600001 read1@0x68012c read1@0x68012e poll1@0x600001 write1@0x600000 write1@0x600000 write1@0x600000 write1@0x600000 write1@0x600000 poll1@0x600001",
       "seen": 2,
       "cartridges": 1
     },

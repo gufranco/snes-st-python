@@ -10,7 +10,7 @@
       "layout": "lorom",
       "chipset": "0xf5",
       "name": "Hayazashi Nidan Morita Shougi 2 (Japan).sfc",
-      "shapes": 6,
+      "shapes": 7,
       "crc32": "dd852671",
       "md5": "5851671aea79961658d0e7b0ba99fc8b",
       "sha1": "b291ada870b9ec09326cd2f9470ea1519cbaa2e9",
@@ -25,7 +25,12 @@
     },
     {
       "shape": "poll1@0x003804 poll1@0x003804",
-      "seen": 2,
+      "seen": 1,
+      "cartridges": 1
+    },
+    {
+      "shape": "poll1@0x003804 poll1@0x003804 poll1@0x003804 poll1@0x003804 write1@0x003804 write1@0x003804 write1@0x003804 poll1@0x003804 poll1@0x003804 write1@0x003802 poll1@0x003804",
+      "seen": 1,
       "cartridges": 1
     },
     {

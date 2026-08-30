@@ -80,21 +80,24 @@ writes `$680021`, the byte that starts the command running. Every recorded
 routine that names a command hands the part a number and then ends.
 
 **Why it is a limit of the reading rather than of the games.** A game that never
-started a command would never get an answer, and both of these games work. The
-start is somewhere a straight walk does not reach: past a computed jump, inside
-a callee, or in a routine the sweep found no way into. One half of this closed
-when the driver stopped recording every access to a status range as a poll,
-which made the command write visible; the same fix did not make the start write
-appear, so it is not the same cause.
+started a command would never get an answer, and both of these games work.
+
+Two readings have been tried and neither found it. Splitting the status range by
+direction made the command write visible, which it had not been. Following calls
+into their callees made the exchanges much longer, the longest ST010 one going
+from two accesses to ten and the longest ST011 one from five to twelve, and it
+produced no write to `$680021` and no word-wide write to `$680020` that would
+cover both bytes at once. Every write to the pair is one byte at `$680020`, nine
+of them across the two ST010 cartridges. So the start is reached through
+something neither reading follows, most likely a computed jump.
 
 **What this costs.** No command sweep. The DSP's run tries all 256 command
 numbers because there the first byte a shape writes is the command and writing it
 is the whole gesture. Here a sweep would set a command and never start it, so
 every answer would come from whatever the part was doing already.
 
-**What would settle or reopen it.** Following calls into their callees, a capture
-of a real console driving either part, or a cartridge whose start write a
-straight walk does reach.
+**What would settle or reopen it.** Running the cartridge rather than reading it,
+or a capture of a real console driving either part.
 
 ### What either part does with a command number outside the eight.
 

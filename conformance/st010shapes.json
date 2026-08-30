@@ -111,7 +111,7 @@
       "cartridges": 2
     },
     {
-      "shape": "read1@0x6809f0 read2@0x6809f2",
+      "shape": "read1@0x6809f0 read2@0x6809f2 write2@0x680810 write2@0x680870 write2@0x6808d0 write2@0x68086e write2@0x6808ce write2@0x68092e write2@0x6809f0 write2@0x6809f2",
       "seen": 2,
       "cartridges": 2
     },

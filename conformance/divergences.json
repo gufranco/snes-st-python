@@ -79,12 +79,15 @@
       "id": "no-shape-writes-the-byte-that-starts-a-command",
       "parts": ["st010", "st011"],
       "severity": "medium",
-      "status": "open",
+      "status": "narrowed",
       "documentSays": "Nothing. Seta published nothing about either part.",
       "referenceDoes": "Reference implementations start a command on a write to $680021, which is what the microcode waits on rather than something a driver was read for.",
       "packageFollows": "cartridges",
-      "reasoning": "A command needs two writes and the record carries one. Five ST010 shapes write $680020, the command register, and no shape on either part writes $680021, the byte that starts the command running. Both games work, so the start happens and the reading misses it: past a computed jump, inside a callee, or in a routine the sweep found no way into. The command write itself was invisible until the driver stopped recording every access to a status range as a poll whichever way it went; the same fix left the start write absent, so it is not the same cause. The cost is that no command sweep is possible here: setting a command without starting it would answer from whatever the part was already doing.",
-      "wouldSettleIt": "Following calls into their callees, or a capture of a real console driving either part.",
+      "reasoning": "A command needs two writes and the record carries one. Five ST010 shapes write $680020, the command register, and no shape on either part writes $680021, the byte that starts the command running. Both games work, so the start happens and the reading misses it. Two readings have now been tried and neither found it. Splitting the status range by direction made the command write visible, which it had not been. Following calls into their callees made the exchanges much longer, the longest ST010 one going from two accesses to ten and the longest ST011 one from five to twelve, and still produced no write to $680021 and no word-wide write to $680020 that would cover both bytes at once. Every write to the pair is one byte at $680020, nine of them across the two ST010 cartridges. So the start is reached through something neither reading follows, most likely a computed jump.",
+      "wouldSettleIt": [
+        "running the cartridge rather than reading it",
+        "a capture of a real console driving either part"
+      ],
       "wouldReopenIt": "A cartridge whose start write a straight walk does reach."
     }
   ]
