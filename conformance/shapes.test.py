@@ -1,5 +1,3 @@
-"""What a recorded shape means, and what replaying one at a part does."""
-
 import random
 import sys
 import unittest
@@ -12,8 +10,6 @@ from conformance import shapes
 
 
 class Recording:
-    """A part that writes nothing down except what it was asked."""
-
     def __init__(self, answers: dict[int, int] | None = None) -> None:
         self.answers = answers or {}
         self.written: list[tuple[int, int]] = []

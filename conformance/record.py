@@ -1,25 +1,3 @@
-"""Read the shapes out of the cartridges that carry these parts.
-
-Run once, against copies you own, to produce one file per part under
-`conformance/`. What it writes is the sequence of accesses each driver routine
-makes, with a name, a length and four digests for every cartridge it read. No
-byte any cartridge carries is recorded and none can be recovered from what is.
-
-**Which part a cartridge carries.** The header does not say outright. The chipset
-byte and the length together do, and neither alone: see `PARTS`.
-
-**Which files it will read.** Only the ones the manifest names, matched on all
-four digests. The tree these are read from also holds fan translations and
-modified dumps, whose driver code is a copy of a shipped cartridge's rather than
-a second witness to what the part expects.
-
-**Why it is not run by the conformance suite.** It needs cartridges, which nobody
-can be assumed to hold, and its output is checked into the repository so that a
-machine holding none can still play the shapes at the part.
-
-Usage: python3 conformance/record.py <directory of cartridges> <output directory>
-"""
-
 import collections
 import hashlib
 import json
@@ -33,7 +11,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 HEADER_AT = 0x7FC0
-"""Where a low cartridge keeps the header, which is where all three keep theirs."""
 
 TITLE_BYTES = 21
 
@@ -42,15 +19,6 @@ PARTS = {
     (0xF6, 0x080000): "st011",
     (0xF5, 0x080000): "st018",
 }
-"""Which part a cartridge carries, by the chipset byte it declares and its length.
-
-Neither field decides alone. The two DSP cartridges and the first shougi game all
-declare `0xF6` and are told apart by length, a megabyte against half of one. The
-second shougi game is the same half megabyte and declares `0xF5`, so length alone
-would read it as the part it does not carry. Both fields together are exact for
-every cartridge on hand, and this is a rule rather than a reading, which is why
-it is written here rather than left implied.
-"""
 
 CHIPSETS = frozenset(chipset for chipset, _ in PARTS)
 
@@ -59,16 +27,13 @@ DRIVER = "https://github.com/gufranco/snes-driver-python"
 SUFFIXES = (".sfc", ".smc")
 
 
-class NotACartridge(Exception):
-    """A file that is not one of the cartridges this reads."""
+class NotACartridge(Exception): ...
 
 
-class Usage(Exception):
-    """The tool was asked for something it cannot produce."""
+class Usage(Exception): ...
 
 
 def digests_of(image: bytes) -> dict[str, str]:
-    """The four a manifest publishes, so a reader can cross-check any of them."""
     return {
         "crc32": f"{zlib.crc32(image):08x}",
         "md5": hashlib.md5(image).hexdigest(),
@@ -78,7 +43,6 @@ def digests_of(image: bytes) -> dict[str, str]:
 
 
 def what_it_says_about_itself(image: bytes) -> dict[str, Any]:
-    """What the cartridge says about itself, or a refusal naming why not."""
     if len(image) < HEADER_AT + 32:
         raise NotACartridge("too short to hold a header where a low cartridge keeps one")
     title = image[HEADER_AT : HEADER_AT + TITLE_BYTES].decode("shift_jis", "replace")
@@ -95,27 +59,17 @@ def what_it_says_about_itself(image: bytes) -> dict[str, Any]:
 
 
 def part_of(chipset: int, length: int) -> str | None:
-    """Which part a cartridge declaring that and running that long carries, if any."""
     return PARTS.get((chipset, length))
 
 
 LAYOUTS = ("lorom", "lorom-shared")
-"""Both windows the part answers in, because a routine uses whichever it needs."""
 
 
 class Anywhere:
-    """Several windows asked as one, so a routine is walked once rather than twice.
-
-    A routine that leaves a parameter in the shared memory and then pokes the
-    port is one exchange. Walking it once per window would report two halves,
-    and neither half on its own starts the part.
-    """
-
     def __init__(self, covered: "Sequence[Any]") -> None:
         self.covered = tuple(covered)
 
     def reaches(self, bank: int, address: int) -> str | None:
-        """Which register an access lands on, in whichever window covers it."""
         for one in self.covered:
             found = one.reaches(bank, address)
             if found is not None:
@@ -126,33 +80,18 @@ class Anywhere:
 MANIFEST = (
     Path(__file__).resolve().parent.parent / "snes-driver-python" / "cartridges.manifest.json"
 )
-"""The published list of cartridges, which lives with the tool that reads them.
-
-One list rather than one per member, because a cartridge is a cartridge whichever
-part it carries and two lists would disagree the first time either moved.
-"""
 
 
 DIGESTS = ("crc32", "md5", "sha1", "sha256")
 
 
 def published() -> dict[str, dict[str, Any]]:
-    """Every cartridge the manifest names, by its sha256."""
     held = json.loads(MANIFEST.read_text())
     assert isinstance(held, dict), f"{MANIFEST} does not hold an object"
     return {str(row["sha256"]): row for row in held["cartridges"]}
 
 
 def confirmed(image: bytes, named: dict[str, dict[str, Any]]) -> dict[str, Any] | None:
-    """The manifest row this image is, or nothing if the manifest does not name it.
-
-    All four digests, not the one the lookup used, because a manifest row that
-    disagrees with itself is worth reporting rather than half-checking. And a
-    manifest at all, because a directory of files is not an evidence base: the
-    tree this reads from also holds fan translations and modified dumps, whose
-    driver code is a copy of a shipped cartridge's. Counting one of those would
-    inflate agreement with a copy of the evidence rather than a second witness.
-    """
     found = digests_of(image)
     row = named.get(found["sha256"])
     if row is None:
@@ -173,13 +112,6 @@ def _driver() -> Any:
 
 
 def windows_for(part: str) -> "Anywhere":
-    """Where that part answers, asked as one question however many windows it has.
-
-    The two DSPs answer at a port in one bank range and through shared memory in
-    the next, and a routine that leaves a parameter in the second and then pokes
-    the first is one exchange. Reading the windows separately would report it as
-    two halves, neither of which starts the part.
-    """
     driver = _driver()
     known = "st018" if part == "st018" else "st"
     named = ("lorom",) if part == "st018" else LAYOUTS
@@ -189,21 +121,6 @@ def windows_for(part: str) -> "Anywhere":
 
 
 def through_the_driver(image: bytes, part: str = "st010") -> tuple[dict[str, int], bool]:
-    """Every distinct exchange in one image, read out of its own code.
-
-    How the accesses are found depends on how the part is reached. The two DSPs
-    are reached with a long store, whose four bytes spell a bank and an address
-    no other encoding puts there, so searching the image for those bytes is
-    exact. The ST018 is reached with an ordinary absolute access, whose two bytes
-    any pair of data bytes spells just as well, so that search would report
-    places the console never touched. For it the driver starts at the reset
-    vector and follows control flow instead.
-
-    The second value is whether every access carried the bank it reached. A long
-    one spells all three bytes; an absolute one takes its bank from a register
-    nothing here tracks, and a file that did not say so would claim more than it
-    knows.
-    """
     driver = _driver()
     reaching = windows_for(part)
     find = driver.reached if part == "st018" else driver.conversation.sites
@@ -224,7 +141,6 @@ def through_the_driver(image: bytes, part: str = "st010") -> tuple[dict[str, int
 def assemble(
     part: str, gathered: "Sequence[tuple[bytes, str, dict[str, int], bool]]"
 ) -> dict[str, Any]:
-    """One recorded file from everything read for one part."""
     if not gathered:
         raise Usage(f"no cartridge carrying {part} was read")
 

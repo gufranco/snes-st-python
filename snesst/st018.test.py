@@ -1,16 +1,3 @@
-"""That the third part answers the way the two artifacts say it does.
-
-Every check here runs a program this project wrote against the modelled part.
-The real firmware is not carried and is not needed: what is being checked is the
-interface, which was read off the cartridge and off the firmware, and an ARM
-program of four instructions exercises it exactly as 160 kilobytes would.
-
-The one thing a made-up program cannot show is that the real firmware answers.
-That belongs to the doctor rather than here: it needs an image nobody can carry,
-so a check for it would report success by skipping on every machine that has
-none, which is the failure the doctor exists to prevent.
-"""
-
 from __future__ import annotations
 
 import sys
@@ -25,16 +12,12 @@ from snesst import errors, firmware, st018  # noqa: E402
 
 
 def arm(*words: int) -> bytes:
-    """A program at the reset vector, padded to the shape an image has."""
     body = b"".join(word.to_bytes(4, "little") for word in words)
     program = body.ljust(st018.PROGRAM_BYTES, b"\x00")
     return program + bytes(st018.DATA_BYTES)
 
 
 IDLE = arm(0xEAFFFFFE)
-"""Branch to itself. The part is powered and doing nothing, which is what most
-of these checks want underneath them.
-"""
 
 ANSWER = arm(
     0xE3A0B101,
@@ -42,11 +25,6 @@ ANSWER = arm(
     0xE5CB0000,
     0xEAFFFFFE,
 )
-"""Read the byte the console sent and write it straight back.
-
-`mov R11, #0x40000000`, `ldrb R0, [R11, #0x10]`, `strb R0, [R11]`, then spin.
-Four instructions is the whole of the mailbox, which is the point.
-"""
 
 
 def _identity() -> firmware.Identity:
@@ -116,7 +94,6 @@ class BuildingTest(Fixture):
                 st018.ST018(images=iter([(other, where)]))
 
     def test_a_core_that_is_not_beside_this_package_is_reported(self) -> None:
-        """An empty directory is what a clone without --recurse-submodules leaves."""
         with tempfile.TemporaryDirectory() as hold, self.assertRaises(errors.NoFirmware) as raised:
             st018.ST018(image=IDLE, processor=hold)
 
@@ -239,12 +216,6 @@ class ConsoleSideTest(Fixture):
         self.assertEqual(found.read(st018.STATUS) & (st018.WAITING | st018.SENT), 0)
 
     def test_an_address_the_cartridge_never_touches_is_refused(self) -> None:
-        """Nothing establishes what the other five bytes of the window do.
-
-        The cartridge reads and writes three addresses and no others, so a fourth
-        is a question this project cannot answer from either artifact. Answering
-        it anyway would be inventing a register.
-        """
         found = self.part()
 
         with self.assertRaises(errors.UnknownPort):
@@ -264,8 +235,6 @@ class ConsoleSideTest(Fixture):
 
 
 class PartSideTest(Fixture):
-    """The three offsets the firmware reaches, driven from inside the program."""
-
     def test_reading_the_incoming_port_with_nothing_sent_gives_nothing(self) -> None:
         found = self.part()
 
@@ -282,9 +251,6 @@ class PartSideTest(Fixture):
         self.assertEqual(found.port(0x04), 0)
 
     def test_the_bytes_the_firmware_writes_once_at_boot_are_kept_and_nothing_else(self) -> None:
-        """It loads three of them and commits at 0x2C. What sits behind that is
-        somebody else's reading, so this keeps the write and models no timer.
-        """
         found = self.part()
 
         found.drive(st018.STATUS_PORT, 0x02)

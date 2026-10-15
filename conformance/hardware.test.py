@@ -1,11 +1,3 @@
-"""Hold this package's constants to hardware.json, and to their standing.
-
-Running the part's own microcode settles what it computes. It settles nothing
-about where the console reaches it, and those constants come from a reference.
-The point of this file is that the two kinds of fact stay visibly apart, so
-nobody inherits the interface with the confidence the microcode earns.
-"""
-
 import json
 import sys
 import unittest
@@ -19,10 +11,8 @@ from snesst import chip
 HERE = Path(__file__).resolve().parent
 
 WORD_BYTES = 2
-"""Bytes to a word on this processor, from NEC's data sheet by way of the sibling."""
 
 DATA_RAM_WORDS = 2048
-"""Words of data RAM the uPD96050 is asserted to have, unverified in that sibling."""
 
 
 def declared(name: str) -> dict[str, Any]:

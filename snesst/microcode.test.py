@@ -1,15 +1,3 @@
-"""The checks that need real microcode, which is why they live apart.
-
-A skipped test contributes no coverage, so on a runner with no image every line
-here would read as uncovered and fail the coverage gate for a reason that has
-nothing to do with the code. Keeping them in one file lets that file sit outside
-the gate while everything else stays inside it.
-
-What they check is the part itself: that it reaches the wait its program has,
-that it stays there until something is started, and that a command run on it
-answers what the part answers.
-"""
-
 import sys
 import unittest
 from pathlib import Path
@@ -23,8 +11,6 @@ PRESENT = chip.available()
 
 @unittest.skipUnless(PRESENT, chip.WHY_NOT_FIRMWARE)
 class RealMicrocodeTest(unittest.TestCase):
-    """The part itself, which only a machine holding its microcode can run."""
-
     def test_the_handshake_leaves_it_waiting_for_a_command(self) -> None:
         part = chip.Chip("st010")
 
@@ -47,10 +33,6 @@ class RealMicrocodeTest(unittest.TestCase):
         self.assertIn(part.core.registers.pc, chip.COMMAND_LOOP["st011"])
 
     def test_every_part_this_class_covers_reaches_a_wait_of_its_own(self) -> None:
-        """The two that run a signal processor. The third runs an ARM and is
-        driven by `snesst.ST018`, which has no shared memory and no command loop
-        to wait in: it idles across thirty-four addresses instead.
-        """
         for name in chip.COMMAND_LOOP:
             part = chip.Chip(name)
 

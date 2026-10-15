@@ -13,14 +13,12 @@ EVERY_PART = {"st010", "st011", "st018"}
 
 
 def _an_identity(part: str) -> Any:
-    """What the processor needs to be told about an image, without an image."""
     from snesst import firmware
 
     return firmware.Identity(part, "upd96050", "MADE UP", 16384, 2048)
 
 
 def _a_program() -> bytes:
-    """An image of zeroes, which belongs to nobody and computes nothing."""
     return bytes(16384 * 3 + 2048 * 2)
 
 
@@ -74,13 +72,6 @@ class NamingTest(unittest.TestCase):
 
 
 class DeclaredImageTest(unittest.TestCase):
-    """That every part names an image the processor will recognise and confirm.
-
-    This is what a machine with no microcode can still check, and it is the check
-    that matters most: a user who supplies a file gets it identified by digest
-    before a byte of it is run, so a wrong file is refused rather than executed.
-    """
-
     def _manifest(self) -> Any:
         where = Path(__file__).resolve().parent / "artifacts.manifest.json"
         return json.loads(where.read_text())
@@ -97,11 +88,6 @@ class DeclaredImageTest(unittest.TestCase):
                 self.assertEqual(len(accepted["sha256"]), 64, one["part"])
 
     def test_the_two_signal_processor_parts_run_the_same_processor(self) -> None:
-        """And the third does not, which is the whole reason it is modelled apart.
-
-        The name is the trap: three parts under one vendor prefix, two of them the
-        same digital signal processor and the third a 32 bit ARM.
-        """
         declared = {one["part"]: one["processor"] for one in self._manifest()["artifacts"]}
 
         found = {name: declared[models.lookup(name).image] for name in models.MODELS}
@@ -110,16 +96,7 @@ class DeclaredImageTest(unittest.TestCase):
 
 
 class DispatchTest(unittest.TestCase):
-    """That one factory reaches both arrangements, which is what a caller wants."""
-
     def built(self, model: str) -> object:
-        """What the factory built for a name, with the image handed to it.
-
-        Handed over rather than looked for, because what the machine happens to
-        hold decides which way a search goes. A helper that answered one way with
-        an image present and another way without has two paths, and every machine
-        runs only one of them, so the other is a check nobody has seen run.
-        """
         name = models.lookup(model).name
         if name == "st018":
             return snesst.Chip(model, image=bytes(st018.IMAGE_BYTES))
@@ -148,8 +125,6 @@ class BuildingTest(unittest.TestCase):
 
 
 class NamingNoneTest(unittest.TestCase):
-    """That leaving the model out is refused, and refused usefully."""
-
     def test_building_without_naming_a_model_is_refused(self) -> None:
         with self.assertRaises(errors.UnknownModelError):
             snesst.Chip()

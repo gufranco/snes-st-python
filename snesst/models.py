@@ -1,21 +1,3 @@
-"""Which parts this package covers, and what each one is.
-
-Seta made two coprocessors for the Super Nintendo under the ST name, and they have
-nothing in common beyond the maker, the socket, and the NEC uPD96050 they are both
-built on. The ST010 does navigation maths for a racing cartridge. The ST011 plays
-shogi.
-
-Only one of them could ever have been written down. What the console sends the
-ST011 is a board and what it reads back is a move, so its behaviour is not a set
-of commands that could be listed: its behaviour is the player masked into it, and
-writing that down would mean writing a shogi engine and calling the result a model
-of the part, which it would not be.
-
-Running the program removes that distinction entirely. A part that plays shogi and
-a part that computes a bearing are the same arrangement, a processor and a mask
-ROM, and both are reached the same way. So both are here, and neither is described.
-"""
-
 from collections.abc import Sequence
 from typing import override
 
@@ -23,8 +5,6 @@ from snesst.errors import UnknownModelError
 
 
 class Model:
-    """One part: what it is, and which image it runs."""
-
     __slots__ = ("aliases", "name", "summary")
 
     def __init__(self, name: str, summary: str, aliases: Sequence[str] = ()) -> None:
@@ -34,7 +14,6 @@ class Model:
 
     @property
     def image(self) -> str:
-        """The name of the image this part runs, which is its own."""
         return self.name
 
     @override
@@ -90,19 +69,6 @@ def _normalise(name: str) -> str:
 
 
 def lookup(name: str | None) -> Model:
-    """The model of that name, however it happens to be written.
-
-    Naming nothing is refused rather than filled in. A default would be the one
-    implicit thing in the call that builds a part, and it is worst where it looks
-    most harmless: a caller who learns to leave the model out against a member
-    covering one part writes the same call against a member covering sixteen.
-    The refusal names every model there is, so somebody who did not know what to
-    pass learns it here rather than from the source.
-
-    Not exported from the package. What a caller wants is the part, and the part
-    carries its own model; handing back a description of a part nobody built
-    reads like a test fixture rather than an interface.
-    """
     if name is None:
         raise UnknownModelError(
             "no model was named, and this package will not choose one for you."

@@ -12,7 +12,6 @@ PRESENT = chip.available()
 
 
 def an_identity(part: str = "st010") -> Any:
-    """What the processor needs to be told about an image, without an image."""
     sys.path.insert(0, str(chip.PROCESSOR))
     from snesst import firmware
 
@@ -20,7 +19,6 @@ def an_identity(part: str = "st010") -> Any:
 
 
 def a_program() -> Any:
-    """An image of zeroes, which belongs to nobody and computes nothing."""
     return bytes(16384 * 3 + 2048 * 2)
 
 
@@ -29,8 +27,6 @@ def built(**options: Any) -> Any:
 
 
 class WithoutTest(unittest.TestCase):
-    """What the backend says when the things it needs are not there."""
-
     @override
     def setUp(self) -> None:
         self.real = chip._processor
@@ -90,14 +86,6 @@ class ImportTest(unittest.TestCase):
 
 
 class WhereTheImagesAreTest(unittest.TestCase):
-    """Finding an image when the package is checked out inside another project.
-
-    The search belongs to the processor package, and this is here to prove this
-    one reaches it rather than looking only in its own directory: a project that
-    carries this as a submodule keeps its images in its own tree, and naming a
-    directory has to work from here too.
-    """
-
     def _catalogue(self, part: str = "st010") -> Any:
         where = Path(tempfile.mkdtemp()) / "made-up.bin"
         where.write_bytes(a_program())
@@ -132,8 +120,6 @@ class WhereTheImagesAreTest(unittest.TestCase):
 
 
 class ShapeTest(unittest.TestCase):
-    """That the backend is the same shape as the model, so a caller can swap."""
-
     def test_it_carries_the_part_it_was_asked_for(self) -> None:
         self.assertEqual(built().part, "st010")
 
@@ -161,14 +147,6 @@ class ShapeTest(unittest.TestCase):
 
 
 class HandshakeTest(unittest.TestCase):
-    """The exchange a console performs before the part will take a command.
-
-    The microcode raises its attention bit on its first instruction and waits for
-    the console to read a word back. Until that happens it never reaches the loop
-    that watches for a command, so a part that is spoken to without it answers
-    nothing and looks broken. A console does this at power-on without being told.
-    """
-
     def test_a_freshly_built_part_is_past_the_boot_exchange(self) -> None:
         part = built()
 
@@ -183,8 +161,6 @@ class HandshakeTest(unittest.TestCase):
 
 
 class DecodeTest(unittest.TestCase):
-    """The register decode, which is the cartridge's rather than the part's."""
-
     def test_the_window_with_the_bit_clear_is_the_port_rather_than_a_refusal(self) -> None:
         part = built()
 
@@ -240,8 +216,6 @@ class DecodeTest(unittest.TestCase):
 
 
 class RunningTest(unittest.TestCase):
-    """Starting a command, with a program that will never answer one."""
-
     def test_a_program_that_never_clears_the_start_byte_is_given_up_on(self) -> None:
         part = built(patience=64)
         part.write(0x000000, 0x00)

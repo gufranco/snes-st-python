@@ -1,5 +1,3 @@
-"""Playing recorded cartridge exchanges at a part, and what the run reports."""
-
 import contextlib
 import json
 import sys
@@ -17,8 +15,6 @@ from snesst import errors, st018
 
 
 class Silent:
-    """A part that answers zero to everything, which is what a dead one does."""
-
     def write(self, address: int, value: int) -> None:
         return None
 
@@ -27,8 +23,6 @@ class Silent:
 
 
 class Echoing:
-    """A part that hands back whatever was last put into that address."""
-
     def __init__(self, seed: int = 0x93) -> None:
         self.held: dict[int, int] = {}
         self.seed = seed
@@ -42,7 +36,6 @@ class Echoing:
 
 @contextlib.contextmanager
 def _one_shape(shape: str) -> "Iterator[Path]":
-    """A recorded file holding exactly the shape a test wants played."""
     with tempfile.TemporaryDirectory() as where:
         path = Path(where) / "made.json"
         path.write_text(json.dumps({"shapes": [{"shape": shape, "seen": 1}]}))
@@ -200,17 +193,12 @@ class MainTest(unittest.TestCase):
 
 
 def arm(*words: int) -> bytes:
-    """A program at the reset vector, padded to the shape an image has."""
     body = b"".join(word.to_bytes(4, "little") for word in words)
     program = body.ljust(st018.PROGRAM_BYTES, b"\x00")
     return program + bytes(st018.DATA_BYTES)
 
 
 IDLE = arm(0xEAFFFFFE)
-"""Branch to itself. The part is powered and doing nothing, which is all a run of
-the recorded shapes needs underneath it: what is being checked is which addresses
-the cartridge reaches, not what the program behind them computes.
-"""
 
 
 class SurfaceTest(unittest.TestCase):
@@ -245,7 +233,6 @@ class SurfaceTest(unittest.TestCase):
 
 
 def _answers(part: "st018.ST018", address: int, what: str) -> bool:
-    """Whether the part has a register that side of the address, rather than refusing."""
     try:
         if what == shapes.WRITE:
             part.write(address, 0)

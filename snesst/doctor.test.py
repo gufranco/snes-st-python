@@ -10,7 +10,6 @@ from snesst import chip, doctor, errors
 
 
 def an_image(part: str = "st010") -> "dict[str, tuple[str, Path]]":
-    """One part held, named the way the loader names what it found."""
     return {part: (f"identity-of-{part}", Path(f"{part}.bin"))}
 
 
@@ -75,11 +74,9 @@ class RunTest(unittest.TestCase):
         self.assertIn("processor", [one.name for one in doctor.examine()])
 
     def test_and_whether_the_other_one_is(self) -> None:
-        """Two processors, because the third part shares no silicon with the two."""
         self.assertIn("arm", [one.name for one in doctor.examine()])
 
     def test_the_part_that_runs_an_arm_is_built_by_the_class_that_runs_one(self) -> None:
-        """`_default_build` is the only place that knows there are two arrangements."""
         from snesst import st018
 
         with self.assertRaises(Exception) as raised:
@@ -126,15 +123,6 @@ class RunTest(unittest.TestCase):
 
 
 class PresentImageTest(unittest.TestCase):
-    """That a part which starts is examined on machines holding no microcode.
-
-    Nobody who does not already own these parts can put one on a machine, so the
-    build holds nothing and most machines that ever run this report hold nothing
-    either. Leaving the started-part checks to whatever happens to be lying
-    around means they run where it is convenient and nowhere else, and a check
-    that only runs on one laptop is not a check.
-    """
-
     def _made_up(self) -> Path:
         import tempfile
 
@@ -166,7 +154,6 @@ class PresentImageTest(unittest.TestCase):
         self.assertTrue(all(one.ok for one in parts))
 
     def test_a_part_that_starts_and_will_not_reset_is_reported_as_broken(self) -> None:
-        """The reset is driven here, so a part that refuses it cannot report as running."""
         found = doctor.examine(images=self._held(self._made_up()), build=self._will_not_reset)
 
         parts = [one for one in found if one.name.startswith("st01")]
@@ -200,8 +187,6 @@ class PresentImageTest(unittest.TestCase):
 
 
 class ExplodingTest(unittest.TestCase):
-    """That a check which itself goes wrong is shown rather than swallowed."""
-
     def test_a_check_that_raises_becomes_an_unhealthy_finding(self) -> None:
         def boom(_part: str, _images: object) -> NoReturn:
             raise Complaint("the part exploded")
@@ -228,8 +213,6 @@ class ExplodingTest(unittest.TestCase):
 
 
 class DigestTest(unittest.TestCase):
-    """The line that settles which file somebody actually has."""
-
     def _catalogue(self, where: Path) -> "dict[str, tuple[object, Path]]":
         import sys as system
 
@@ -262,14 +245,6 @@ class DigestTest(unittest.TestCase):
 
 
 class BeneathTest(unittest.TestCase):
-    """That what this is built on is examined too, and under its own name.
-
-    A package can be entirely well while the thing underneath it is missing,
-    stale, or holding a different file. A doctor that looks only at its own
-    project reports that everything is fine on exactly the machine where it is
-    not, which is the failure this is here to prevent.
-    """
-
     def test_the_processor_underneath_is_examined_as_well(self) -> None:
         names = [one.name for one in doctor.examine()]
 
@@ -326,8 +301,6 @@ class BeneathTest(unittest.TestCase):
 
 
 class ReachTest(unittest.TestCase):
-    """That the project underneath is made importable, and only once."""
-
     def test_a_path_without_it_gains_it(self) -> None:
         found = doctor._reach([])
 
@@ -397,15 +370,7 @@ class EntryTest(unittest.TestCase):
 
 
 class WaitsTest(unittest.TestCase):
-    """Where each part's program stops, and what happens when one will not build."""
-
     def test_a_part_that_will_not_build_is_reported_rather_than_raised(self) -> None:
-        """Driven with an image supplied, so the result does not depend on the machine.
-
-        Reading what happens to be on disk made this pass here and report success
-        on a runner with no image, which is the failure the whole doctor exists
-        to prevent.
-        """
 
         def boom(part: str, images: Any) -> Any:
             raise RuntimeError("the core exploded")
@@ -416,14 +381,12 @@ class WaitsTest(unittest.TestCase):
         self.assertIn("RuntimeError: the core exploded", found.detail)
 
     def test_a_machine_with_no_image_says_nothing_was_run(self) -> None:
-        """A fresh checkout has none, and that is not a fault to report."""
         found = doctor._waits(images={})
 
         self.assertTrue(found.ok)
         self.assertIn("nothing was run", found.detail)
 
     def test_and_a_part_that_builds_reports_where_it_stopped(self) -> None:
-        """Also driven, so the happy path is checked on every machine too."""
 
         def waiting(part: str, images: Any) -> Any:
             return SimpleNamespace(core=SimpleNamespace(registers=SimpleNamespace(pc=3)))

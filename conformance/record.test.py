@@ -1,5 +1,3 @@
-"""Reading the shapes out of cartridges, and what the recorded file must say."""
-
 import json
 import sys
 import unittest
@@ -61,7 +59,6 @@ class HeaderTest(unittest.TestCase):
 
 
 def _named(*images: bytes) -> dict[str, dict[str, Any]]:
-    """A catalogue naming exactly the images a test made, so the gate lets them by."""
     return {
         record.digests_of(one)["sha256"]: {"name": f"made-up-{at}.sfc", **record.digests_of(one)}
         for at, one in enumerate(images)
@@ -273,7 +270,6 @@ class MainTest(unittest.TestCase):
 
 
 def _a_routine() -> bytes:
-    """A cartridge whose code pokes the port, the shared memory and neither."""
     body = bytearray()
     body += bytes((0x8F, 0x00, 0x00, 0x60))
     body += bytes((0x8F, 0x20, 0x00, 0x68))
