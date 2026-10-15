@@ -35,9 +35,6 @@ version = { attr = "snesst.version.VERSION" }
 [tool.setuptools.package-data]
 snesst = ["artifacts.manifest.json"]
 
-[tool.setuptools.exclude-package-data]
-snesst = ["*.test.py"]
-
 [tool.ruff]
 target-version = "py312"
 line-length = 100
