@@ -1,368 +1,364 @@
+English | [日本語](README.ja.md) | [简体中文](README.zh-Hans.md) | [繁體中文（香港）](README.zh-HK.md)
+
 # Seta ST010, ST011 and ST018
 
-The three coprocessors Seta made for the Super Nintendo, each running the program you supply rather than a description of it.
+The three coprocessors Seta made for Super Nintendo cartridges in Python, each running the microcode a reader supplies and held to the place that microcode stops to wait for a command.
 
 [![CI](https://github.com/gufranco/snes-st-python/actions/workflows/ci.yml/badge.svg)](https://github.com/gufranco/snes-st-python/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/gufranco/snes-st-python)](https://github.com/gufranco/snes-st-python/releases)
+[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**3** parts, **0** commands described by hand, both waits measured on the shipped microcode, **0** disagreements, **662** tests, **100%** statement and branch coverage, no dependencies
+**3** parts, **0** commands described by hand, both waits measured on the shipped microcode, **0** disagreements between those waits and the record, **672** tests, **100%** statement and branch coverage, no dependencies
 
 ```python
 from snesst import Chip
 
-chip = Chip("st010")
+part = Chip("st010")
 
-chip.write(0x000000, 0x00)
+part.write(0x000000, 0x00)
 for at, value in enumerate((0x00, 0x01, 0x00, 0x02)):
-    chip.write(0x680000 + at, value)
-chip.write(0x680020, 0x01)
-chip.write(0x680021, 0x80)
+    part.write(0x680000 + at, value)
+part.write(0x680020, 0x01)
+part.write(0x680021, 0x80)
 
-chip.read(0x680010) | (chip.read(0x680011) << 8)
-
-# 0x9300
+print(hex(part.read(0x680010) | part.read(0x680011) << 8))
 ```
 
-The first write wakes the part. The four after it are a point at `(0x0100,
-0x0200)` in the shared memory, then a command number and a start bit in the two
-registers just past the end of it. The answer comes back out of the same memory.
+```
+0x9300
+```
 
+The write to `0x000000` lands below the shared window, on the processor's data port, and lets the part act on a start byte. The next four bytes put the point `0x0100, 0x0200` at the bottom of the shared memory. Command `0x01` goes in the register byte at `0x20` and the start bit in the one at `0x21`, and the ST010's own program runs until it clears that bit. The answer comes back out of the same memory at `0x10`. The example needs an ST010 image; without one, `Chip("st010")` raises `NoFirmware`.
 
 ## Install
+
+| Requirement | Version |
+|:--|:--|
+| Python | 3.12 or newer |
+| git | Any, to fetch the submodules |
+| A firmware image | One per part you build, dumped from hardware you own |
+
 ```bash
 git clone --recurse-submodules https://github.com/gufranco/snes-st-python.git
 cd snes-st-python
+python3 snesst/doctor.py
 ```
 
-Python 3.12 or newer, and the submodule. Nothing else.
+The package imports nothing outside the standard library. Three submodules sit at the repository root: `nec-upd7725-96050-python` is the processor inside the ST010 and ST011, `arm6-python` is the processor inside the ST018, and `snes-driver-python` is read only by the tool that records cartridge exchanges. A source archive from the download-zip link has no submodules, and every part then refuses to build.
 
-The submodule sits at the repository root as
-[`nec-upd7725-96050-python/`](https://github.com/gufranco/nec-upd7725-96050-python),
-named after itself rather than buried under a generic folder, because it is the
-processor both of these parts are built on. Without it nothing here can run.
+The doctor checks the machine, the submodules and each part's image, and ends with one line. Paste its whole output into any bug report. A fresh checkout holds no image, so its three part lines fail:
 
-The microcode is a separate matter and is not carried here. Where to put a copy
-you already own is under [the microcode you supply](#the-microcode-you-supply).
+```
+  3 of 12 checks did not pass
+```
+
+Releases follow [Semantic Versioning](https://semver.org/) and are cut from the commit history by semantic-release. Every release is tagged and listed on the [releases page](https://github.com/gufranco/snes-st-python/releases).
 
 ## The interface
-Everything a caller touches. Nothing else is public.
 
-| Name | What it is |
+`snesst.Chip(model, **options)` builds one part. `model` is required and is matched without regard to case, hyphens or underscores. The ST010 and ST011 come back as `snesst.chip.Chip`, which runs a NEC uPD96050. The ST018 comes back as `snesst.ST018`, which runs an ARM60.
+
+| Model | Aliases | Processor | Image bytes | What the program does |
+|:--|:--|:--|--:|:--|
+| `st010` | `st-010`, `seta010`, `setast010` | uPD96050 | 53,248 | Eight commands for a racing cartridge |
+| `st011` | `st-011`, `seta011`, `setast011` | uPD96050 | 53,248 | Plays shogi |
+| `st018` | `st-018`, `seta018`, `setast018` | ARM60 | 163,840 | Plays shogi, through a one byte mailbox |
+
+### The catalogue and the errors
+
+| Name | Content |
 |:--|:--|
-| `Chip(model, **options)` | A part of that model, running its own microcode |
-| `Chip(model, image=...)` | The same, with the bytes handed straight in and no directory searched |
-| `MODELS` | Every part this package covers, by the name it goes by |
-| `Model` | One entry of that catalogue: its name, its aliases and what it is |
-| `available()` | Every part there is an image for on this machine |
-| `why_not()` | Why the backend cannot run, or nothing when it can |
-| `read(address)`, `write(address, value)` | The two accesses a cartridge makes |
-| `handshake()` | What the console does to wake the part |
-| `reset()` | Back to a part that has not been woken, handed back for chaining |
-| `step(count)` | Run the processor for a number of its own instructions |
-| `UnknownModelError`, `NoFirmware`, `NeverFinished` | What a caller can catch |
-| `Unrecognised`, `Corrupt`, `WrongShape` | What a supplied image can be refused for |
+| `snesst.MODELS` | The three `Model` records, keyed by canonical name |
+| `snesst.Model` | `name`, `aliases`, `summary`, and `image`, the name of the image it runs |
+| `snesst.available()` | A dict of every part whose image is on this machine, each an identity and a path. Empty when the uPD96050 submodule is missing |
+| `snesst.why_not()` | The sentence saying why no part can be built here, because the uPD96050 submodule or every image is missing. `None` otherwise |
+| `snesst.ST018` | The ARM part's class, for a caller who builds it directly |
+| `snesst.__version__` | The installed version |
 
-`Chip` takes the model first, which is the argument every member of the family
-takes first. The name is the kind rather than the chip, so a traceback says what
-sort of thing it was rather than which of two parts happened to raise.
-
-```python
-from snesst import Chip
-
-Chip("seta011").model
-
-# 'st011'
-```
-
-Every part is reached the same way, by the name it is known as. The third one
-needs an image nobody can carry, so the line below builds the two whose images
-this machine happens to hold:
+| Error | Raised when |
+|:--|:--|
+| `UnknownModelError` | The model is missing or no part goes by that name. The message lists the names accepted |
+| `NoFirmware` | A processor submodule is not checked out, no image for the part is found, or an image is passed to a uPD96050 part without an `identity` |
+| `NeverFinished` | A started command has not cleared the start bit within `patience` instructions |
+| `WrongShape` | An image is not the length its processor takes |
+| `Unrecognised` | `snesst.firmware.identify` meets bytes whose SHA-256 the manifest does not hold. The directory search skips such a file instead |
+| `Corrupt` | An image matches a manifest entry on SHA-256 and disagrees with it on another digest |
+| `UnknownPort` | An ST018 read or write lands on an address other than its three ports |
 
 ```python
-from snesst import Chip
-
-print(Chip("st010").part, Chip("st011").part)
-
-# st010 st011
-```
-
-`Chip("st018")` and `Chip("setast018")` reach the third, which is an ARM rather
-than a signal processor and is `snesst.ST018` underneath. The factory decides
-which arrangement a name means, so a caller who knows the part does not have to
-know which silicon is under it.
-
-A name no part answers to is refused rather than quietly building the default:
-
-```python
+import snesst
 from snesst import Chip, UnknownModelError
 
-try:
-    Chip("st012")
-except UnknownModelError as refused:
-    print(str(refused).split(";")[0])
+for name, model in snesst.MODELS.items():
+    print(name, model.aliases)
 
-# st012 is not a part this package covers
+print(repr(snesst.MODELS["st018"]))
+
+for asked in ("st012", None):
+    try:
+        Chip(asked)
+    except UnknownModelError as refused:
+        print(refused)
 ```
 
-### The three parts
+```
+st010 ('st-010', 'seta010', 'setast010')
+st011 ('st-011', 'seta011', 'setast011')
+st018 ('st-018', 'seta018', 'setast018')
+<Model st018, running the st018 image>
+st012 is not a model this package covers; it has st010, st011, st018
+no model was named, and this package will not choose one for you. Name one of: st010, st011, st018
+```
 
-| Name | Also answers to | What it does |
-|:--|:--|:--|
-| `st010` | `st-010`, `seta010`, `setast010` | Eight commands for a racing cartridge |
-| `st011` | `st-011`, `seta011`, `setast011` | A shogi opponent |
-| `st018` | `st-018`, `seta018`, `setast018` | A shogi opponent, on an ARM |
+### The ST010 and ST011
 
-The first two are NEC uPD96050 signal processors and share one class. The third
-shares a vendor and a prefix with them and shares no silicon: it is a 32 bit ARM
-on the cartridge's own crystal, reached through three addresses and one byte at
-a time rather than through four kilobytes of shared memory, so it has a class of
-its own.
+`Chip("st011", memory=None, fill=0, patience=4000000, boot=200000, image=None, identity=None, images=None)` shows every option with its default.
+
+| Option | Effect |
+|:--|:--|
+| `memory` | Bytes copied into the shared memory after the handshake, up to 4,096 of them |
+| `fill` | The value the processor's registers and memories hold at power-on |
+| `patience` | Instructions a started command may run before `NeverFinished` |
+| `boot` | Instructions run after the handshake's two reads, before the part is handed back |
+| `image` | The image bytes. No directory is searched and no variable is read |
+| `identity` | What `image` is, as a `snesst.firmware.Identity`. Required with `image` |
+| `images` | A catalogue shaped like `available()`, searched in place of this machine's |
+
+| Call | Effect |
+|:--|:--|
+| `read(address)` | With bit `0x80000` set, the shared memory byte at `address & 0xFFF`. Otherwise the data port, or the status port at an odd address |
+| `write(address, value)` | With bit `0x80000` set, a shared memory byte, then the program runs if the part is enabled and the byte at `0x21` has bit `0x80`. Otherwise a write that enables the part, passed to the data port at an even address |
+| `handshake(boot=None)` | One instruction, two reads of the data port, then `boot` instructions. Returns the part |
+| `step(count)` | `count` processor instructions |
+| `reset()` | Clears `enabled`. The program and the shared memory are untouched. Returns the part |
+
+| Attribute | Meaning |
+|:--|:--|
+| `model`, `part` | The canonical model name |
+| `processor` | `upd96050` |
+| `identity` | The `Identity` of the image that runs |
+| `core` | The processor from `nec-upd7725-96050-python` |
+| `console` | The host side of the processor's ports |
+| `enabled` | True once a write below the shared window has arrived since the last reset |
+| `memory` | The 4,096 bytes of shared memory, read without side effects |
+| `command`, `execute` | The register bytes at `0x20` and `0x21` |
+| `patience`, `boot` | The values passed in |
 
 ```python
-from snesst import ST018
+from snesst import Chip, NeverFinished
+from snesst.firmware import Identity
 
-sorted(one for one in dir(ST018) if not one.startswith("_"))
+blank = Identity("st010", "upd96050", "blank", program_words=16384, data_words=2048)
+part = Chip("st010", image=bytes(53248), identity=blank, boot=0, patience=1000)
 
-# ['drive', 'model', 'part', 'port', 'processor', 'read', 'reset', 'status', 'step', 'write']
+part.write(0x680005, 0x7F)
+part.write(0x680020, 0x02)
+print(hex(part.read(0x680005)), part.memory[5], part.command, part.enabled)
+
+part.write(0x600000, 0x00)
+try:
+    part.write(0x680021, 0x80)
+except NeverFinished as refused:
+    print(refused)
+
+print(part.reset().enabled, repr(part))
 ```
 
+```
+0x7f 127 2 False
+st010 did not finish command 0x02 within 1000 instructions
+False <Chip st010 on upd96050>
+```
+
+A program of zeroes needs no image, so this runs on any checkout with its submodules. The shared memory and the registers take writes before the part is enabled. Once the write to `0x600000` enables it, the start bit runs the program, which never clears the bit, and the part gives up after 1,000 instructions.
+
+### The ST018
+
+`Chip("st018", image=None, images=None, fill=0, processor=None)` shows every option with its default. `image` is 163,840 bytes, 131,072 of program and 32,768 of data, and is not identified first. `images` is an iterable of identity and path pairs searched in place of this machine's directories. `processor` names a checkout of `arm6-python` other than the submodule.
+
+| Call | Effect |
+|:--|:--|
+| `read(0x3800)` | The byte the ARM sent, once. Clears the waiting flag, and reads 0 when nothing is waiting |
+| `write(0x3802, value)` | A byte for the ARM. Sets the sent flag |
+| `read(0x3804)` | The status byte: `0x01` a byte waits for the console, `0x08` a byte waits for the ARM, `0x80` the part is up |
+| `write(0x3804, value)` | Resets the part when bit 0 is set |
+| `status()` | The status byte, read the same way |
+| `port(offset)`, `drive(offset, value)` | The ARM's side of the mailbox: reading offset `0x10` takes the console's byte, reading `0x20` gives the status, driving `0x00` sends a byte to the console and driving `0x20` sets `timer` |
+| `step(count=1)` | `count` ARM instructions. Returns the part |
+| `reset()` | Empties the mailbox, sets the part up and resets the ARM. Returns the part |
+
+| Attribute | Meaning |
+|:--|:--|
+| `model`, `part` | `st018` |
+| `processor` | `arm60` |
+| `identity` | The `Identity` of the image found, or `None` when `image` was passed |
+| `core` | The `arm6.Cpu` running the program |
+| `stores` | The ARM's address space: program at `0x00000000`, ports at `0x40000000`, data at `0xA0000000`, 16 KB of work RAM at `0xE0000000` |
+| `incoming`, `outgoing`, `sent`, `waiting`, `up`, `timer` | The mailbox state behind the status byte |
+| `steps` | ARM instructions run since the part was built. A reset leaves it alone |
+
+```python
+from snesst import Chip, UnknownPort
+
+part = Chip("setast018", image=bytes(163840))
+print(type(part).__name__, part.model, part.processor, hex(part.status()))
+
+part.write(0x3802, 0x2A)
+print(hex(part.read(0x3804)), hex(part.port(0x10)), hex(part.read(0x3804)))
+
+part.drive(0x00, 0x99)
+print(hex(part.read(0x3804)), hex(part.read(0x3800)), hex(part.read(0x3804)))
+print(part.step(100).steps)
+
+try:
+    part.read(0x3806)
+except UnknownPort as refused:
+    print(str(refused).split(".")[0])
+```
+
+```
+ST018 st018 arm60 0x80
+0x88 0x2a 0x80
+0x81 0x99 0x80
+100
+nothing establishes what a read of $3806 does
+```
+
+A zeroed image builds an ARM that runs zeroes, so the mailbox can be driven without the real program. The console's byte raises bit `0x08` until the ARM takes it, and the ARM's byte raises bit `0x01` until the console takes it.
+
+### Command-line tools
+
+Each runs from the repository root.
+
+| Command | Arguments | Exit codes |
+|:--|:--|:--|
+| `python3 snesst/doctor.py` | None | 0 when every check passes, 1 when any fails |
+| `python3 -m conformance.speed` | None | 0 at or above 150,000 uPD96050 instructions a second, or when no part can be built here. 1 below that |
+| `python3 -m conformance.against_cartridges` | A part, `st010` by default | 0 when at least one recorded exchange got a byte back, 1 when none did, 2 when no part can be built here |
+| `python3 -m conformance.record` | A directory of cartridges, then an output directory | 0 when every part found yields shapes, 1 when one yields none, 2 for a missing argument, a missing directory, or no cartridge carrying a part |
+| `python3 -m conformance.links` | None | 0 unless an address in this README answers 404 or 410 |
+| `python3 -m conformance.package` | A built wheel | 0 when every module is in it and no test is, 1 otherwise or when the file is absent, 2 without an argument |
+
+`conformance.against_cartridges` plays the exchanges in [`conformance/st010shapes.json`](conformance/st010shapes.json) and [`conformance/st011shapes.json`](conformance/st011shapes.json) at the part. `conformance.record` writes those files: it reads each cartridge's own code through `snes-driver-python` and keeps the shape of every exchange, never a byte of the cartridge. It accepts only cartridges named in that submodule's manifest and checks all four of their digests.
+
 ## The problem
-This chip has no port. It shares four kilobytes of battery-backed memory with the
-console: every command reads its arguments out of fixed addresses in that memory
-and writes its answers back into other fixed addresses in the same memory.
 
-Underneath, both ST parts are a NEC uPD96050 with a program masked into it. What
-a command computes is that program. Working out what each one does and writing it
-down produces something that can be checked and can never be finished, and for
-these two it produces something worse: the tables this chip works from cannot be
-restated as the formulas that made them. Each agrees with school mathematics to
-within a unit or two and none agrees exactly, which is what a table computed by
-an iterative routine on the machine that would use it looks like.
+The ST010 and ST011 have no port of their own. Each shares four kilobytes of memory with the console. A command reads its arguments from fixed addresses in that memory and writes its answers to other fixed addresses in it.
 
-So carrying them means carrying the chip's content, and deriving them means being
-slightly wrong everywhere.
+Inside, both are a NEC uPD96050 with a program masked into its ROM. What a command computes is that program. The tables it works from agree with the textbook formulas to within a unit or two and match none of them exactly, so restating them as formulas leaves an error in every entry, and carrying them means carrying the chip's content.
 
 ## The solution
-Run the program. Neither problem survives it: nothing needs deriving, and nothing
-of the chip's content is carried.
 
-The ST011 arrives with that change. It plays shogi, so its behaviour was never a
-set of commands anybody could write down; it is the player masked into it. A part
-that plays shogi and a part that computes a bearing are the same arrangement once
-the program is run, so both are here.
+The package runs the program. Nothing is derived and none of the chip's content is in the repository. The ST011 and ST018 play shogi, and running the program covers them the same way it covers the ST010's eight commands.
 
-The cost is stated plainly: without an image this package refuses. It does not
-fall back to a guess, because an answer that did not come from the part is worse
-than no answer.
-
-## Why there is no model here
-This used to carry a hand-written implementation of the ST010's eight commands
-and fifteen hundred lines of the tables they worked from. Its own opening said
-none of those tables could be restated as a formula. All of it is gone, along
-with the corpus recorded from another implementation that existed to check it.
+Without an image a part refuses to build. It never falls back to an answer that did not come from the part.
 
 ## The microcode you supply
-Every image is identified before a byte of it is executed. SHA-256 decides; the
-other values are there so you can cross-check against a database that keys on
-them.
+
+Every image is identified before a byte of it runs. SHA-256 decides. The CRC32 is there to cross-check against a catalogue that keys on it.
 
 | Part | Bytes | CRC32 | SHA-256 |
 |:--|--:|:--|:--|
 | `st010` | 53,248 | `8d136190` | `55c697e864562445621cdf8a7bf6e84ae91361e393d382a3704e9aa55559041e` |
 | `st011` | 53,248 | `750c6012` | `651b82a1e26c4fa8dd549e91e7f923012ed2ca54c1d9fd858655ab30679c2f0e` |
+| `st018` | 163,840 | `5c403cc5` | `6df209ab5d2524d1839c038be400ae5eb20dafc14a3771a3239cd9e8acd53806` |
 
-A copy you already own goes in `firmware/` in this project, or in the `firmware/`
-of the project this one sits inside when it is checked out as a submodule, or in
-any directory named by `SNES_ST_FIRMWARE_DIR`. That variable is read first and
-may name more than one directory at once, separated the way the operating system
-separates a path. `UPD7725_FIRMWARE_DIR` is read after it and still works: this
-member and [snes-dsp-python](https://github.com/gufranco/snes-dsp-python) shared
-that one name until somebody wanted to point them at two different sets. Nothing
-is downloaded.
+[`snesst/artifacts.manifest.json`](snesst/artifacts.manifest.json) holds these with the MD5 and SHA-1 beside them. The search reads files ending in `.bin` or `.rom`, in this order, and the first image found for a part wins:
 
-A caller who already holds the bytes hands them straight over as
-`Chip("st010", image=...)`, and then no directory is searched at all and no
-variable is read.
+1. Every directory named by `SNES_ST_FIRMWARE_DIR`, separated the way the operating system separates a path.
+2. Every directory named by `UPD7725_FIRMWARE_DIR`.
+3. `firmware/` in the project this one is checked out inside.
+4. `firmware/` in this repository.
 
-Confirm one you hold:
+Nothing is downloaded. Confirm a copy you hold on macOS, Linux or Windows:
 
 ```bash
-shasum -a 256 firmware/st0010.bin      # macOS
-sha256sum firmware/st0010.bin          # Linux
-certutil -hashfile firmware\st0010.bin SHA256   # Windows
+shasum -a 256 firmware/st0010.bin
+sha256sum firmware/st0010.bin
+certutil -hashfile firmware\st0010.bin SHA256
 ```
 
-A file that does not match is refused rather than run.
+A file whose digest is not in the manifest is skipped by the search. Passed to `snesst.firmware.identify`, it is refused, and the refusal says whether removing a 512 byte header, dropping the last 512 bytes or swapping byte pairs turns it into a known image.
 
 ## The handshake nothing documents
-The model this replaced treated one write as a switch. A write below the shared
-window made the chip start listening, and until it arrived the two registers past
-the end of memory could not be set at all.
 
-On the part there is no switch. The window below the shared memory is the
-processor's own data port, and the window above it is the processor's scratch
-memory, which is the four kilobytes the console shares. That single fact explains
-the write the model could not account for: the microcode raises its attention bit
-on its very first instruction and waits for the console to take a word off the
-data port. Until that happens it never reaches the loop that watches for a
-command, so a part spoken to without it answers nothing and reads as broken.
+The window below the shared memory is the processor's data port, and the shared memory is the processor's own data RAM. The microcode raises its attention bit on its first instruction and waits for the console to take a word off the data port. Until that happens it never reaches the loop that watches for a command, and a part spoken to without it answers nothing.
 
-A console does that at power-on without being told, and so does this. Past it,
-each part sits in a wait of its own, measured on each rather than assumed.
+`Chip` performs that handshake while building the part: one instruction, two reads of the data port, then 200,000 instructions. Each program then waits in a place of its own.
 
 | Part | Where its program waits |
 |:--|:--|
-| ST010 | words 3, 4 and 5, testing the top bit of the word holding the command and the start byte |
-| ST011 | word 2 |
-
-Measured rather than asserted, on whichever images are on this machine:
+| ST010 | Words 3, 4 and 5, testing the top bit of the word holding the command and the start byte |
+| ST011 | Word 2 |
 
 ```python
-from snesst import Chip, available
+from snesst import Chip
 
-for name in sorted(available()):
-    print(name, Chip(name).core.registers.pc)
+for name in ("st010", "st011"):
+    part = Chip(name)
+    print(part.model, part.processor, part.core.registers.pc)
 ```
 
+```
+st010 upd96050 3
+st011 upd96050 2
+```
+
+This example needs both images.
 
 ## Is it right
-A machine holding no microcode still checks everything this package can get
-wrong, because the part-specific knowledge is no longer in the code.
+
+[`conformance/hardware.json`](conformance/hardware.json) records every value the package asserts about the interface, each marked unverified, with its evidence and the measurement that would settle it: the 4,096 byte shared window, enable bit `0x80000`, the register bytes at `0x20` and `0x21`, the two handshake reads, both wait places, and what a reset does. [`conformance/hardware.test.py`](conformance/hardware.test.py) holds each one to the constant in the code.
 
 | Layer | What is checked | Needs an image |
 |:--|:--|:--:|
-| The processor | Every instruction, in [`nec-upd7725-96050-python`](https://github.com/gufranco/nec-upd7725-96050-python) | No |
-| The decode | The wake write, the two registers past memory, the shared window, driven by a program of zeroes | No |
-| Identity | That both parts name an image with a deciding digest, so a supplied file is confirmed rather than trusted | No |
-| The catalogue | Both parts, every name they answer to, and which image each runs | No |
-| The parts | That each reaches its own wait, stays there, and answers a command | Yes |
+| The processors | Every instruction, in [nec-upd7725-96050-python](https://github.com/gufranco/nec-upd7725-96050-python) and [arm6-python](https://github.com/gufranco/arm6-python) | No |
+| The decode | The enabling write, the two register bytes, the shared window, on a program of zeroes | No |
+| The ST018 mailbox | Its three ports, its status bits and its refusals, on short ARM programs written in the tests | No |
+| Identity | Each image named by a deciding digest, and every refusal a wrong file gets | No |
+| The catalogue | All three parts and every name they answer to | No |
+| The parts | The ST010 and ST011 each reach their own wait and stay there for 4,096 instructions, and the ST010 answers a command | Yes |
 
-That last one is the only check that needs an image, and it reports as skipped
-rather than as passed when there is none.
+[`snesst/microcode.test.py`](snesst/microcode.test.py) carries the last row and reports as skipped when no image is present. A separate CI job starts every part, runs `conformance.against_cartridges` for the ST010 and ST011, and says on the run page whether a part was driven at all.
 
-**Open questions** are listed with the measurement that would close each one:
-[`OPEN-QUESTIONS.md`](OPEN-QUESTIONS.md). Where two sources part, both are kept
-in [`conformance/divergences.json`](conformance/divergences.json) with what would
-settle it.
+[OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) lists what is not known with the measurement that would close each item. [`conformance/divergences.json`](conformance/divergences.json) records where sources part, and which one this package follows.
 
 ## Working on it
-```bash
-python -m coverage erase
-for file in $(find st010 conformance -name '*.test.py' | sort); do
-  python -m coverage run -a "$file"
-done
-python -m coverage report
-```
 
-`python3 snesst/doctor.py` says what is actually on this machine: both parts, which image each wants, where each one's program stops waiting, and the state of the processor underneath. It is run as a file rather than with `-m` so that it still runs when the package itself will not import, which is the case it exists for.
-
-[`AGENTS.md`](AGENTS.md) is the document for an agent working here. [`FAMILY.md`](FAMILY.md) is the standard this repository shares with the rest of the family, kept identical in every member.
-
-### Project structure
-
-```text
-snesst/
-  __init__.py       the package, and the part chosen at construction
-  models.py         which parts exist, what they answer to, which image each runs
-  chip.py        loading an image, the handshake, and driving the part
-  microcode.test.py the checks that need a real image, kept out of the gate
-  version.py        rewritten by the release job and by nothing else
-nec-upd7725-96050-python/ the processor both of these are, as a submodule at the root
-```
-
-Each module has its tests beside it as `<module>.test.py`, so a module and the
-cases that pin its behaviour are read together.
-
-### Tests
+| Need | Where |
+|:--|:--|
+| Every gate and the order to run them | [CONTRIBUTING.md](CONTRIBUTING.md) |
+| The same material for a coding agent | [AGENTS.md](AGENTS.md) |
+| The standard this repository shares with the rest of the family | [FAMILY.md](FAMILY.md) |
+| Bug reports | [GitHub Issues](https://github.com/gufranco/snes-st-python/issues) |
+| Security reports | [SECURITY.md](SECURITY.md) |
 
 ```bash
-for f in snesst/*.test.py; do python3 "$f"; done
+uvx ruff@0.16.3 format --check .
+uvx ruff@0.16.3 check .
+uvx --python 3.12 mypy==1.14.1
+pnpm install --frozen-lockfile && pnpm run format:check
+python3 -m coverage erase
+for file in $(find snesst conformance -name '*.test.py' | sort); do python3 -m coverage run -a "$file"; done
+python3 -m coverage report
+python3 -m conformance.speed
 ```
 
-| Area | File | What it pins |
-|:--|:--|:--|
-| The catalogue | [`snesst/models.test.py`](snesst/models.test.py) | Both parts, their names, their images, and that each image is declared with a digest |
-| The part | [`snesst/chip.test.py`](snesst/chip.test.py) | Loading, the handshake, the decode, the shared memory, refusing |
-| The microcode | [`snesst/microcode.test.py`](snesst/microcode.test.py) | That each part reaches its own wait and answers a command. Needs an image |
-
-Coverage is enforced at 100% of statements and branches by
-[`pyproject.toml`](pyproject.toml), so a new branch without a test fails the
-build rather than quietly lowering the number.
-
-### Development
-
-| Command | Description |
-|:--|:--|
-| `ruff format .` | Format |
-| `ruff check .` | Lint |
-| `python3 -m coverage run -a <file>` | Run one test file under coverage |
-| `python3 -m coverage report` | Coverage, which fails below 100% |
-| `python3 snesst/microcode.test.py -v` | Run the checks that need an image |
-| `pnpm run format:check` | Check that every JSON file is formatted, which CI also does |
-
-### Project conventions
-
-| Convention | Source |
-|:--|:--|
-| Commit format | [Conventional Commits](https://www.conventionalcommits.org/) |
-| Formatting and lint | [ruff](https://docs.astral.sh/ruff/), pinned in [`.github/workflows/ci.yml`](.github/workflows/ci.yml) |
-| Versioning | [semantic-release](https://semantic-release.gitbook.io/), from the commit history |
-| Tests | Beside the module, named `<module>.test.py` |
-
-### Versioning
-
-This project follows [Semantic Versioning](https://semver.org/). Every release is
-tagged. See [releases](https://github.com/gufranco/snes-st-python/releases) for
-the changelog and upgrade notes.
-
-### FAQ
-
-<details>
-<summary><strong>Why will it not work without a firmware image?</strong></summary>
-<br>
-
-Because what these parts do is the program masked into them, and that program
-belongs to whoever made the part. A package that answered without one would be
-answering from a description somebody wrote.
-
-</details>
-
-<details>
-<summary><strong>Where do I get the microcode?</strong></summary>
-<br>
-
-Not from here, and this will not tell you. Dump it from hardware you own. The
-digests above let you confirm that what you have is what the part expects.
-
-</details>
-
-<details>
-<summary><strong>Why is the ST011 here now when it was refused before?</strong></summary>
-<br>
-
-It plays shogi. Its behaviour was never a set of commands that could be written
-down, which is exactly why it was refused by name while this package described
-things rather than running them. Running the program removes the distinction:
-both parts are a processor and a mask ROM, and both are reached the same way.
-
-</details>
+Each module has a test file beside it, named after it, and each runs on its own, as in `python3 snesst/chip.test.py`. Coverage is a hard gate at 100% statement and branch, set in [pyproject.toml](pyproject.toml). The throughput floor runs outside the coverage step.
 
 ## References
-This repository carries no documents and no microcode. Every claim is traced to
-something published elsewhere, listed here so a reader can fetch the same file
-and check the same page.
 
-Seta published nothing about either part. The top rung of the authority ladder is
-empty here and [`conformance/hardware.json`](conformance/hardware.json) says so
-rather than promoting the rung below it.
-
-| Source | Used for |
-|:-------|:---------|
-| [nec-upd7725-96050-python](https://github.com/gufranco/nec-upd7725-96050-python) | The processor itself: its data sheet, its record, its divergences and its corpus |
-| [snes-driver-python](https://github.com/gufranco/snes-driver-python) | Reading a cartridge's own code to find what it says to its coprocessor |
-| The microcode a reader supplies | Every answer this package gives. Confirmed by digest before a byte of it runs |
+- Seta published nothing about these parts. The top rung of the authority ladder in [`conformance/hardware.json`](conformance/hardware.json) is empty and the record says so.
+- The microcode a reader supplies, for every answer the package gives. It is confirmed by digest before it runs and is not in this repository.
+- [nec-upd7725-96050-python](https://github.com/gufranco/nec-upd7725-96050-python), for the uPD96050 and every fact NEC printed about it.
+- [arm6-python](https://github.com/gufranco/arm6-python), for the ARM60 inside the ST018.
+- [snes-driver-python](https://github.com/gufranco/snes-driver-python), for reading a cartridge's own code to find what it says to its coprocessor.
+- The behavioural models in emulators, for the interface constants: where the shared memory sits and which addresses are registers.
 
 ## Citing this
-[CITATION.cff](CITATION.cff) is kept in step with the released version by the same script that stamps the package, so the version it names is the version that shipped. GitHub renders it as a Cite this repository button.
+
+[CITATION.cff](CITATION.cff) is updated with each release by the script that stamps the package version.
 
 ## License
-[MIT](LICENSE)
+
+MIT. See [LICENSE](LICENSE).
