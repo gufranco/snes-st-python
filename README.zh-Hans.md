@@ -8,7 +8,7 @@ Seta 为 Super Nintendo 卡带制造的三款协处理器的 Python 实现，每
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-st-python)](https://github.com/gufranco/snes-st-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**3** 个部件，**0** 条手工描述的命令，两处等待位置均在出厂微码上测得，这些等待位置与记录之间 **0** 处不一致，**690** 个测试，**100%** 语句和分支覆盖率，无依赖
+**3** 个部件，**0** 条手工描述的命令，两处等待位置均在出厂微码上测得，这些等待位置与记录之间 **0** 处不一致，**705** 个测试，**100%** 语句和分支覆盖率，无依赖
 
 ```python
 from snesst import Chip
@@ -308,7 +308,7 @@ st011 upd96050 2
 
 ## 它是否正确
 
-[`conformance/hardware.json`](conformance/hardware.json) 记录了本包对接口断言的每个值，每项都标记为未验证，并附有证据和能够定论的测量：4,096 字节的共享窗口、启用位 `0x80000`、`0x20` 和 `0x21` 处的寄存器字节、握手的两次读取、两处等待位置，以及复位的作用。[`conformance/hardware.test.py`](conformance/hardware.test.py) 将每一项与代码中的常量对照。
+[`conformance/hardware.json`](conformance/hardware.json) 记录了本包对接口断言的每个值，每项都标记为未验证，并附有证据和能够定论的测量：4,096 字节的共享窗口、启用位 `0x80000`、`0x20` 和 `0x21` 处的寄存器字节、握手的两次读取、两处等待位置，以及复位的作用。[`conformance/hardware.test.py`](conformance/hardware.test.py) 驱动一个以全零程序构建的部件，核对窗口、启用位、寄存器和握手；两处等待位置由 [`snesst/microcode.test.py`](snesst/microcode.test.py) 在真实镜像上核对。
 
 | 层 | 检查内容 | 需要镜像 |
 |:--|:--|:--:|
@@ -336,11 +336,12 @@ st011 upd96050 2
 ```bash
 uvx ruff@0.16.3 format --check .
 uvx ruff@0.16.3 check .
-uvx --python 3.12 mypy==1.14.1
+uvx --python 3.12 --with types-setuptools==84.0.0.20260812 mypy==1.14.1
 pnpm install --frozen-lockfile && pnpm run format:check
-python3 -m coverage erase
-for file in $(find snesst conformance -name '*.test.py' | sort); do python3 -m coverage run -a "$file"; done
-python3 -m coverage report
+cov=(uvx --python 3.12 --from coverage==7.6.10 --with setuptools==84.0.0 coverage)
+"${cov[@]}" erase
+for file in $(find snesst conformance -name '*.test.py' | sort); do "${cov[@]}" run -a "$file"; done
+"${cov[@]}" report
 python3 -m conformance.speed
 ```
 

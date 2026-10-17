@@ -10,9 +10,10 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from snesst import chip, errors, firmware, models  # noqa: F401
+import snesst
+from snesst import firmware
 
-sys.path.append(str(chip.PROCESSOR))
+sys.path.append(str(Path(__file__).resolve().parent.parent / "nec-upd7725-96050-python"))
 
 from upd7725 import models as upd_models
 
@@ -162,6 +163,7 @@ class IdentifyTest(unittest.TestCase):
         self.assertEqual(firmware.identify(image, catalogue).revision, "one")
 
     def test_an_image_of_the_right_size_and_the_wrong_content_says_so(self) -> None:
+        # Arrange
         catalogue = {
             "artifacts": [
                 {
@@ -175,24 +177,37 @@ class IdentifyTest(unittest.TestCase):
             ]
         }
 
-        with self.assertRaises(errors.Unrecognised) as raised:
+        # Act
+        with self.assertRaises(snesst.Unrecognised) as raised:
             firmware.identify(an_image(), catalogue)
 
+        # Assert
         self.assertIn("altered", str(raised.exception))
 
     def test_an_image_of_no_size_the_manifest_knows_says_that_instead(self) -> None:
+        # Arrange
         catalogue: dict[str, list[object]] = {"artifacts": []}
 
-        with self.assertRaises(errors.Unrecognised) as raised:
+        # Act
+        with self.assertRaises(snesst.Unrecognised) as raised:
             firmware.identify(b"\x00" * 7, catalogue)
 
+        # Assert
         self.assertIn("7", str(raised.exception))
 
     def test_the_report_always_carries_the_digest_that_was_computed(self) -> None:
-        with self.assertRaises(errors.Unrecognised) as raised:
-            firmware.identify(b"\x00" * 7, {"artifacts": []})
+        # Arrange
+        image = b"\x00" * 7
 
-        self.assertIn(hashlib.sha256(b"\x00" * 7).hexdigest(), str(raised.exception))
+        # Act
+        with self.assertRaises(snesst.Unrecognised) as raised:
+            firmware.identify(image, {"artifacts": []})
+
+        # Assert
+        self.assertIn(
+            "837885c8f8091aeaeb9ec3c3f85a6ff470a415e610b8ba3e49f9b33c9cf9d619",
+            str(raised.exception),
+        )
 
 
 def a_catalogue(image: bytes, part: str = "made-up", **extra: object) -> dict[str, Any]:
@@ -253,17 +268,21 @@ class RepairTest(unittest.TestCase):
         self.assertEqual(firmware.repairs(b"Z" * 8, a_catalogue(image)["artifacts"]), [])
 
     def test_the_diagnosis_names_the_repair_rather_than_the_length(self) -> None:
+        # Arrange
         image = an_image()
 
-        with self.assertRaises(errors.Unrecognised) as raised:
+        # Act
+        with self.assertRaises(snesst.Unrecognised) as raised:
             firmware.identify(b"H" * 512 + image, a_catalogue(image))
 
+        # Assert
         self.assertIn("512", str(raised.exception))
         self.assertIn("checked rather than guessed", str(raised.exception))
 
 
 class BadDumpTest(unittest.TestCase):
     def test_a_declared_bad_dump_is_named_as_damaged(self) -> None:
+        # Arrange
         image = an_image()
         broken = an_image(filler=0x00)
         catalogue = a_catalogue(
@@ -271,12 +290,15 @@ class BadDumpTest(unittest.TestCase):
             badDumps=[{"sha256": hashlib.sha256(broken).hexdigest(), "why": "truncated"}],
         )
 
-        with self.assertRaises(errors.Unrecognised) as raised:
+        # Act
+        with self.assertRaises(snesst.Unrecognised) as raised:
             firmware.identify(broken, catalogue)
 
+        # Assert
         self.assertIn("known bad dump", str(raised.exception))
 
     def test_and_names_the_part_it_is_a_bad_dump_of(self) -> None:
+        # Arrange
         image = an_image()
         broken = an_image(filler=0x00)
         catalogue = a_catalogue(
@@ -285,17 +307,22 @@ class BadDumpTest(unittest.TestCase):
             badDumps=[{"sha256": hashlib.sha256(broken).hexdigest()}],
         )
 
-        with self.assertRaises(errors.Unrecognised) as raised:
+        # Act
+        with self.assertRaises(snesst.Unrecognised) as raised:
             firmware.identify(broken, catalogue)
 
+        # Assert
         self.assertIn("dsp9", str(raised.exception))
 
     def test_an_undeclared_file_is_not_called_a_bad_dump(self) -> None:
+        # Arrange
         image = an_image()
 
-        with self.assertRaises(errors.Unrecognised) as raised:
+        # Act
+        with self.assertRaises(snesst.Unrecognised) as raised:
             firmware.identify(an_image(filler=0x00), a_catalogue(image))
 
+        # Assert
         self.assertNotIn("known bad dump", str(raised.exception))
 
     def test_the_manifest_that_ships_declares_the_list_for_every_part(self) -> None:
@@ -329,7 +356,15 @@ class ProvenanceTest(unittest.TestCase):
 
 
 class CrossCheckTest(unittest.TestCase):
+    def refusal(self, image: bytes, name: str, wrong: str) -> str:
+        entry = a_catalogue(image)["artifacts"][0]
+        accepted = {"revision": "one", **firmware.digests_of(image), name: wrong}
+        with self.assertRaises(snesst.Corrupt) as raised:
+            firmware.identify(image, {"artifacts": [{**entry, "accepted": [accepted]}]})
+        return str(raised.exception)
+
     def test_an_image_whose_other_digests_disagree_is_refused(self) -> None:
+        # Arrange
         image = an_image()
         catalogue = {
             "artifacts": [
@@ -352,9 +387,11 @@ class CrossCheckTest(unittest.TestCase):
             ]
         }
 
-        with self.assertRaises(errors.Corrupt) as raised:
+        # Act
+        with self.assertRaises(snesst.Corrupt) as raised:
             firmware.identify(image, catalogue)
 
+        # Assert
         self.assertIn("crc32", str(raised.exception))
 
     def test_a_cross_check_that_passes_every_digest_accepts_the_image(self) -> None:
@@ -375,25 +412,18 @@ class CrossCheckTest(unittest.TestCase):
         self.assertEqual(firmware.identify(image, catalogue).revision, "one")
 
     def test_every_kind_of_disagreement_is_caught(self) -> None:
+        # Arrange
         image = an_image()
-        for name, wrong in (("crc32", "0" * 8), ("md5", "0" * 32), ("sha1", "0" * 40)):
-            catalogue = {
-                "artifacts": [
-                    {
-                        "part": "made-up",
-                        "processor": "upd7725",
-                        "bytes": len(image),
-                        "programWords": 2048,
-                        "dataWords": 1024,
-                        "accepted": [
-                            {"revision": "one", **firmware.digests_of(image), name: wrong}
-                        ],
-                    }
-                ]
-            }
+        wrong = {"crc32": "0" * 8, "md5": "0" * 32, "sha1": "0" * 40}
 
-            with self.assertRaises(errors.Corrupt):
-                firmware.identify(image, catalogue)
+        # Act
+        said = {name: self.refusal(image, name, digest) for name, digest in wrong.items()}
+
+        # Assert
+        self.assertEqual(
+            [name for name, text in said.items() if f"not on {name}" in text],
+            ["crc32", "md5", "sha1"],
+        )
 
     def test_an_image_the_manifest_only_partly_describes_is_still_accepted(self) -> None:
         image = an_image()
@@ -440,10 +470,15 @@ class LoadTest(unittest.TestCase):
         self.assertEqual(chip.stores.table[0], 0xAABB)
 
     def test_an_image_that_does_not_match_the_processor_is_refused(self) -> None:
+        # Arrange
         chip = upd_models.lookup("upd7725").build(fill=0)
 
-        with self.assertRaises(errors.WrongShape):
+        # Act
+        with self.assertRaises(snesst.WrongShape) as raised:
             firmware.load(chip, bytes(53248))
+
+        # Assert
+        self.assertIn("53248", str(raised.exception))
 
 
 class FoundTest(unittest.TestCase):

@@ -73,16 +73,17 @@ running a program beats describing one.
 ## Every gate, in the order to run them
 
 ```bash
-ruff format --check .
-ruff check .
-mypy
-pnpm run format:check
+uvx ruff@0.16.3 format --check .
+uvx ruff@0.16.3 check .
+uvx --python 3.12 --with types-setuptools==84.0.0.20260812 mypy==1.14.1
+pnpm install --frozen-lockfile && pnpm run format:check
 uvx yamllint==1.38.0 --strict .
-python3 -m coverage erase
-for file in $(find st010 conformance -name '*.test.py' | sort); do
-  python3 -m coverage run -a "$file"
+cov=(uvx --python 3.12 --from coverage==7.6.10 --with setuptools==84.0.0 coverage)
+"${cov[@]}" erase
+for f in $(find snesst conformance -name '*.test.py' | sort); do
+  "${cov[@]}" run -a "$f" || echo "FAILED $f"
 done
-python3 -m coverage report
+"${cov[@]}" report
 ```
 
 Then the throughput floor, which runs outside the coverage step because a tracer

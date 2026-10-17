@@ -6,7 +6,8 @@ from typing import Any, override
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from snesst import chip
+import snesst
+from snesst import firmware
 
 HERE = Path(__file__).resolve().parent
 
@@ -57,58 +58,139 @@ class DocumentTest(unittest.TestCase):
         self.assertGreaterEqual(len(stated), 4)
 
 
+LOAD_A_WORD_FOR_THE_CONSOLE = 0xC00000 | 0xBEEF << 6 | 6
+
+PROGRAM_WORDS = 16384
+
+
+def a_part(*words: int, boot: int = 0) -> Any:
+    body = b"".join(word.to_bytes(3, "big") for word in words)
+    image = body.ljust(PROGRAM_WORDS * 3, b"\x00") + bytes(DATA_RAM_WORDS * WORD_BYTES)
+    identity = firmware.Identity("st010", "upd96050", "MADE UP", PROGRAM_WORDS, DATA_RAM_WORDS)
+    return snesst.Chip("st010", image=image, identity=identity, boot=boot)
+
+
 class ConstantTest(unittest.TestCase):
     @override
     def setUp(self) -> None:
         self.facts: dict[str, Any] = declared("hardware.json")["facts"]
 
-    def test_the_shared_memory_is_the_size_declared(self) -> None:
-        shared = self.facts["sharedMemoryBytes"]
+    def window(self) -> int:
+        return int(self.facts["enableBit"]["value"])
 
-        self.assertEqual(shared["value"], chip.MEMORY_BYTES)
+    def test_the_shared_memory_is_the_size_declared(self) -> None:
+        # Arrange
+        part = a_part()
+
+        # Act
+        found = len(part.memory)
+
+        # Assert
+        self.assertEqual(found, self.facts["sharedMemoryBytes"]["value"])
+
+    def test_and_an_address_past_it_lands_back_at_its_start(self) -> None:
+        # Arrange
+        part = a_part()
+        shared = self.facts["sharedMemoryBytes"]["value"]
+
+        # Act
+        part.write(self.window() + shared, 0x5A)
+
+        # Assert
+        self.assertEqual(part.read(self.window()), 0x5A)
 
     def test_and_it_is_the_data_ram_the_processor_is_asserted_to_have(self) -> None:
-        self.assertEqual(chip.MEMORY_BYTES, DATA_RAM_WORDS * WORD_BYTES)
+        # Arrange
+        part = a_part()
+
+        # Act
+        found = len(part.core.stores.scratch) * WORD_BYTES
+
+        # Assert
+        self.assertEqual(found, self.facts["sharedMemoryBytes"]["value"])
 
     def test_the_enable_bit_is_the_one_declared(self) -> None:
-        enable = self.facts["enableBit"]
+        # Arrange
+        part = a_part()
 
-        self.assertEqual(enable["value"], chip.ENABLE_BIT)
+        # Act
+        part.write(self.window() | 0x100, 0x42)
+
+        # Assert
+        self.assertEqual((part.enabled, part.memory[0x100]), (False, 0x42))
+
+    def test_and_an_access_without_it_reaches_the_port_and_wakes_the_part(self) -> None:
+        # Arrange
+        part = a_part()
+
+        # Act
+        part.write(0x100, 0x42)
+
+        # Assert
+        self.assertEqual((part.enabled, part.memory[0x100]), (True, 0x00))
 
     def test_and_it_sits_above_the_shared_window(self) -> None:
-        self.assertGreater(chip.ENABLE_BIT, chip.MEMORY_BYTES)
+        # Arrange
+        shared = self.facts["sharedMemoryBytes"]["value"]
+
+        # Act
+        found = self.window()
+
+        # Assert
+        self.assertGreater(found, shared)
 
     def test_both_registers_are_where_they_are_declared(self) -> None:
+        # Arrange
         registers = self.facts["registers"]["value"]
+        part = a_part()
 
-        found = (int(registers["command"], 16), int(registers["start"], 16))
+        # Act
+        part.write(self.window() + int(registers["command"], 16), 0x04)
+        part.write(self.window() + int(registers["start"], 16), 0x01)
 
-        self.assertEqual(found, (chip.COMMAND_REGISTER, chip.START_REGISTER))
+        # Assert
+        self.assertEqual((part.command, part.execute), (0x04, 0x01))
 
     def test_and_they_are_adjacent(self) -> None:
-        self.assertEqual(chip.START_REGISTER - chip.COMMAND_REGISTER, 1)
+        # Arrange
+        registers = self.facts["registers"]["value"]
+
+        # Act
+        found = int(registers["start"], 16) - int(registers["command"], 16)
+
+        # Assert
+        self.assertEqual(found, 1)
 
     def test_the_handshake_takes_the_declared_number_of_reads(self) -> None:
-        handshake = self.facts["bootHandshake"]
+        # Arrange
+        reads = self.facts["bootHandshake"]["value"]
 
-        self.assertEqual(handshake["value"], chip.HANDSHAKE_READS)
+        # Act
+        part = a_part(LOAD_A_WORD_FOR_THE_CONSOLE)
+
+        # Assert
+        status = part.core.registers.sr
+        self.assertEqual((reads, status.rqm, status.drs), (2, False, False))
 
     def test_and_the_record_says_it_came_from_running_the_program(self) -> None:
+        # Arrange
         handshake = self.facts["bootHandshake"]
 
-        self.assertIn("running the program", handshake["evidence"])
+        # Act
+        found = handshake["evidence"]
 
-    def test_each_part_waits_where_it_is_declared_to(self) -> None:
-        waits = self.facts["waitWords"]["value"]
-
-        found = {name: tuple(words) for name, words in waits.items()}
-
-        self.assertEqual(found, dict(chip.COMMAND_LOOP))
+        # Assert
+        self.assertIn("running the program", found)
 
     def test_and_the_two_parts_do_not_wait_alike(self) -> None:
+        # Arrange
         waits = self.facts["waitWords"]["value"]
 
-        self.assertNotEqual(waits["st010"], waits["st011"])
+        # Act
+        found = (waits["st010"], waits["st011"])
+
+        # Assert
+        self.assertEqual(found, ([3, 4, 5], [2]))
 
 
 class DivergenceTest(unittest.TestCase):

@@ -9,9 +9,17 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+import snesst
 from conformance import against_cartridges as against
 from conformance import shapes
-from snesst import errors, st018
+
+ST018_PROGRAM_BYTES = 131072
+
+ST018_DATA_BYTES = 32768
+
+ST018_PORTS = (0x3800, 0x3802, 0x3804)
+
+ST018_TO_PART = 0x3802
 
 
 class Silent:
@@ -194,8 +202,8 @@ class MainTest(unittest.TestCase):
 
 def arm(*words: int) -> bytes:
     body = b"".join(word.to_bytes(4, "little") for word in words)
-    program = body.ljust(st018.PROGRAM_BYTES, b"\x00")
-    return program + bytes(st018.DATA_BYTES)
+    program = body.ljust(ST018_PROGRAM_BYTES, b"\x00")
+    return program + bytes(ST018_DATA_BYTES)
 
 
 IDLE = arm(0xEAFFFFFE)
@@ -203,42 +211,63 @@ IDLE = arm(0xEAFFFFFE)
 
 class SurfaceTest(unittest.TestCase):
     def test_the_cartridge_reaches_every_port_the_third_part_declares(self) -> None:
-        found = {address for address, _ in against.surface("st018")}
+        # Arrange
+        part = "st018"
 
-        self.assertEqual(sorted(found), sorted(st018.CONSOLE_PORTS))
+        # Act
+        found = {address for address, _ in against.surface(part)}
+
+        # Assert
+        self.assertEqual(sorted(found), sorted(ST018_PORTS))
 
     def test_the_third_part_answers_every_access_its_cartridge_makes(self) -> None:
-        part = st018.ST018(IDLE)
+        # Arrange
+        part = snesst.ST018(IDLE)
 
-        refused = [one for one in against.surface("st018") if not _answers(part, *one)]
+        # Act
+        refused = [one for one in against.surface("st018") if not answers(part, *one)]
 
+        # Assert
         self.assertEqual(refused, [])
 
     def test_the_send_port_is_written_and_never_read(self) -> None:
-        found = [one for one in against.surface("st018") if one[0] == st018.TO_PART]
+        # Arrange
+        part = "st018"
 
-        self.assertEqual(found, [(st018.TO_PART, shapes.WRITE)])
+        # Act
+        found = [one for one in against.surface(part) if one[0] == ST018_TO_PART]
+
+        # Assert
+        self.assertEqual(found, [(ST018_TO_PART, shapes.WRITE)])
 
     def test_a_part_refuses_an_address_no_cartridge_reaches(self) -> None:
-        part = st018.ST018(IDLE)
+        # Arrange
+        part = snesst.ST018(IDLE)
 
-        self.assertFalse(_answers(part, 0x3806, shapes.READ))
+        # Act
+        found = answers(part, 0x3806, shapes.READ)
+
+        # Assert
+        self.assertIs(found, False)
 
     def test_every_recorded_exchange_plays_at_the_third_part(self) -> None:
+        # Arrange
         held = shapes.interesting(shapes.recorded("st018"))
 
-        found = against.driven("st018", lambda part: st018.ST018(IDLE))
+        # Act
+        found = against.driven("st018", lambda part: snesst.ST018(IDLE))
 
+        # Assert
         self.assertEqual(len(found), len(held))
 
 
-def _answers(part: "st018.ST018", address: int, what: str) -> bool:
+def answers(part: snesst.ST018, address: int, what: str) -> bool:
     try:
         if what == shapes.WRITE:
             part.write(address, 0)
         else:
             part.read(address)
-    except errors.UnknownPort:
+    except snesst.UnknownPort:
         return False
     return True
 

@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any, Protocol, override
 ROOT = Path(__file__).resolve().parent.parent
 
 
-def _reachable(root: Path = ROOT, path: list[str] | None = None) -> bool:
+def reachable(root: Path = ROOT, path: list[str] | None = None) -> bool:
     where = sys.path if path is None else path
     if str(root) in where:
         return False
@@ -17,7 +17,7 @@ def _reachable(root: Path = ROOT, path: list[str] | None = None) -> bool:
     return True
 
 
-_reachable()
+reachable()
 
 from snesst import chip, environment, models, st018  # noqa: E402
 from snesst.version import VERSION  # noqa: E402
@@ -98,7 +98,7 @@ def _arm() -> Finding:
     )
 
 
-def _default_build(part: str, images: Images) -> Any:
+def build_part(part: str, images: Images) -> Any:
     if part == st018.PART:
         return st018.ST018(images=iter(images.values()))
     return chip.Chip(part, images=images)
@@ -128,11 +128,11 @@ def _part(name: str, images: Images, build: Build) -> Finding:
         )
     identity = getattr(part, "identity", None)
     running = identity.part if identity is not None else wanted
-    digest = _digest_of(wanted, images)
+    digest = digest_of(wanted, images)
     return Finding(name, True, f"runs and resets the {running} image{digest}")
 
 
-def _digest_of(wanted: str, images: Images | None) -> str:
+def digest_of(wanted: str, images: Images | None) -> str:
     held = images.get(wanted) if isinstance(images, dict) else None
     if not isinstance(held, tuple) or len(held) != 2:
         return ""
@@ -143,8 +143,8 @@ def _digest_of(wanted: str, images: Images | None) -> str:
     return f", sha256 {hashlib.sha256(raw).hexdigest()}"
 
 
-def _waits(build: Build | None = None, images: Images | None = None) -> Finding:
-    made = _default_build if build is None else build
+def check_waits(build: Build | None = None, images: Images | None = None) -> Finding:
+    made = build_part if build is None else build
     held = chip.available() if images is None else images
     reached = []
     for name in sorted(models.MODELS):
@@ -164,14 +164,14 @@ def _waits(build: Build | None = None, images: Images | None = None) -> Finding:
 
 
 def _default_beneath() -> list[Finding]:
-    _reach()
+    reach_processor()
     from upd7725 import doctor as underneath
 
     found: list[Finding] = list(underneath.examine())
     return found
 
 
-def _reach(path: list[str] | None = None) -> list[str]:
+def reach_processor(path: list[str] | None = None) -> list[str]:
     path = sys.path if path is None else path
     where = str(chip.PROCESSOR)
     if where not in path:
@@ -201,13 +201,13 @@ def _beneath(beneath: Callable[[], Iterable[Finding]]) -> list[Finding]:
 
 def examine(
     images: Images | None = None,
-    build: Build = _default_build,
+    build: Build = build_part,
     beneath: Callable[[], Iterable[Finding]] = _default_beneath,
 ) -> list[Finding]:
     held = chip.available() if images is None else images
     found = [_python(), _package(), _processor(), _arm()]
     found.extend(_part(name, held, build) for name in sorted(models.MODELS))
-    found.append(_waits())
+    found.append(check_waits())
     found.extend(_beneath(beneath))
     return found
 

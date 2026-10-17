@@ -8,7 +8,7 @@ SetaがSuper Nintendoのカートリッジ向けに作った3つのコプロセ�
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-st-python)](https://github.com/gufranco/snes-st-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**3**個のパーツ、手で記述したコマンドは**0**個、2つの待機位置はどちらも出荷時のマイクロコードで測定済み、それらの待機位置と記録との食い違いは**0**件、テストは**690**個、ステートメントとブランチの**100%**カバレッジ、依存関係なし
+**3**個のパーツ、手で記述したコマンドは**0**個、2つの待機位置はどちらも出荷時のマイクロコードで測定済み、それらの待機位置と記録との食い違いは**0**件、テストは**705**個、ステートメントとブランチの**100%**カバレッジ、依存関係なし
 
 ```python
 from snesst import Chip
@@ -308,7 +308,7 @@ st011 upd96050 2
 
 ## 正しいのか
 
-[`conformance/hardware.json`](conformance/hardware.json)は、パッケージがインターフェースについて主張するすべての値を記録しています。どれも未検証と記され、その根拠と、決着をつける測定が添えられています。4,096バイトの共有ウィンドウ、有効化ビット`0x80000`、`0x20`と`0x21`のレジスタバイト、ハンドシェイクの2回の読み出し、2つの待機位置、そしてリセットが何をするかです。[`conformance/hardware.test.py`](conformance/hardware.test.py)は、それぞれをコード内の定数と照合します。
+[`conformance/hardware.json`](conformance/hardware.json)は、パッケージがインターフェースについて主張するすべての値を記録しています。どれも未検証と記され、その根拠と、決着をつける測定が添えられています。4,096バイトの共有ウィンドウ、有効化ビット`0x80000`、`0x20`と`0x21`のレジスタバイト、ハンドシェイクの2回の読み出し、2つの待機位置、そしてリセットが何をするかです。[`conformance/hardware.test.py`](conformance/hardware.test.py)は、ゼロだけのプログラムで組み立てたパーツを動かし、ウィンドウ、有効化ビット、レジスタ、ハンドシェイクを確かめます。2つの待機位置は[`snesst/microcode.test.py`](snesst/microcode.test.py)が実際のイメージで確かめます。
 
 | 層 | 確認する内容 | イメージが必要か |
 |:--|:--|:--:|
@@ -336,11 +336,12 @@ st011 upd96050 2
 ```bash
 uvx ruff@0.16.3 format --check .
 uvx ruff@0.16.3 check .
-uvx --python 3.12 mypy==1.14.1
+uvx --python 3.12 --with types-setuptools==84.0.0.20260812 mypy==1.14.1
 pnpm install --frozen-lockfile && pnpm run format:check
-python3 -m coverage erase
-for file in $(find snesst conformance -name '*.test.py' | sort); do python3 -m coverage run -a "$file"; done
-python3 -m coverage report
+cov=(uvx --python 3.12 --from coverage==7.6.10 --with setuptools==84.0.0 coverage)
+"${cov[@]}" erase
+for file in $(find snesst conformance -name '*.test.py' | sort); do "${cov[@]}" run -a "$file"; done
+"${cov[@]}" report
 python3 -m conformance.speed
 ```
 

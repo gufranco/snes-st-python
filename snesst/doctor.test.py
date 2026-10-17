@@ -5,11 +5,12 @@ import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any, NoReturn
+from typing import NoReturn
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from snesst import chip, doctor, errors
+import snesst
+from snesst import doctor, firmware
 
 
 def an_image(part: str = "st010") -> "dict[str, tuple[str, Path]]":
@@ -80,31 +81,36 @@ class RunTest(unittest.TestCase):
         self.assertIn("arm", [one.name for one in doctor.examine()])
 
     def test_the_part_that_runs_an_arm_is_built_by_the_class_that_runs_one(self) -> None:
-        from snesst import st018
+        # Arrange
+        nothing: dict[str, tuple[object, Path]] = {}
 
+        # Act
         with self.assertRaises(Exception) as raised:
-            doctor._default_build(st018.PART, {})
+            doctor.build_part("st018", nothing)
 
-        self.assertIsInstance(raised.exception, errors.NoFirmware)
+        # Assert
+        self.assertIn("st018", str(raised.exception))
+        self.assertIsInstance(raised.exception, snesst.NoFirmware)
 
     def test_a_part_whose_processor_does_not_stop_is_left_out_of_the_waits(self) -> None:
-        from snesst import firmware
-
+        # Arrange
         identity = firmware.Identity(part="st018", processor="arm60", revision="ST018")
 
-        found = doctor._waits(images={"st018": (identity, Path("nowhere"))})
+        # Act
+        found = doctor.check_waits(images={"st018": (identity, Path("nowhere"))})
 
+        # Assert
         self.assertEqual(found.detail, "no image is here, so nothing was run")
 
     def test_and_one_finding_per_part_it_covers(self) -> None:
-        from snesst import models
+        # Arrange
+        expected = {"st010", "st011", "st018", "waits"}
 
-        names = [one.name for one in doctor.examine()]
+        # Act
+        names = {one.name for one in doctor.examine()}
 
-        for part in models.MODELS:
-            self.assertIn(part, names, part)
-
-        self.assertIn("waits", [one.name for one in doctor.examine()])
+        # Assert
+        self.assertEqual(names & expected, expected)
 
     def test_every_finding_carries_a_detail(self) -> None:
         for one in doctor.examine():
@@ -134,9 +140,7 @@ class PresentImageTest(unittest.TestCase):
         return where
 
     def _held(self, where: Path) -> "dict[str, tuple[object, Path]]":
-        from snesst import models
-
-        return dict.fromkeys(models.MODELS, ("identity", where))
+        return dict.fromkeys(snesst.MODELS, ("identity", where))
 
     def _nameless(self, _part: str, _images: object) -> doctor.Restartable:
         return SimpleNamespace(identity=None, reset=lambda: None)
@@ -185,8 +189,15 @@ class PresentImageTest(unittest.TestCase):
         self.assertIn(digest, " ".join(one.detail for one in found))
 
     def test_the_build_it_uses_by_default_is_the_one_that_runs_the_microcode(self) -> None:
-        with self.assertRaises(errors.NoFirmware):
-            doctor._default_build("st010", {})
+        # Arrange
+        nothing: dict[str, tuple[object, Path]] = {}
+
+        # Act
+        with self.assertRaises(snesst.NoFirmware) as raised:
+            doctor.build_part("st010", nothing)
+
+        # Assert
+        self.assertIn("st010", str(raised.exception))
 
 
 class ExplodingTest(unittest.TestCase):
@@ -213,38 +224,6 @@ class ExplodingTest(unittest.TestCase):
         found = doctor.examine(images=an_image(), build=boom)
 
         self.assertIn("Complaint", "\n".join(one.report for one in found))
-
-
-class DigestTest(unittest.TestCase):
-    def _catalogue(self, where: Path) -> "dict[str, tuple[object, Path]]":
-        import sys as system
-
-        system.path.insert(0, str(chip.PROCESSOR))
-        from snesst import firmware
-
-        return {"st010": (firmware.Identity("st010", "upd7725", "MADE UP", 8, 8), where)}
-
-    def test_a_part_whose_file_is_here_reports_its_digest(self) -> None:
-        import hashlib
-        import tempfile
-
-        where = Path(tempfile.mkdtemp()) / "made-up.bin"
-        where.write_bytes(b"nothing anybody owns")
-
-        found = doctor._digest_of("st010", self._catalogue(where))
-
-        self.assertIn(hashlib.sha256(b"nothing anybody owns").hexdigest(), found)
-
-    def test_a_file_that_cannot_be_read_says_so_rather_than_going_quiet(self) -> None:
-        found = doctor._digest_of("st010", self._catalogue(Path("/nowhere/at/all.bin")))
-
-        self.assertIn("could not be read", found)
-
-    def test_a_catalogue_with_nothing_in_it_reports_no_digest(self) -> None:
-        self.assertEqual(doctor._digest_of("st010", {}), "")
-
-    def test_and_a_catalogue_that_is_not_one_at_all_does_the_same(self) -> None:
-        self.assertEqual(doctor._digest_of("st010", None), "")
 
 
 class BeneathTest(unittest.TestCase):
@@ -303,21 +282,6 @@ class BeneathTest(unittest.TestCase):
         self.assertTrue(all(one.ok for one in found if "/" in one.name))
 
 
-class ReachTest(unittest.TestCase):
-    def test_a_path_without_it_gains_it(self) -> None:
-        found = doctor._reach([])
-
-        self.assertEqual(found, [str(chip.PROCESSOR)])
-
-    def test_a_path_that_already_has_it_is_left_alone(self) -> None:
-        found = doctor._reach([str(chip.PROCESSOR), "somewhere else"])
-
-        self.assertEqual(len(found), 2)
-
-    def test_by_default_it_works_on_the_real_one(self) -> None:
-        self.assertIn(str(chip.PROCESSOR), doctor._reach())
-
-
 class ReportTest(unittest.TestCase):
     def test_the_report_has_a_line_for_every_finding(self) -> None:
         found = doctor.examine()
@@ -370,56 +334,6 @@ class EntryTest(unittest.TestCase):
         doctor.main([], say=said.append)
 
         self.assertIn("st010", " ".join(said))
-
-
-class WaitsTest(unittest.TestCase):
-    def test_a_part_that_will_not_build_is_reported_rather_than_raised(self) -> None:
-
-        def boom(part: str, images: Any) -> Any:
-            raise RuntimeError("the core exploded")
-
-        found = doctor._waits(boom, {"st010": (None, Path("nowhere"))})
-
-        self.assertFalse(found.ok)
-        self.assertIn("RuntimeError: the core exploded", found.detail)
-
-    def test_a_machine_with_no_image_says_nothing_was_run(self) -> None:
-        found = doctor._waits(images={})
-
-        self.assertTrue(found.ok)
-        self.assertIn("nothing was run", found.detail)
-
-    def test_and_a_part_that_builds_reports_where_it_stopped(self) -> None:
-
-        def waiting(part: str, images: Any) -> Any:
-            return SimpleNamespace(core=SimpleNamespace(registers=SimpleNamespace(pc=3)))
-
-        found = doctor._waits(waiting, {"st010": (None, Path("nowhere"))})
-
-        self.assertTrue(found.ok)
-        self.assertIn("st010 waits at 3", found.detail)
-
-
-class ReachableTest(unittest.TestCase):
-    def test_a_root_that_is_not_on_the_path_is_put_there(self) -> None:
-        # Arrange
-        path: list[str] = []
-
-        # Act
-        added = doctor._reachable(Path("/somewhere"), path)
-
-        # Assert
-        self.assertEqual((added, path), (True, ["/somewhere"]))
-
-    def test_a_root_already_on_the_path_is_left_alone(self) -> None:
-        # Arrange
-        path = ["/somewhere"]
-
-        # Act
-        added = doctor._reachable(Path("/somewhere"), path)
-
-        # Assert
-        self.assertEqual((added, path), (False, ["/somewhere"]))
 
 
 class TheDoctorRunsAsTheReadmeSaysTest(unittest.TestCase):

@@ -8,7 +8,7 @@ English | [日本語](README.ja.md) | [简体中文](README.zh-Hans.md) | [繁�
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-st-python)](https://github.com/gufranco/snes-st-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**3** parts, **0** commands described by hand, both waits measured on the shipped microcode, **0** disagreements between those waits and the record, **690** tests, **100%** statement and branch coverage, no dependencies
+**3** parts, **0** commands described by hand, both waits measured on the shipped microcode, **0** disagreements between those waits and the record, **705** tests, **100%** statement and branch coverage, no dependencies
 
 ```python
 from snesst import Chip
@@ -308,7 +308,7 @@ This example needs both images.
 
 ## Is it right
 
-[`conformance/hardware.json`](conformance/hardware.json) records every value the package asserts about the interface, each marked unverified, with its evidence and the measurement that would settle it: the 4,096 byte shared window, enable bit `0x80000`, the register bytes at `0x20` and `0x21`, the two handshake reads, both wait places, and what a reset does. [`conformance/hardware.test.py`](conformance/hardware.test.py) holds each one to the constant in the code.
+[`conformance/hardware.json`](conformance/hardware.json) records every value the package asserts about the interface, each marked unverified, with its evidence and the measurement that would settle it: the 4,096 byte shared window, enable bit `0x80000`, the register bytes at `0x20` and `0x21`, the two handshake reads, both wait places, and what a reset does. [`conformance/hardware.test.py`](conformance/hardware.test.py) drives a part built on a program of zeroes to hold the window, the enable bit, the registers and the handshake, and [`snesst/microcode.test.py`](snesst/microcode.test.py) holds both wait places on the real images.
 
 | Layer | What is checked | Needs an image |
 |:--|:--|:--:|
@@ -336,11 +336,12 @@ This example needs both images.
 ```bash
 uvx ruff@0.16.3 format --check .
 uvx ruff@0.16.3 check .
-uvx --python 3.12 mypy==1.14.1
+uvx --python 3.12 --with types-setuptools==84.0.0.20260812 mypy==1.14.1
 pnpm install --frozen-lockfile && pnpm run format:check
-python3 -m coverage erase
-for file in $(find snesst conformance -name '*.test.py' | sort); do python3 -m coverage run -a "$file"; done
-python3 -m coverage report
+cov=(uvx --python 3.12 --from coverage==7.6.10 --with setuptools==84.0.0 coverage)
+"${cov[@]}" erase
+for file in $(find snesst conformance -name '*.test.py' | sort); do "${cov[@]}" run -a "$file"; done
+"${cov[@]}" report
 python3 -m conformance.speed
 ```
 

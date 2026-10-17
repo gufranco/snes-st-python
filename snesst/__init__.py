@@ -1,6 +1,7 @@
 from typing import Any
 
 from . import chip as chip
+from . import firmware as firmware
 from . import models as models
 from . import st018 as st018
 from .chip import available, why_not

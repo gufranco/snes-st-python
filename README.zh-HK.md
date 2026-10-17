@@ -8,7 +8,7 @@ Seta 為 Super Nintendo 卡帶製造的三款協處理器的 Python 實現。每
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-st-python)](https://github.com/gufranco/snes-st-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**3** 款晶片，**0** 個人手描述的命令，兩處等待位置均在出貨的微碼上量度，這些等待位置與記錄之間 **0** 處分歧，**690** 個測試，**100%** 語句與分支覆蓋率，無任何依賴
+**3** 款晶片，**0** 個人手描述的命令，兩處等待位置均在出貨的微碼上量度，這些等待位置與記錄之間 **0** 處分歧，**705** 個測試，**100%** 語句與分支覆蓋率，無任何依賴
 
 ```python
 from snesst import Chip
@@ -308,7 +308,7 @@ st011 upd96050 2
 
 ## 它是否正確
 
-[`conformance/hardware.json`](conformance/hardware.json) 記錄套件就介面所斷言的每個值，每個都標記為未驗證，並附有其證據及可以確定它的量度：4,096 位元組的共享窗口、啟用位 `0x80000`、`0x20` 與 `0x21` 的暫存器位元組、握手的兩次讀取、兩處等待位置，以及重設的作用。[`conformance/hardware.test.py`](conformance/hardware.test.py) 把每一個值與程式碼中的常數對照。
+[`conformance/hardware.json`](conformance/hardware.json) 記錄套件就介面所斷言的每個值，每個都標記為未驗證，並附有其證據及可以確定它的量度：4,096 位元組的共享窗口、啟用位 `0x80000`、`0x20` 與 `0x21` 的暫存器位元組、握手的兩次讀取、兩處等待位置，以及重設的作用。[`conformance/hardware.test.py`](conformance/hardware.test.py) 驅動一款以全零程式建立的晶片，核對窗口、啟用位、暫存器及握手；兩處等待位置由 [`snesst/microcode.test.py`](snesst/microcode.test.py) 在真實映像上核對。
 
 | 層次 | 檢查內容 | 需要映像檔 |
 |:--|:--|:--:|
@@ -336,11 +336,12 @@ st011 upd96050 2
 ```bash
 uvx ruff@0.16.3 format --check .
 uvx ruff@0.16.3 check .
-uvx --python 3.12 mypy==1.14.1
+uvx --python 3.12 --with types-setuptools==84.0.0.20260812 mypy==1.14.1
 pnpm install --frozen-lockfile && pnpm run format:check
-python3 -m coverage erase
-for file in $(find snesst conformance -name '*.test.py' | sort); do python3 -m coverage run -a "$file"; done
-python3 -m coverage report
+cov=(uvx --python 3.12 --from coverage==7.6.10 --with setuptools==84.0.0 coverage)
+"${cov[@]}" erase
+for file in $(find snesst conformance -name '*.test.py' | sort); do "${cov[@]}" run -a "$file"; done
+"${cov[@]}" report
 python3 -m conformance.speed
 ```
 

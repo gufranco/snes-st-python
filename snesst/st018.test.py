@@ -8,13 +8,33 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from snesst import errors, firmware, st018  # noqa: E402
+import snesst  # noqa: E402
+from snesst import firmware  # noqa: E402
+
+PROGRAM_BYTES = 131072
+DATA_BYTES = 32768
+DATA_ROM = 0xA0000000
+PORT_REGION = 0x40000000
+WORK_RAM = 0xE0000000
+WORK_RAM_BYTES = 16 * 1024
+NO_REGION = 0x20000000
+
+FROM_PART = 0x3800
+TO_PART = 0x3802
+STATUS = 0x3804
+
+TO_PART_PORT = 0x10
+STATUS_PORT = 0x20
+
+WAITING = 0x01
+SENT = 0x08
+READY = 0x80
 
 
 def arm(*words: int) -> bytes:
     body = b"".join(word.to_bytes(4, "little") for word in words)
-    program = body.ljust(st018.PROGRAM_BYTES, b"\x00")
-    return program + bytes(st018.DATA_BYTES)
+    program = body.ljust(PROGRAM_BYTES, b"\x00")
+    return program + bytes(DATA_BYTES)
 
 
 IDLE = arm(0xEAFFFFFE)
@@ -27,252 +47,438 @@ ANSWER = arm(
 )
 
 
-def _identity() -> firmware.Identity:
+def an_identity() -> firmware.Identity:
     return firmware.Identity(
         part="st018",
         processor="arm60",
         revision="ST018",
-        program_bytes=st018.PROGRAM_BYTES,
-        data_bytes=st018.DATA_BYTES,
+        program_bytes=PROGRAM_BYTES,
+        data_bytes=DATA_BYTES,
     )
 
 
-class Fixture(unittest.TestCase):
-    def part(self, image: bytes = IDLE) -> st018.ST018:
-        return st018.ST018(image=image)
+def a_part(image: bytes = IDLE) -> snesst.ST018:
+    return snesst.ST018(image=image)
 
 
-class BuildingTest(Fixture):
+class BuildingTest(unittest.TestCase):
     def test_a_part_can_be_built_from_an_image_in_hand(self) -> None:
-        found = self.part()
+        # Arrange
+        image = IDLE
 
-        self.assertEqual(found.part, "st018")
+        # Act
+        found = snesst.Chip("st018", image=image)
+
+        # Assert
+        self.assertEqual((type(found), found.part), (snesst.ST018, "st018"))
 
     def test_an_image_of_the_wrong_length_is_refused(self) -> None:
-        with self.assertRaises(errors.WrongShape) as raised:
-            st018.ST018(image=b"\x00" * 16)
+        # Arrange
+        image = b"\x00" * 16
 
+        # Act
+        with self.assertRaises(snesst.WrongShape) as raised:
+            snesst.ST018(image=image)
+
+        # Assert
         self.assertIn("163840", str(raised.exception))
 
     def test_a_reset_hands_the_part_back(self) -> None:
-        found = self.part()
+        # Arrange
+        found = a_part()
 
-        self.assertIs(found.reset(), found)
+        # Act
+        handed = found.reset()
+
+        # Assert
+        self.assertIs(handed, found)
 
     def test_a_part_says_which_model_it_is(self) -> None:
-        found = self.part()
+        # Arrange
+        found = a_part()
 
-        self.assertEqual(found.model, "st018")
+        # Act
+        model = found.model
+
+        # Assert
+        self.assertEqual(model, "st018")
 
     def test_a_part_says_which_processor_it_runs(self) -> None:
-        found = self.part()
+        # Arrange
+        found = a_part()
 
-        self.assertEqual(found.processor, "arm60")
+        # Act
+        processor = found.processor
+
+        # Assert
+        self.assertEqual(processor, "arm60")
+
+    def test_a_part_built_from_an_image_in_hand_has_no_identity(self) -> None:
+        # Arrange
+        image = IDLE
+
+        # Act
+        found = a_part(image)
+
+        # Assert
+        self.assertIsNone(found.identity)
 
     def test_a_part_with_no_image_anywhere_says_so(self) -> None:
-        with self.assertRaises(errors.NoFirmware) as raised:
-            st018.ST018(images=iter(()))
+        # Arrange
+        images = iter(())
 
+        # Act
+        with self.assertRaises(snesst.NoFirmware) as raised:
+            snesst.ST018(images=images)
+
+        # Assert
         self.assertIn("st018", str(raised.exception))
 
     def test_an_image_the_search_turns_up_is_the_one_that_runs(self) -> None:
-        with tempfile.TemporaryDirectory() as hold:
-            where = Path(hold) / "st018.bin"
-            where.write_bytes(IDLE)
+        # Arrange
+        hold = Path(tempfile.mkdtemp())
+        where = hold / "st018.bin"
+        where.write_bytes(IDLE)
 
-            found = st018.ST018(images=iter([(_identity(), where)]))
+        # Act
+        found = snesst.ST018(images=iter([(an_identity(), where)]))
 
+        # Assert
         self.assertEqual(found.identity.revision, "ST018")
 
     def test_an_image_for_another_part_is_passed_over(self) -> None:
-        with tempfile.TemporaryDirectory() as hold:
-            where = Path(hold) / "st010.bin"
-            where.write_bytes(IDLE)
-            other = firmware.Identity(part="st010", processor="upd96050", revision="ST010")
+        # Arrange
+        where = Path(tempfile.mkdtemp()) / "st010.bin"
+        where.write_bytes(IDLE)
+        other = firmware.Identity(part="st010", processor="upd96050", revision="ST010")
 
-            with self.assertRaises(errors.NoFirmware):
-                st018.ST018(images=iter([(other, where)]))
+        # Act
+        with self.assertRaises(snesst.NoFirmware) as raised:
+            snesst.ST018(images=iter([(other, where)]))
+
+        # Assert
+        self.assertIn("st018", str(raised.exception))
 
     def test_a_core_that_is_not_beside_this_package_is_reported(self) -> None:
-        with tempfile.TemporaryDirectory() as hold, self.assertRaises(errors.NoFirmware) as raised:
-            st018.ST018(image=IDLE, processor=hold)
+        # Arrange
+        hold = tempfile.mkdtemp()
 
+        # Act
+        with self.assertRaises(snesst.NoFirmware) as raised:
+            snesst.ST018(image=IDLE, processor=hold)
+
+        # Assert
         self.assertIn("arm6-python", str(raised.exception))
 
-    def test_the_core_is_looked_for_rather_than_imported_hopefully(self) -> None:
-        with tempfile.TemporaryDirectory() as hold:
-            found = st018._processor(Path(hold))
+    def test_a_directory_without_the_package_in_it_is_refused_before_any_import(self) -> None:
+        # Arrange
+        hold = Path(tempfile.mkdtemp())
+        (hold / "arm6").mkdir()
 
-        self.assertIsNone(found)
+        # Act
+        with self.assertRaises(snesst.NoFirmware) as raised:
+            snesst.ST018(image=IDLE, processor=hold)
+
+        # Assert
+        self.assertIn("the ARM core is not here", str(raised.exception))
 
 
-class MemoryTest(Fixture):
+class MemoryTest(unittest.TestCase):
     def test_the_program_is_read_where_the_part_fetches_it(self) -> None:
-        found = self.part()
+        # Arrange
+        found = a_part()
 
-        self.assertEqual(found.stores.read_word(0), 0xEAFFFFFE)
+        # Act
+        word = found.stores.read_word(0)
+
+        # Assert
+        self.assertEqual(word, 0xEAFFFFFE)
 
     def test_the_data_rom_is_read_where_the_firmware_names_it(self) -> None:
+        # Arrange
         image = bytearray(IDLE)
-        image[st018.PROGRAM_BYTES] = 0x5A
-        found = st018.ST018(image=bytes(image))
+        image[PROGRAM_BYTES] = 0x5A
+        found = a_part(bytes(image))
 
-        self.assertEqual(found.stores.read_byte(st018.DATA_ROM), 0x5A)
+        # Act
+        byte = found.stores.read_byte(DATA_ROM)
+
+        # Assert
+        self.assertEqual(byte, 0x5A)
 
     def test_neither_rom_can_be_written(self) -> None:
-        found = self.part()
+        # Arrange
+        found = a_part()
 
+        # Act
         found.stores.write_byte(0, 0xFF)
-        found.stores.write_byte(st018.DATA_ROM, 0xFF)
+        found.stores.write_byte(DATA_ROM, 0xFF)
 
+        # Assert
         self.assertEqual(
-            (found.stores.read_byte(0), found.stores.read_byte(st018.DATA_ROM)), (0xFE, 0x00)
+            (found.stores.read_byte(0), found.stores.read_byte(DATA_ROM)), (0xFE, 0x00)
         )
 
     def test_the_work_ram_keeps_what_is_put_in_it(self) -> None:
-        found = self.part()
+        # Arrange
+        found = a_part()
 
-        found.stores.write_word(st018.WORK_RAM, 0x12345678)
+        # Act
+        found.stores.write_word(WORK_RAM, 0x12345678)
 
-        self.assertEqual(found.stores.read_word(st018.WORK_RAM), 0x12345678)
+        # Assert
+        self.assertEqual(found.stores.read_word(WORK_RAM), 0x12345678)
 
     def test_the_work_ram_wraps_at_the_size_the_stack_pointer_implies(self) -> None:
-        found = self.part()
+        # Arrange
+        found = a_part()
 
-        found.stores.write_byte(st018.WORK_RAM, 0x99)
+        # Act
+        found.stores.write_byte(WORK_RAM, 0x99)
 
-        self.assertEqual(found.stores.read_byte(st018.WORK_RAM + st018.WORK_RAM_BYTES), 0x99)
+        # Assert
+        self.assertEqual(found.stores.read_byte(WORK_RAM + WORK_RAM_BYTES), 0x99)
+
+    def test_the_ports_are_the_mailbox_seen_from_the_arm(self) -> None:
+        # Arrange
+        found = a_part()
+        found.write(TO_PART, 0x2A)
+
+        # Act
+        byte = found.stores.read_byte(PORT_REGION + TO_PART_PORT)
+
+        # Assert
+        self.assertEqual(byte, 0x2A)
+
+    def test_and_a_byte_the_arm_stores_there_goes_to_the_console(self) -> None:
+        # Arrange
+        found = a_part()
+
+        # Act
+        found.stores.write_byte(PORT_REGION, 0x77)
+
+        # Assert
+        self.assertEqual(found.read(FROM_PART), 0x77)
 
     def test_an_address_in_no_region_reads_as_nothing(self) -> None:
-        found = self.part()
+        # Arrange
+        found = a_part()
 
-        self.assertEqual(found.stores.read_word(0x20000000), 0)
+        # Act
+        word = found.stores.read_word(NO_REGION)
+
+        # Assert
+        self.assertEqual(word, 0)
 
     def test_and_writing_there_changes_nothing(self) -> None:
-        found = self.part()
+        # Arrange
+        found = a_part()
 
-        found.stores.write_word(0x20000000, 0xFFFFFFFF)
+        # Act
+        found.stores.write_word(NO_REGION, 0xFFFFFFFF)
 
-        self.assertEqual(found.stores.read_word(0x20000000), 0)
+        # Assert
+        self.assertEqual(found.stores.read_word(NO_REGION), 0)
 
 
-class ConsoleSideTest(Fixture):
+class ConsoleSideTest(unittest.TestCase):
     def test_the_status_says_the_part_is_up_once_it_has_been_reset(self) -> None:
-        found = self.part()
+        # Arrange
+        found = a_part()
 
-        self.assertTrue(found.read(st018.STATUS) & st018.READY)
+        # Act
+        status = found.read(STATUS)
 
-    def test_a_part_that_has_not_been_reset_is_not_up(self) -> None:
-        found = self.part().reset()
+        # Assert
+        self.assertEqual(status, READY)
+
+    def test_a_part_that_is_not_up_does_not_say_it_is(self) -> None:
+        # Arrange
+        found = a_part().reset()
         found.up = False
 
-        self.assertFalse(found.read(st018.STATUS) & st018.READY)
+        # Act
+        status = found.read(STATUS)
+
+        # Assert
+        self.assertEqual(status & READY, 0)
 
     def test_writing_the_data_port_says_a_byte_is_waiting_for_the_part(self) -> None:
-        found = self.part()
+        # Arrange
+        found = a_part()
 
-        found.write(st018.TO_PART, 0xF1)
+        # Act
+        found.write(TO_PART, 0xF1)
 
-        self.assertTrue(found.read(st018.STATUS) & st018.SENT)
+        # Assert
+        self.assertEqual(found.read(STATUS), READY | SENT)
 
     def test_the_part_reading_it_clears_that(self) -> None:
-        found = self.part(ANSWER)
-        found.write(st018.TO_PART, 0xF1)
+        # Arrange
+        found = a_part(ANSWER)
+        found.write(TO_PART, 0xF1)
 
+        # Act
         found.step(2)
 
-        self.assertFalse(found.read(st018.STATUS) & st018.SENT)
+        # Assert
+        self.assertEqual(found.read(STATUS) & SENT, 0)
 
     def test_a_byte_the_part_writes_is_offered_to_the_console(self) -> None:
-        found = self.part(ANSWER)
-        found.write(st018.TO_PART, 0x42)
+        # Arrange
+        found = a_part(ANSWER)
+        found.write(TO_PART, 0x42)
 
+        # Act
         found.step(3)
 
-        self.assertTrue(found.read(st018.STATUS) & st018.WAITING)
+        # Assert
+        self.assertEqual(found.read(STATUS), READY | WAITING)
 
     def test_and_reading_it_gives_the_byte_and_clears_the_flag(self) -> None:
-        found = self.part(ANSWER)
-        found.write(st018.TO_PART, 0x42)
+        # Arrange
+        found = a_part(ANSWER)
+        found.write(TO_PART, 0x42)
         found.step(3)
 
-        byte = found.read(st018.FROM_PART)
+        # Act
+        byte = found.read(FROM_PART)
 
-        self.assertEqual((byte, bool(found.read(st018.STATUS) & st018.WAITING)), (0x42, False))
+        # Assert
+        self.assertEqual((byte, found.read(STATUS) & WAITING), (0x42, 0))
 
     def test_reading_the_data_port_with_nothing_offered_gives_nothing(self) -> None:
-        found = self.part()
+        # Arrange
+        found = a_part()
 
-        self.assertEqual(found.read(st018.FROM_PART), 0)
+        # Act
+        byte = found.read(FROM_PART)
+
+        # Assert
+        self.assertEqual(byte, 0)
 
     def test_a_reset_pulse_starts_the_part_over(self) -> None:
-        found = self.part(ANSWER)
-        found.write(st018.TO_PART, 0x42)
+        # Arrange
+        found = a_part(ANSWER)
+        found.write(TO_PART, 0x42)
         found.step(3)
+        found.write(STATUS, 0)
 
-        found.write(st018.STATUS, 0)
-        found.write(st018.STATUS, 1)
+        # Act
+        found.write(STATUS, 1)
 
-        self.assertEqual(found.read(st018.STATUS) & (st018.WAITING | st018.SENT), 0)
+        # Assert
+        self.assertEqual(found.read(STATUS) & (WAITING | SENT), 0)
+
+    def test_a_write_to_the_status_port_without_bit_zero_resets_nothing(self) -> None:
+        # Arrange
+        found = a_part()
+        found.write(TO_PART, 0x42)
+
+        # Act
+        found.write(STATUS, 0xFE)
+
+        # Assert
+        self.assertEqual(found.read(STATUS), READY | SENT)
 
     def test_an_address_the_cartridge_never_touches_is_refused(self) -> None:
-        found = self.part()
+        # Arrange
+        found = a_part()
 
-        with self.assertRaises(errors.UnknownPort):
+        # Act
+        with self.assertRaises(snesst.UnknownPort) as raised:
             found.read(0x3801)
 
-    def test_and_so_is_writing_to_one(self) -> None:
-        found = self.part()
+        # Assert
+        self.assertIn("$3801", str(raised.exception))
 
-        with self.assertRaises(errors.UnknownPort):
+    def test_and_so_is_writing_to_one(self) -> None:
+        # Arrange
+        found = a_part()
+
+        # Act
+        with self.assertRaises(snesst.UnknownPort) as raised:
             found.write(0x3806, 0)
 
+        # Assert
+        self.assertIn("$3806", str(raised.exception))
+
     def test_writing_the_port_the_part_writes_is_refused(self) -> None:
-        found = self.part()
+        # Arrange
+        found = a_part()
 
-        with self.assertRaises(errors.UnknownPort):
-            found.write(st018.FROM_PART, 0)
+        # Act
+        with self.assertRaises(snesst.UnknownPort) as raised:
+            found.write(FROM_PART, 0)
+
+        # Assert
+        self.assertIn("$3800", str(raised.exception))
 
 
-class PartSideTest(Fixture):
+class PartSideTest(unittest.TestCase):
     def test_reading_the_incoming_port_with_nothing_sent_gives_nothing(self) -> None:
-        found = self.part()
+        # Arrange
+        found = a_part()
 
-        self.assertEqual(found.port(st018.TO_PART_PORT), 0)
+        # Act
+        byte = found.port(TO_PART_PORT)
+
+        # Assert
+        self.assertEqual(byte, 0)
 
     def test_reading_the_status_from_inside_gives_the_same_byte(self) -> None:
-        found = self.part()
+        # Arrange
+        found = a_part()
+        found.write(TO_PART, 0x01)
 
-        self.assertEqual(found.port(st018.STATUS_PORT), found.read(st018.STATUS))
+        # Act
+        status = found.port(STATUS_PORT)
+
+        # Assert
+        self.assertEqual(status, READY | SENT)
 
     def test_an_offset_the_firmware_never_reaches_reads_as_nothing(self) -> None:
-        found = self.part()
+        # Arrange
+        found = a_part()
 
-        self.assertEqual(found.port(0x04), 0)
+        # Act
+        byte = found.port(0x04)
+
+        # Assert
+        self.assertEqual(byte, 0)
 
     def test_the_bytes_the_firmware_writes_once_at_boot_are_kept_and_nothing_else(self) -> None:
-        found = self.part()
+        # Arrange
+        found = a_part()
+        found.drive(STATUS_PORT, 0x02)
 
-        found.drive(st018.STATUS_PORT, 0x02)
+        # Act
         found.drive(0x24, 0xFF)
 
+        # Assert
         self.assertEqual(found.timer, 0x02)
 
 
-class ExchangeTest(Fixture):
+class ExchangeTest(unittest.TestCase):
     def test_a_byte_goes_in_and_comes_back(self) -> None:
-        found = self.part(ANSWER)
+        # Arrange
+        found = a_part(ANSWER)
+        found.write(TO_PART, 0xAB)
 
-        found.write(st018.TO_PART, 0xAB)
+        # Act
         found.step(4)
 
-        self.assertEqual(found.read(st018.FROM_PART), 0xAB)
+        # Assert
+        self.assertEqual(found.read(FROM_PART), 0xAB)
 
     def test_the_part_counts_what_it_has_run(self) -> None:
-        found = self.part()
+        # Arrange
+        found = a_part()
 
+        # Act
         found.step(5)
 
+        # Assert
         self.assertEqual(found.steps, 5)
 
 

@@ -7,141 +7,253 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import snesst
-from snesst import chip, errors, models, st018
+from snesst import chip, firmware
 
 EVERY_PART = {"st010", "st011", "st018"}
 
+ST018_IMAGE_BYTES = 163840
 
-def _an_identity(part: str) -> Any:
-    from snesst import firmware
 
+def an_identity(part: str) -> Any:
     return firmware.Identity(part, "upd96050", "MADE UP", 16384, 2048)
 
 
-def _a_program() -> bytes:
+def a_program() -> bytes:
     return bytes(16384 * 3 + 2048 * 2)
+
+
+def built(model: str) -> Any:
+    return snesst.Chip(model, image=a_program(), identity=an_identity("st010"), boot=1)
+
+
+def built_arm(model: str) -> Any:
+    return snesst.Chip(model, image=bytes(ST018_IMAGE_BYTES))
 
 
 class CatalogueTest(unittest.TestCase):
     def test_the_package_names_every_part_it_covers(self) -> None:
-        self.assertEqual(set(models.MODELS), EVERY_PART)
+        # Arrange
+        catalogue = snesst.MODELS
 
-    def test_the_part_that_plays_shogi_is_one_of_them(self) -> None:
-        self.assertIn("st011", models.MODELS)
+        # Act
+        found = set(catalogue)
+
+        # Assert
+        self.assertEqual(found, EVERY_PART)
 
     def test_a_part_says_what_it_is(self) -> None:
-        self.assertTrue(models.lookup("st010").summary)
+        # Arrange
+        model = snesst.MODELS["st010"]
+
+        # Act
+        found = model.summary
+
+        # Assert
+        self.assertIn("ST010", found)
 
     def test_and_which_image_it_runs(self) -> None:
-        self.assertEqual(models.lookup("st011").image, "st011")
+        # Arrange
+        model = snesst.MODELS["st011"]
+
+        # Act
+        found = model.image
+
+        # Assert
+        self.assertEqual(found, "st011")
 
     def test_a_part_prints_as_itself_and_the_image_it_runs(self) -> None:
-        printed = repr(models.lookup("st010"))
+        # Arrange
+        model = snesst.MODELS["st018"]
 
-        self.assertIn("st010", printed)
+        # Act
+        printed = repr(model)
 
-    def test_every_part_carries_a_summary(self) -> None:
-        for name in models.MODELS:
-            self.assertTrue(models.lookup(name).summary, name)
+        # Assert
+        self.assertEqual(printed, "<Model st018, running the st018 image>")
+
+    def test_every_part_carries_a_summary_naming_it(self) -> None:
+        # Arrange
+        catalogue = snesst.MODELS
+
+        # Act
+        missing = [name for name, model in catalogue.items() if name.upper() not in model.summary]
+
+        # Assert
+        self.assertEqual(missing, [])
+
+    def test_each_part_answers_to_the_aliases_the_readme_lists(self) -> None:
+        # Arrange
+        expected = {
+            "st010": ("st-010", "seta010", "setast010"),
+            "st011": ("st-011", "seta011", "setast011"),
+            "st018": ("st-018", "seta018", "setast018"),
+        }
+
+        # Act
+        found = {name: model.aliases for name, model in snesst.MODELS.items()}
+
+        # Assert
+        self.assertEqual(found, expected)
 
 
 class NamingTest(unittest.TestCase):
     def test_a_part_name_is_matched_however_it_is_written(self) -> None:
-        for written in ("ST010", "st-010", "ST_010", "seta-st010"):
-            self.assertEqual(models.lookup(written).name, "st010")
+        # Arrange
+        written = ("ST010", "st-010", "ST_010", "seta-st010")
+
+        # Act
+        found = [built(one).model for one in written]
+
+        # Assert
+        self.assertEqual(found, ["st010"] * 4)
 
     def test_the_other_part_is_matched_the_same_way(self) -> None:
-        for written in ("ST011", "st-011", "seta-st011"):
-            self.assertEqual(models.lookup(written).name, "st011")
+        # Arrange
+        written = ("ST011", "st-011", "seta-st011")
+
+        # Act
+        found = [built(one).model for one in written]
+
+        # Assert
+        self.assertEqual(found, ["st011"] * 3)
+
+    def test_and_so_is_the_third(self) -> None:
+        # Arrange
+        written = ("ST018", "st_018", "Seta-ST018")
+
+        # Act
+        found = [built_arm(one).model for one in written]
+
+        # Assert
+        self.assertEqual(found, ["st018"] * 3)
 
     def test_a_name_no_part_answers_to_is_refused(self) -> None:
-        with self.assertRaises(errors.UnknownModelError):
-            models.lookup("nonsense")
+        # Arrange
+        asked = "nonsense"
 
-    def test_and_the_refusal_lists_what_there_is(self) -> None:
-        with self.assertRaises(errors.UnknownModelError) as raised:
-            models.lookup("nonsense")
+        # Act
+        with self.assertRaises(snesst.UnknownModelError) as raised:
+            snesst.Chip(asked)
 
-        for name in EVERY_PART:
-            self.assertIn(name, str(raised.exception))
+        # Assert
+        self.assertEqual(
+            str(raised.exception),
+            "nonsense is not a model this package covers; it has st010, st011, st018",
+        )
 
     def test_no_alias_belongs_to_two_parts(self) -> None:
-        seen = [alias for name in models.MODELS for alias in models.lookup(name).aliases]
+        # Arrange
+        catalogue = snesst.MODELS
 
+        # Act
+        seen = [alias for model in catalogue.values() for alias in model.aliases]
+
+        # Assert
         self.assertEqual(len(seen), len(set(seen)))
 
 
 class DeclaredImageTest(unittest.TestCase):
-    def _manifest(self) -> Any:
+    def manifest(self) -> Any:
         where = Path(__file__).resolve().parent / "artifacts.manifest.json"
         return json.loads(where.read_text())
 
     def test_every_part_runs_an_image_the_processor_declares(self) -> None:
-        declared = {one["part"] for one in self._manifest()["artifacts"]}
+        # Arrange
+        declared = {one["part"] for one in self.manifest()["artifacts"]}
 
-        for name in models.MODELS:
-            self.assertIn(models.lookup(name).image, declared, name)
+        # Act
+        missing = [name for name, model in snesst.MODELS.items() if model.image not in declared]
+
+        # Assert
+        self.assertEqual(missing, [])
 
     def test_every_declared_image_carries_a_deciding_digest(self) -> None:
-        for one in self._manifest()["artifacts"]:
-            for accepted in one["accepted"]:
-                self.assertEqual(len(accepted["sha256"]), 64, one["part"])
+        # Arrange
+        artifacts = self.manifest()["artifacts"]
+
+        # Act
+        widths = {len(accepted["sha256"]) for one in artifacts for accepted in one["accepted"]}
+
+        # Assert
+        self.assertEqual(widths, {64})
 
     def test_the_two_signal_processor_parts_run_the_same_processor(self) -> None:
-        declared = {one["part"]: one["processor"] for one in self._manifest()["artifacts"]}
+        # Arrange
+        declared = {one["part"]: one["processor"] for one in self.manifest()["artifacts"]}
 
-        found = {name: declared[models.lookup(name).image] for name in models.MODELS}
+        # Act
+        found = {name: declared[model.image] for name, model in snesst.MODELS.items()}
 
+        # Assert
         self.assertEqual(found, {"st010": "upd96050", "st011": "upd96050", "st018": "arm60"})
 
 
 class DispatchTest(unittest.TestCase):
-    def built(self, model: str) -> object:
-        name = models.lookup(model).name
-        if name == "st018":
-            return snesst.Chip(model, image=bytes(st018.IMAGE_BYTES))
-        return snesst.Chip(model, image=_a_program(), identity=_an_identity(name), boot=1)
-
     def test_the_signal_processor_parts_are_built_by_the_class_that_runs_one(self) -> None:
-        self.assertIsInstance(self.built("seta010"), chip.Chip)
+        # Arrange
+        model = "seta010"
+
+        # Act
+        found = built(model)
+
+        # Assert
+        self.assertIs(type(found), chip.Chip)
 
     def test_the_arm_part_is_built_by_the_class_that_runs_an_arm(self) -> None:
-        self.assertIsInstance(self.built("setast018"), st018.ST018)
+        # Arrange
+        model = "setast018"
+
+        # Act
+        found = built_arm(model)
+
+        # Assert
+        self.assertIs(type(found), snesst.ST018)
 
     def test_the_two_arrangements_are_not_the_same_class(self) -> None:
-        self.assertNotIsInstance(self.built("seta011"), st018.ST018)
+        # Arrange
+        model = "seta011"
 
+        # Act
+        found = built(model)
 
-class BuildingTest(unittest.TestCase):
-    def test_a_name_no_part_answers_to_is_refused_before_any_image_is_looked_for(self) -> None:
-        with self.assertRaises(errors.UnknownModelError):
-            snesst.Chip("nonsense")
-
-    def test_the_default_part_is_one_the_catalogue_knows(self) -> None:
-        self.assertIn("st010", models.MODELS)
-
-    def test_the_family_name_reaches_the_same_thing(self) -> None:
-        self.assertIs(snesst.Chip, snesst.Chip)
+        # Assert
+        self.assertNotIsInstance(found, snesst.ST018)
 
 
 class NamingNoneTest(unittest.TestCase):
-    def test_building_without_naming_a_model_is_refused(self) -> None:
-        with self.assertRaises(errors.UnknownModelError):
+    def test_building_without_naming_a_model_is_refused_with_every_name(self) -> None:
+        # Arrange
+        expected = (
+            "no model was named, and this package will not choose one for you."
+            " Name one of: st010, st011, st018"
+        )
+
+        # Act
+        with self.assertRaises(snesst.UnknownModelError) as caught:
             snesst.Chip()
 
-    def test_and_the_refusal_names_every_model_there_is(self) -> None:
-        with self.assertRaises(errors.UnknownModelError) as caught:
-            snesst.Chip()
-
-        missing = [name for name in snesst.MODELS if name not in str(caught.exception)]
-
-        self.assertEqual(missing, [])
+        # Assert
+        self.assertEqual(str(caught.exception), expected)
 
     def test_nothing_named_describe_is_published(self) -> None:
-        self.assertFalse(hasattr(snesst, "describe"))
+        # Arrange
+        published = set(snesst.__all__)
+
+        # Act
+        found = "describe" in published or hasattr(snesst, "describe")
+
+        # Assert
+        self.assertIs(found, False)
 
     def test_and_no_default_model_is_published_either(self) -> None:
-        self.assertFalse(hasattr(snesst, "DEFAULT_MODEL"))
+        # Arrange
+        published = set(snesst.__all__)
+
+        # Act
+        found = "DEFAULT_MODEL" in published or hasattr(snesst, "DEFAULT_MODEL")
+
+        # Assert
+        self.assertIs(found, False)
 
 
 if __name__ == "__main__":
