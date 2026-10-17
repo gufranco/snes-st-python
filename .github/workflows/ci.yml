@@ -1,3 +1,4 @@
+---
 name: CI
 
 on:
@@ -21,10 +22,6 @@ jobs:
     name: Format and lint
     runs-on: ubuntu-26.04
     steps:
-      # The package reaches the processor through this submodule, and without it
-      # the microcode backend cannot be built at all. Checking it out here does
-      # not supply any firmware, so the runner still exercises the path a user
-      # without an image takes.
       - uses: actions/checkout@v7
         with:
           submodules: recursive
@@ -55,6 +52,11 @@ jobs:
       - name: Check that every JSON file is formatted
         run: pnpm run format:check
 
+      - name: Lint every YAML file
+        run: |
+          pipx install yamllint==1.38.0
+          yamllint --strict .
+
   types:
     name: Types
     runs-on: ubuntu-26.04
@@ -68,9 +70,6 @@ jobs:
       - name: Install mypy
         run: pipx install mypy==1.14.1
 
-      # Strict, with every optional error class the checker offers. The
-      # configuration lives in pyproject.toml so this run and a local one are
-      # the same run.
       - name: Check types
         run: mypy
 
@@ -82,10 +81,6 @@ jobs:
       matrix:
         python: ["3.12", "3.13", "3.14"]
     steps:
-      # The package reaches the processor through this submodule, and without it
-      # the microcode backend cannot be built at all. Checking it out here does
-      # not supply any firmware, so the runner still exercises the path a user
-      # without an image takes.
       - uses: actions/checkout@v7
         with:
           submodules: recursive
@@ -139,10 +134,6 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      # This runs the program a cartridge carries, which belongs to whoever
-      # wrote it, so on a machine without one it says so and stops rather than
-      # reporting a pass. Everything a machine without one can check runs in the
-      # test job above: this package has no behaviour of its own to get wrong.
       - name: Start every part and confirm it reaches its own wait
         run: |
           set +e
@@ -162,18 +153,14 @@ jobs:
           status=$?
           set -e
           if [ "${status}" -eq 2 ]; then
-            echo "::notice title=No microcode present::The checks that start a part's own program did not run. They are not failures; they had nothing to run."
+            notice="The checks that start a part's own program did not run."
+            notice="${notice} They are not failures; they had nothing to run."
+            echo "::notice title=No microcode present::${notice}"
             exit 0
           fi
           exit "${status}"
         shell: bash
 
-      # What the part says back when it is driven the way a cartridge drives it.
-      # The exchanges come out of the three retail cartridges that carry these
-      # parts, read out of their own code rather than guessed at, and are checked
-      # in beside the conformance suite with the digests of the cartridges they
-      # came from. A part that answers nothing to every one of them is what a
-      # wrong image or a broken decode looks like.
       - name: Play the exchanges real cartridges make
         run: |
           set +e
@@ -187,15 +174,14 @@ jobs:
           done
           set -e
           if [ "${status}" -eq 2 ]; then
-            echo "::notice title=No microcode present::The exchanges were not played. They are not failures; there was no part to play them at."
+            notice="The exchanges were not played."
+            notice="${notice} They are not failures; there was no part to play them at."
+            echo "::notice title=No microcode present::${notice}"
             exit 0
           fi
           exit "${status}"
         shell: bash
 
-      # The tests that need a real image are skipped without one, and a skipped
-      # test and a passing one print the same thing at the end of a run. This
-      # says which happened, on the page a person actually opens.
       - name: Say on the run page whether the part was driven at all
         run: |
           set +e
@@ -213,7 +199,8 @@ jobs:
             echo "::notice title=No microcode present::$(cat reason.txt)"
             exit 0
           fi
-          echo "::notice title=Microcode present::Every part this package covers was built from its own image and driven."
+          notice="Every part this package covers was built from its own image and driven."
+          echo "::notice title=Microcode present::${notice}"
           exit "${status}"
         shell: bash
 
