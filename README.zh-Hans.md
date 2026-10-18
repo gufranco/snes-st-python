@@ -8,7 +8,7 @@ Seta 为 Super Nintendo 卡带制造的三款协处理器的 Python 实现，每
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-st-python)](https://github.com/gufranco/snes-st-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**3** 个部件，**0** 条手工描述的命令，两处等待位置均在出厂微码上测得，这些等待位置与记录之间 **0** 处不一致，**705** 个测试，**100%** 语句和分支覆盖率，无依赖
+**3** 个部件，**0** 条手工描述的命令，两处等待位置均在出厂微码上测得，这些等待位置与记录之间 **0** 处不一致，**706** 个测试，**100%** 语句和分支覆盖率，无依赖
 
 ```python
 from snesst import Chip
