@@ -119,6 +119,42 @@ the case it exists for.
 - A check nobody has seen fail is not known to work. Drive every new check
   against input that should fail it before keeping it.
 
+The linter's ignores in [`pyproject.toml`](pyproject.toml) carry no comments, so
+their reasons live here, beside those of the other exclusions:
+
+- `nec-upd7725-96050-python` is excluded from `ruff`: the submodule carries its
+  own gate at its own version, so this lint never depends on a commit made in a
+  different repository.
+- `N818`: three exceptions are control flow signals rather than failures, named
+  the way CPython names `StopIteration`. Those that report a failure end in
+  `Error`.
+- `BLE001` and `T201` in `environment.py`: it reports what a machine is, so a
+  check that throws becomes a line in the report rather than ending the run.
+- `N999` in tests: a test file is named after the module it covers, with a dot,
+  so a module and its tests are read together.
+- `T201` in `conformance/`: these are command line tools and printing is their
+  output. A logger would put a level and a timestamp in front of a report meant
+  for a person.
+- `BLE001` and `T201` in the doctor: it must survive whatever a check throws and
+  report it, because a narrower catch would let a traceback take the rest of the
+  report with it.
+- Every optional `mypy` error class is on because the errors that matter in a
+  model of hardware are a width, a mask or a `None` crossing a boundary.
+- The `arm6.*`, `upd7725.*`, `mapper.*` and `snesdriver.*` override in `mypy`:
+  the submodules are checked in their own repositories, against their own gate.
+- [`snesst/microcode.test.py`](snesst/microcode.test.py) is omitted from
+  coverage: it drives real microcode, a file nobody may distribute, so no single
+  build can take every path. It reports as skipped instead. The submodule
+  directories are omitted too.
+- The `__main__` guard is excluded from coverage: it hands argv to a tested
+  function, and importing the module to cover it would run the tool.
+- The doctor's `sys.path` guard is excluded: a suite that imports the doctor has
+  already put the repository on the path, so no test can take that branch.
+- `if TYPE_CHECKING:` is excluded: it never runs, and Python 3.14 drops it before
+  coverage sees it while earlier versions do not.
+- A lone ellipsis and a signature ending in one are excluded: a protocol method
+  has no body to run, and the same version split applies.
+
 ## Layout
 
 ```text
