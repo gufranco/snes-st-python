@@ -34,6 +34,11 @@ BRANCH_SEQUENTIAL = 2
 BRANCH_NONSEQUENTIAL = 1
 BRANCH_CYCLES = BRANCH_SEQUENTIAL + BRANCH_NONSEQUENTIAL
 
+TIMER_LOW = 0x20
+TIMER_MIDDLE = 0x24
+TIMER_HIGH = 0x28
+TIMER_COMMIT = 0x2C
+
 
 def arm(*words: int) -> bytes:
     body = b"".join(word.to_bytes(4, "little") for word in words)
@@ -451,16 +456,88 @@ class PartSideTest(unittest.TestCase):
         # Assert
         self.assertEqual(byte, 0)
 
-    def test_the_bytes_the_firmware_writes_once_at_boot_are_kept_and_nothing_else(self) -> None:
+
+class TimerTest(unittest.TestCase):
+    def test_three_latch_bytes_are_committed_as_one_twenty_four_bit_count(self) -> None:
         # Arrange
         found = a_part()
-        found.drive(STATUS_PORT, 0x02)
+        found.drive(TIMER_LOW, 0x56)
+        found.drive(TIMER_MIDDLE, 0x34)
+        found.drive(TIMER_HIGH, 0x12)
 
         # Act
-        found.drive(0x24, 0xFF)
+        found.drive(TIMER_COMMIT, 0x00)
 
         # Assert
-        self.assertEqual(found.timer, 0x02)
+        self.assertEqual((found.latch, found.timer), (0x123456, 0x123456))
+
+    def test_a_latch_byte_alone_does_not_reach_the_count(self) -> None:
+        # Arrange
+        found = a_part()
+
+        # Act
+        found.drive(TIMER_LOW, 0x56)
+
+        # Assert
+        self.assertEqual((found.latch, found.timer), (0x56, 0))
+
+    def test_rewriting_a_latch_byte_replaces_only_that_byte(self) -> None:
+        # Arrange
+        found = a_part()
+        found.drive(TIMER_LOW, 0x56)
+        found.drive(TIMER_MIDDLE, 0x34)
+
+        # Act
+        found.drive(TIMER_LOW, 0x9A)
+
+        # Assert
+        self.assertEqual(found.latch, 0x349A)
+
+    def test_the_count_falls_by_one_for_every_cycle_the_arm_spends(self) -> None:
+        # Arrange
+        found = a_part()
+        found.drive(TIMER_LOW, 0x10)
+        found.drive(TIMER_COMMIT, 0x00)
+
+        # Act
+        found.step(1)
+
+        # Assert
+        self.assertEqual(found.timer, 0x10 - BRANCH_CYCLES)
+
+    def test_and_stops_at_zero_rather_than_wrapping(self) -> None:
+        # Arrange
+        found = a_part()
+        found.drive(TIMER_LOW, 0x02)
+        found.drive(TIMER_COMMIT, 0x00)
+
+        # Act
+        found.step(1)
+
+        # Assert
+        self.assertEqual(found.timer, 0)
+
+    def test_driving_an_offset_the_firmware_never_writes_changes_nothing(self) -> None:
+        # Arrange
+        found = a_part()
+
+        # Act
+        found.drive(0x04, 0xFF)
+
+        # Assert
+        self.assertEqual((found.latch, found.timer, found.status()), (0, 0, READY))
+
+    def test_a_reset_empties_the_latch_and_the_count(self) -> None:
+        # Arrange
+        found = a_part()
+        found.drive(TIMER_LOW, 0x40)
+        found.drive(TIMER_COMMIT, 0x00)
+
+        # Act
+        found.reset()
+
+        # Assert
+        self.assertEqual((found.latch, found.timer), (0, 0))
 
 
 class TimingTest(unittest.TestCase):

@@ -46,6 +46,9 @@ READY = 0x80
 GUARD = 0x10
 PART_GUARD = 0x20
 
+TIMER_LATCH_PORTS = (0x20, 0x24, 0x28)
+TIMER_COMMIT_PORT = 0x2C
+
 
 def _processor(where: Path | str | None = None) -> Any:
     root = Path(where or PROCESSOR)
@@ -102,6 +105,7 @@ class ST018:
         "core",
         "identity",
         "incoming",
+        "latch",
         "outgoing",
         "part",
         "sent",
@@ -139,8 +143,10 @@ class ST018:
         self.part = PART
         self.steps = 0
         self.timer = 0
+        self.latch = 0
         self.stores = Stores(self, image[:PROGRAM_BYTES], image[PROGRAM_BYTES:])
         self.core = arm6.Cpu(MODEL, self.stores, fill=fill)
+        self.core.on_cycle = self._count
         self.reset()
 
     @staticmethod
@@ -175,6 +181,8 @@ class ST018:
         self.sent = False
         self.waiting = False
         self.up = True
+        self.timer = 0
+        self.latch = 0
         self.core.reset()
         return self
 
@@ -189,6 +197,10 @@ class ST018:
         while self.cycles - began < cycles:
             self.step()
         return self.cycles - began
+
+    def _count(self, _core: object) -> None:
+        if self.timer:
+            self.timer -= 1
 
     def port(self, offset: int) -> int:
         if offset == TO_PART_PORT:
@@ -205,7 +217,12 @@ class ST018:
             self.outgoing = value
             self.waiting = True
             return
-        self.timer = value if offset == STATUS_PORT else self.timer
+        if offset in TIMER_LATCH_PORTS:
+            place = TIMER_LATCH_PORTS.index(offset) * 8
+            self.latch = self.latch & ~(0xFF << place) | value << place
+            return
+        if offset == TIMER_COMMIT_PORT:
+            self.timer = self.latch
 
     def status(self) -> int:
         found = 0

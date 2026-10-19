@@ -359,8 +359,19 @@ else from the same artifacts:
 recorded here as a shape with no meaning attached. ares reads those four as a
 24-bit timer being loaded a byte at a time and then committed, which fits the
 order exactly. That reading is ares's rather than this project's: what the
-artifact establishes is the four writes and their order, and nothing here
-observes a timer counting.
+artifact establishes is the four writes and their order.
+
+**The timer counts, at the rung of that implementation.** The model now does
+what ares at commit `9408cb43d4948fc3ea6e152a307a34348df3fe04` does in
+`sfc/coprocessor/armdsp/memory.cpp` and `armdsp.cpp`: the writes to `0x20`,
+`0x24` and `0x28` set the low, middle and high bytes of a latch, the write to
+`0x2C` copies the latch into the count, the count falls by one for every cycle
+the ARM spends until it reaches zero, and a reset empties both. Nothing reads
+the count back, in ares or in any instruction this record has seen the firmware
+execute, so no observation here can tell a counting timer from a stored byte.
+What would settle it is the firmware reading the count, or an interrupt line
+the count drives, seen on a part; until then it is recorded as
+`the-timer-is-an-implementation-s-reading`.
 
 **Two regions the artifact names for itself.** The image is 163,840 bytes, which
 is 128 KiB then 32 KiB. The first region ends in zero padding from `0x01FFE0`,

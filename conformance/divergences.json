@@ -89,6 +89,18 @@
         "a capture of a real console driving either part"
       ],
       "wouldReopenIt": "A cartridge whose start write a straight walk does reach."
+    },
+    {
+      "id": "the-timer-is-an-implementation-s-reading",
+      "parts": ["st018"],
+      "severity": "low",
+      "status": "open",
+      "documentSays": "Nothing. No document for this part exists.",
+      "referenceDoes": "ares at commit 9408cb43d4948fc3ea6e152a307a34348df3fe04, sfc/coprocessor/armdsp/memory.cpp and armdsp.cpp: writes to 0x40000020, 0x40000024 and 0x40000028 set bytes 0, 1 and 2 of a latch, a write to 0x4000002C copies the latch into a 32-bit count, every call to step(1), which ares makes once per ARM bus access or idle cycle, lowers a nonzero count by one, and a reset clears both. Nothing in ares reads the count.",
+      "packageFollows": "reference",
+      "reasoning": "The firmware writes those four ports in that order, which is the artifact's evidence, and an earlier version of this model kept only the byte written to 0x20 and never counted. Following the one independent implementation turns a stored byte into a timer that runs on the ARM's own cycles, at the rung of that implementation rather than of the part. Nothing observable depends on it yet: the status byte does not carry it and no instruction the firmware was seen to execute reads it back.",
+      "wouldSettleIt": "The firmware reading the count, or a line the count drives, observed on a real part, or a document for the part.",
+      "wouldReopenIt": "A later ares or another implementation that reads the count back or lets it raise an interrupt."
     }
   ]
 }
