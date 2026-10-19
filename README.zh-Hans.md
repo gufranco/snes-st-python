@@ -8,7 +8,7 @@ Seta 为 Super Nintendo 卡带制造的三款协处理器的 Python 实现，每
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-st-python)](https://github.com/gufranco/snes-st-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**3** 个部件，**0** 条手工描述的命令，两处等待位置均在出厂微码上测得，这些等待位置与记录之间 **0** 处不一致，**740** 个测试，**100%** 语句和分支覆盖率，无依赖
+**3** 个部件，**0** 条手工描述的命令，两处等待位置均在出厂微码上测得，这些等待位置与记录之间 **0** 处不一致，**756** 个测试，**100%** 语句和分支覆盖率，无依赖
 
 ```python
 from snesst import Chip
@@ -240,14 +240,15 @@ nothing establishes what a read of $3806 does
 
 每个工具都从仓库根目录运行。
 
-| 命令                                        | 参数                             | 退出码                                                                                         |
-| :------------------------------------------ | :------------------------------- | :--------------------------------------------------------------------------------------------- |
-| `python3 snesst/doctor.py`                  | 无                               | 所有检查通过时为 0，任一失败时为 1                                                             |
-| `python3 -m conformance.speed`              | 无                               | 达到或超过每秒 150,000 条 uPD96050 指令，或此处无法构建任何部件时为 0。低于该值时为 1          |
-| `python3 -m conformance.against_cartridges` | 一个部件，默认为 `st010`         | 至少一次记录的交互得到返回字节时为 0，没有任何一次得到时为 1，此处无法构建任何部件时为 2       |
-| `python3 -m conformance.record`             | 一个卡带目录，然后是一个输出目录 | 找到的每个部件都产生形态时为 0，有一个未产生时为 1，缺少参数、缺少目录或没有卡带带有部件时为 2 |
-| `python3 -m conformance.links`              | 无                               | 为 0，除非本 README 中的某个地址返回 404 或 410                                                |
-| `python3 -m conformance.package`            | 一个构建好的 wheel               | 每个模块都在其中且不含任何测试时为 0，否则或文件不存在时为 1，没有参数时为 2                   |
+| 命令                                        | 参数                                           | 退出码                                                                                             |
+| :------------------------------------------ | :--------------------------------------------- | :------------------------------------------------------------------------------------------------- |
+| `python3 snesst/doctor.py`                  | 无                                             | 所有检查通过时为 0，任一失败时为 1                                                                 |
+| `python3 -m conformance.speed`              | 无                                             | 达到或超过每秒 150,000 条 uPD96050 指令，或此处无法构建任何部件时为 0。低于该值时为 1              |
+| `python3 -m conformance.against_cartridges` | 一个部件，默认为 `st010`                       | 至少一次记录的交互得到返回字节时为 0，没有任何一次得到时为 1，此处无法构建任何部件时为 2           |
+| `python3 -m conformance.record`             | 一个卡带目录，然后是一个输出目录               | 找到的每个部件都产生形态时为 0，有一个未产生时为 1，缺少参数、缺少目录或没有卡带带有部件时为 2     |
+| `python3 -m conformance.links`              | 无                                             | 为 0，除非本 README 中的某个地址返回 404 或 410                                                    |
+| `python3 -m conformance.package`            | 一个构建好的 wheel                             | 每个模块都在其中且不含任何测试时为 0，否则或文件不存在时为 1，没有参数时为 2                       |
+| `python3 -m conformance.testroms`           | 程序转储所在的文件夹，加 `--record` 则重写判定 | 找到的每个转储都与记录的判定一致时为 0，有一个不一致时为 1，没有文件夹或其中没有记录过的转储时为 2 |
 
 `conformance.against_cartridges` 将 [`conformance/st010shapes.json`](conformance/st010shapes.json) 和 [`conformance/st011shapes.json`](conformance/st011shapes.json) 中的交互回放给部件。`conformance.record` 生成这些文件：它通过 `snes-driver-python` 读取每个卡带自身的代码，保留每次交互的形态，从不保留卡带的任何字节。它只接受该子模块清单中列出的卡带，并检查它们全部四个摘要。
 

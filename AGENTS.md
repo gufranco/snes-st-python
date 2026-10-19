@@ -74,6 +74,32 @@ A part spoken to without that reads as broken. This is recorded as a closed
 divergence rather than deleted, because it is the clearest evidence here that
 running a program beats describing one.
 
+## Test cartridges
+
+[`conformance/testroms.json`](conformance/testroms.json) names the three program
+dumps that exercise this member, each keyed by the SHA-256 of the file on disk
+and never committed. They live in `snes-roms/5 Tools & Service Test Carts/CPU/`
+in the local library. All three are `run`: the ST010 and ST011 dumps store each
+word low byte first and are read through that reversal, and the ST018 dump is
+read as it stands.
+
+```bash
+python3 -m conformance.testroms "../snes-roms/5 Tools & Service Test Carts/CPU"
+python3 -m conformance.testroms --record FOLDER   # only after a deliberate model change
+```
+
+What each run reports is recorded in
+[`conformance/testroms_measured.json`](conformance/testroms_measured.json): the
+word each signal processor program waits at, the ST010's answer to command 1
+and the instructions it took, and the byte the ST018 program answers an unknown
+command with. [`conformance/testroms.test.py`](conformance/testroms.test.py)
+replays those verdicts with no image present against the record and the README.
+Without an image the runner exits 2 and CI annotates the skip.
+
+No whole-console test cartridge reaches these parts: none of the factory,
+service or community cartridges on disk carries a Seta coprocessor, and the SNES
+catalogue names none, so nothing waits on another member.
+
 ## Every gate, in the order to run them
 
 ```bash
@@ -205,6 +231,7 @@ conformance/
   hardware.json   what this package asserts, and where each assertion comes from
   divergences.json where sources part, and what would settle each
   speed.py        the throughput floor
+  testroms.py     the program dumps the record names, run and held to their verdicts
 nec-upd7725-96050-python/  the processor both parts are, as a submodule at the root
 ```
 

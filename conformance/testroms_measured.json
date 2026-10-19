@@ -1,0 +1,19 @@
+{
+  "st010-fa9bced8": {
+    "command1Answer": 37632,
+    "command1Instructions": 106,
+    "part": "st010",
+    "storedLowByteFirst": true,
+    "waitsAt": 3
+  },
+  "st011-8b2b3f3f": {
+    "part": "st011",
+    "storedLowByteFirst": true,
+    "waitsAt": 2
+  },
+  "st018-6df209ab": {
+    "part": "st018",
+    "storedLowByteFirst": false,
+    "unknownCommandAnswer": 238
+  }
+}

@@ -186,6 +186,21 @@ jobs:
           exit "${status}"
         shell: bash
 
+      - name: Run the program dumps the record names and compare their verdicts
+        run: |
+          set +e
+          python -m conformance.testroms "${SNES_ST_FIRMWARE_DIR:-firmware}"
+          status=$?
+          set -e
+          if [ "${status}" -eq 2 ]; then
+            notice="The recorded program dumps were not run."
+            notice="${notice} They are not failures; none of them is on this runner."
+            echo "::notice title=No program dump present::${notice}"
+            exit 0
+          fi
+          exit "${status}"
+        shell: bash
+
       - name: Say on the run page whether the part was driven at all
         run: |
           set +e
