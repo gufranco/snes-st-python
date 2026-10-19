@@ -8,7 +8,7 @@ English | [日本語](README.ja.md) | [简体中文](README.zh-Hans.md) | [繁�
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-st-python)](https://github.com/gufranco/snes-st-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**3** parts, **0** commands described by hand, both waits measured on the shipped microcode, **0** disagreements between those waits and the record, **712** tests, **100%** statement and branch coverage, no dependencies
+**3** parts, **0** commands described by hand, both waits measured on the shipped microcode, **0** disagreements between those waits and the record, **716** tests, **100%** statement and branch coverage, no dependencies
 
 ```python
 from snesst import Chip
@@ -191,6 +191,7 @@ A program of zeroes needs no image, so this runs on any checkout with its submod
 | `status()`                             | The status byte, read the same way                                                                                                                                                         |
 | `port(offset)`, `drive(offset, value)` | The ARM's side of the mailbox: reading offset `0x10` takes the console's byte, reading `0x20` gives the status, driving `0x00` sends a byte to the console and driving `0x20` sets `timer` |
 | `step(count=1)`                        | `count` ARM instructions. Returns the part                                                                                                                                                 |
+| `run_for(cycles)`                      | Whole ARM instructions until at least `cycles` bus cycles have passed. Returns the cycles spent, which may overshoot                                                                       |
 | `reset()`                              | Empties the mailbox, sets the part up and resets the ARM. Returns the part                                                                                                                 |
 
 | Attribute                                                | Meaning                                                                                                                          |
@@ -202,6 +203,8 @@ A program of zeroes needs no image, so this runs on any checkout with its submod
 | `stores`                                                 | The ARM's address space: program at `0x00000000`, ports at `0x40000000`, data at `0xA0000000`, 16 KB of work RAM at `0xE0000000` |
 | `incoming`, `outgoing`, `sent`, `waiting`, `up`, `timer` | The mailbox state behind the status byte                                                                                         |
 | `steps`                                                  | ARM instructions run since the part was built. A reset leaves it alone                                                           |
+| `cycles`                                                 | ARM bus cycles since the part was built, as the ARM spent them. A reset adds the cycles it costs                                 |
+| `tally`                                                  | The same cycles in the ARM60 datasheet's own terms, sequential, nonsequential, internal and coprocessor                          |
 
 ```python
 from snesst import Chip, UnknownPort

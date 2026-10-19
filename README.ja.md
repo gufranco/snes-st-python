@@ -8,7 +8,7 @@ SetaがSuper Nintendoのカートリッジ向けに作った3つのコプロセ�
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-st-python)](https://github.com/gufranco/snes-st-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**3**個のパーツ、手で記述したコマンドは**0**個、2つの待機位置はどちらも出荷時のマイクロコードで測定済み、それらの待機位置と記録との食い違いは**0**件、テストは**712**個、ステートメントとブランチの**100%**カバレッジ、依存関係なし
+**3**個のパーツ、手で記述したコマンドは**0**個、2つの待機位置はどちらも出荷時のマイクロコードで測定済み、それらの待機位置と記録との食い違いは**0**件、テストは**716**個、ステートメントとブランチの**100%**カバレッジ、依存関係なし
 
 ```python
 from snesst import Chip
@@ -191,6 +191,7 @@ False <Chip st010 on upd96050>
 | `status()`                             | ステータスバイト。同じ方法で読み出します                                                                                                                                                                   |
 | `port(offset)`, `drive(offset, value)` | メールボックスのARM側。オフセット`0x10`の読み出しはコンソールのバイトを受け取り、`0x20`の読み出しはステータスを返し、`0x00`への書き込みはコンソールにバイトを送り、`0x20`への書き込みは`timer`を設定します |
 | `step(count=1)`                        | `count`個のARM命令。パーツを返します                                                                                                                                                                       |
+| `run_for(cycles)`                      | 少なくとも`cycles`バスサイクルが経過するまでARM命令を丸ごと実行します。費やしたサイクル数を返し、超過することがあります                                                                                    |
 | `reset()`                              | メールボックスを空にし、パーツを起動状態にしてARMをリセットします。パーツを返します                                                                                                                        |
 
 | 属性                                                     | 意味                                                                                                                              |
@@ -202,6 +203,8 @@ False <Chip st010 on upd96050>
 | `stores`                                                 | ARMのアドレス空間。プログラムは`0x00000000`、ポートは`0x40000000`、データは`0xA0000000`、16 KBのワークRAMは`0xE0000000`にあります |
 | `incoming`, `outgoing`, `sent`, `waiting`, `up`, `timer` | ステータスバイトの背後にあるメールボックスの状態                                                                                  |
 | `steps`                                                  | パーツの構築以降に実行したARM命令数。リセットしても変わりません                                                                   |
+| `cycles`                                                 | パーツの構築以降にARMが費やしたバスサイクル数。リセットはそのコストのサイクルを加えます                                           |
+| `tally`                                                  | 同じサイクルをARM60データシート自身の分類、シーケンシャル、ノンシーケンシャル、内部、コプロセッサで表したもの                     |
 
 ```python
 from snesst import Chip, UnknownPort

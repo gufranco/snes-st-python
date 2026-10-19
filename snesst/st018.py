@@ -161,6 +161,14 @@ class ST018:
     def processor(self) -> str:
         return MODEL
 
+    @property
+    def cycles(self) -> int:
+        return int(self.core.cycles)
+
+    @property
+    def tally(self) -> Any:
+        return self.core.tally
+
     def reset(self) -> ST018:
         self.incoming = 0
         self.outgoing = 0
@@ -175,6 +183,12 @@ class ST018:
             self.core.step()
             self.steps += 1
         return self
+
+    def run_for(self, cycles: int) -> int:
+        began = self.cycles
+        while self.cycles - began < cycles:
+            self.step()
+        return self.cycles - began
 
     def port(self, offset: int) -> int:
         if offset == TO_PART_PORT:

@@ -30,6 +30,10 @@ WAITING = 0x01
 SENT = 0x08
 READY = 0x80
 
+BRANCH_SEQUENTIAL = 2
+BRANCH_NONSEQUENTIAL = 1
+BRANCH_CYCLES = BRANCH_SEQUENTIAL + BRANCH_NONSEQUENTIAL
+
 
 def arm(*words: int) -> bytes:
     body = b"".join(word.to_bytes(4, "little") for word in words)
@@ -457,6 +461,53 @@ class PartSideTest(unittest.TestCase):
 
         # Assert
         self.assertEqual(found.timer, 0x02)
+
+
+class TimingTest(unittest.TestCase):
+    def test_a_branch_costs_the_cycles_the_arm_spends_on_its_bus(self) -> None:
+        # Arrange
+        found = a_part()
+        before = found.cycles
+
+        # Act
+        found.step(1)
+
+        # Assert
+        self.assertEqual(found.cycles - before, BRANCH_CYCLES)
+
+    def test_the_cycles_are_kept_in_the_manufacturer_s_own_terms(self) -> None:
+        # Arrange
+        found = a_part()
+        before = (found.tally.s, found.tally.n)
+
+        # Act
+        found.step(1)
+
+        # Assert
+        self.assertEqual(
+            (found.tally.s - before[0], found.tally.n - before[1]),
+            (BRANCH_SEQUENTIAL, BRANCH_NONSEQUENTIAL),
+        )
+
+    def test_a_budget_is_spent_in_whole_instructions_and_overshoots(self) -> None:
+        # Arrange
+        found = a_part()
+
+        # Act
+        spent = found.run_for(BRANCH_CYCLES * 2 + 1)
+
+        # Assert
+        self.assertEqual((spent, found.steps), (BRANCH_CYCLES * 3, 3))
+
+    def test_a_budget_of_nothing_spends_nothing(self) -> None:
+        # Arrange
+        found = a_part()
+
+        # Act
+        spent = found.run_for(0)
+
+        # Assert
+        self.assertEqual(spent, 0)
 
 
 class ExchangeTest(unittest.TestCase):

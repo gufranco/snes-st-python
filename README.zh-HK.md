@@ -8,7 +8,7 @@ Seta 為 Super Nintendo 卡帶製造的三款協處理器的 Python 實現。每
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-st-python)](https://github.com/gufranco/snes-st-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**3** 款晶片，**0** 個人手描述的命令，兩處等待位置均在出貨的微碼上量度，這些等待位置與記錄之間 **0** 處分歧，**712** 個測試，**100%** 語句與分支覆蓋率，無任何依賴
+**3** 款晶片，**0** 個人手描述的命令，兩處等待位置均在出貨的微碼上量度，這些等待位置與記錄之間 **0** 處分歧，**716** 個測試，**100%** 語句與分支覆蓋率，無任何依賴
 
 ```python
 from snesst import Chip
@@ -191,6 +191,7 @@ False <Chip st010 on upd96050>
 | `status()`                             | 狀態位元組，讀取方式相同                                                                                                            |
 | `port(offset)`, `drive(offset, value)` | 信箱的 ARM 一側：讀取偏移 `0x10` 取得主機的位元組，讀取 `0x20` 取得狀態，驅動 `0x00` 向主機送出一個位元組，驅動 `0x20` 設定 `timer` |
 | `step(count=1)`                        | 執行 `count` 條 ARM 指令。返回晶片                                                                                                  |
+| `run_for(cycles)`                      | 執行完整的 ARM 指令，直至最少經過 `cycles` 個匯流排週期。返回實際花費的週期數，可能超出                                             |
 | `reset()`                              | 清空信箱、將晶片設為已啟動並重設 ARM。返回晶片                                                                                      |
 
 | 屬性                                                     | 含義                                                                                                                |
@@ -202,6 +203,8 @@ False <Chip st010 on upd96050>
 | `stores`                                                 | ARM 的位址空間：程式位於 `0x00000000`，埠位於 `0x40000000`，數據位於 `0xA0000000`，16 KB 工作 RAM 位於 `0xE0000000` |
 | `incoming`, `outgoing`, `sent`, `waiting`, `up`, `timer` | 狀態位元組背後的信箱狀態                                                                                            |
 | `steps`                                                  | 自晶片建構以來執行的 ARM 指令數。重設不會改變它                                                                     |
+| `cycles`                                                 | 自晶片建構以來 ARM 花費的匯流排週期數。重設會加上其所花費的週期                                                     |
+| `tally`                                                  | 以 ARM60 數據表自身的分類表示的同一批週期：順序、非順序、內部及協處理器                                             |
 
 ```python
 from snesst import Chip, UnknownPort

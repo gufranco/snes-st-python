@@ -8,7 +8,7 @@ Seta 为 Super Nintendo 卡带制造的三款协处理器的 Python 实现，每
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-st-python)](https://github.com/gufranco/snes-st-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**3** 个部件，**0** 条手工描述的命令，两处等待位置均在出厂微码上测得，这些等待位置与记录之间 **0** 处不一致，**712** 个测试，**100%** 语句和分支覆盖率，无依赖
+**3** 个部件，**0** 条手工描述的命令，两处等待位置均在出厂微码上测得，这些等待位置与记录之间 **0** 处不一致，**716** 个测试，**100%** 语句和分支覆盖率，无依赖
 
 ```python
 from snesst import Chip
@@ -191,6 +191,7 @@ False <Chip st010 on upd96050>
 | `status()`                             | 状态字节，读取方式相同                                                                                                          |
 | `port(offset)`, `drive(offset, value)` | 邮箱的 ARM 一侧：读取偏移 `0x10` 取走主机的字节，读取 `0x20` 给出状态，驱动 `0x00` 向主机发送一个字节，驱动 `0x20` 设置 `timer` |
 | `step(count=1)`                        | 运行 `count` 条 ARM 指令。返回部件                                                                                              |
+| `run_for(cycles)`                      | 运行完整的 ARM 指令，直到至少经过 `cycles` 个总线周期。返回实际花费的周期数，可能超出                                           |
 | `reset()`                              | 清空邮箱，将部件置为就绪并复位 ARM。返回部件                                                                                    |
 
 | 属性                                                     | 含义                                                                                                                  |
@@ -202,6 +203,8 @@ False <Chip st010 on upd96050>
 | `stores`                                                 | ARM 的地址空间：程序位于 `0x00000000`，端口位于 `0x40000000`，数据位于 `0xA0000000`，16 KB 工作 RAM 位于 `0xE0000000` |
 | `incoming`, `outgoing`, `sent`, `waiting`, `up`, `timer` | 状态字节背后的邮箱状态                                                                                                |
 | `steps`                                                  | 自部件构建以来运行的 ARM 指令数。复位不影响它                                                                         |
+| `cycles`                                                 | 自部件构建以来 ARM 花费的总线周期数。复位会加上它所花费的周期                                                         |
+| `tally`                                                  | 以 ARM60 数据手册自身的分类表示的同一批周期：顺序、非顺序、内部和协处理器                                             |
 
 ```python
 from snesst import Chip, UnknownPort

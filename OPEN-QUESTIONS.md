@@ -206,9 +206,11 @@ data ROM sits on an eight bit databus so a word read from it cannot be one acces
 whatever the answer, and the part's ROM is on the die so there is no bus to probe.
 
 **How to settle it.** Decapping and probing, which is out of reach here. Short of
-that, the member would publish cycle counts in the manufacturer's own S, N, I and
-C terms and refuse to convert them to ticks, the way this family already refuses
-to convert between the console and the audio unit.
+that, `ST018.cycles` and `ST018.tally` publish the cycles
+[arm6-python](https://github.com/gufranco/arm6-python) spends on the ARM's bus,
+in the manufacturer's own S, N, I and C terms, and `run_for` takes a budget in
+them. Nothing here converts them to oscillator ticks, the way this family already
+refuses to convert between the console and the audio unit.
 
 **What running the firmware already shows.** On 2026-08-27 the dumped firmware
 was driven against [arm6-python](https://github.com/gufranco/arm6-python), which
