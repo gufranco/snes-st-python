@@ -223,10 +223,10 @@ interrupt disables set, loads the stack pointer PC-relative from a literal at
 That gives three regions, read off the part's own program rather than from any
 implementation of it:
 
-| Address | What the firmware does with it |
-|:--|:--|
-| `0x00000000` | The program it is executing |
-| `0x40000000` | Registers, written at offsets `0x20` through `0x2D`, and `0x20` read once |
+| Address      | What the firmware does with it                                                                                                             |
+| :----------- | :----------------------------------------------------------------------------------------------------------------------------------------- |
+| `0x00000000` | The program it is executing                                                                                                                |
+| `0x40000000` | Registers, written at offsets `0x20` through `0x2D`, and `0x20` read once                                                                  |
 | `0xE0000000` | Work RAM. The stack pointer is loaded with `0xE0004000`, so sixteen kilobytes, and the repeated reads at `0xE0003FE0` upward are its stack |
 
 What this does not show is what any of those registers answer, because the model
@@ -250,31 +250,31 @@ so it reports operand bytes as addresses.
 Three console-side addresses answer, and no others in `$2000` through `$5FFF`
 outside the console's own registers:
 
-| Address | What the cartridge does with it |
-|:--|:--|
-| `$3800` | Read only. One byte in from the part |
-| `$3802` | Written only. One byte out to the part |
+| Address | What the cartridge does with it                        |
+| :------ | :----------------------------------------------------- |
+| `$3800` | Read only. One byte in from the part                   |
+| `$3802` | Written only. One byte out to the part                 |
 | `$3804` | Read for status, and written to drive the part's reset |
 
 Five routines in bank `$00` are the whole of the console side, and every other
 site calls one of them:
 
-| Routine | File offset | What it does |
-|:--|:--|:--|
-| `$E717` | `0x006717` | Writes `0`, then `1`, then `0` to `$3804`, with a full index-register countdown between each. A reset pulse |
-| `$E862` | `0x006862` | Writes `0` to `$3804`, counts down, then polls `$3804` until bit 7 sets |
-| `$E873` | `0x006873` | Sends: checks the guard, and writes the accumulator to `$3802` only if it passes |
-| `$E87E` | `0x00687E` | Receives: checks the guard, polls `$3804` until bit 0 sets, then reads `$3800` |
-| `$E892` | `0x006892` | The guard: reads `$3804` and returns carry set when bit 4 is set, which is what both transfer routines abandon on |
+| Routine | File offset | What it does                                                                                                      |
+| :------ | :---------- | :---------------------------------------------------------------------------------------------------------------- |
+| `$E717` | `0x006717`  | Writes `0`, then `1`, then `0` to `$3804`, with a full index-register countdown between each. A reset pulse       |
+| `$E862` | `0x006862`  | Writes `0` to `$3804`, counts down, then polls `$3804` until bit 7 sets                                           |
+| `$E873` | `0x006873`  | Sends: checks the guard, and writes the accumulator to `$3802` only if it passes                                  |
+| `$E87E` | `0x00687E`  | Receives: checks the guard, polls `$3804` until bit 0 sets, then reads `$3800`                                    |
+| `$E892` | `0x006892`  | The guard: reads `$3804` and returns carry set when bit 4 is set, which is what both transfer routines abandon on |
 
 That gives four bits of `$3804` a role the cartridge can be seen to rely on:
 
-| Bit | How the cartridge reads it |
-|:--|:--|
-| 0 | Polled before every read of `$3800`. A byte is waiting |
-| 4 | Polled before every transfer in either direction. Set means the transfer is abandoned |
-| 6 | Read once beside bit 7, in the routine at `$EFBD` that decides between two paths |
-| 7 | Polled after the reset pulse until it sets |
+| Bit | How the cartridge reads it                                                            |
+| :-- | :------------------------------------------------------------------------------------ |
+| 0   | Polled before every read of `$3800`. A byte is waiting                                |
+| 4   | Polled before every transfer in either direction. Set means the transfer is abandoned |
+| 6   | Read once beside bit 7, in the routine at `$EFBD` that decides between two paths      |
+| 7   | Polled after the reset pulse until it sets                                            |
 
 **What this still does not settle.** The names above are the cartridge's usage,
 never the part's documentation, and no document for this part exists. Nothing here
@@ -306,11 +306,11 @@ the same register and is the counterpart of the console's guard at `$E892`.
 That leaves one arrangement, because each side has exactly one port it writes and
 one it reads:
 
-| Direction | Console | Part | What gates it |
-|:--|:--|:--|:--|
-| Console to part | writes `$3802` | reads `0x40000010` | part waits for bit 3 of `0x40000020` to set |
-| Part to console | reads `$3800` | writes `0x40000000` | part waits for bit 0 of `0x40000020` to clear |
-| Abandon | `$3804` bit 4 | `0x40000020` bit 5 | both give up on it |
+| Direction       | Console        | Part                | What gates it                                 |
+| :-------------- | :------------- | :------------------ | :-------------------------------------------- |
+| Console to part | writes `$3802` | reads `0x40000010`  | part waits for bit 3 of `0x40000020` to set   |
+| Part to console | reads `$3800`  | writes `0x40000000` | part waits for bit 0 of `0x40000020` to clear |
+| Abandon         | `$3804` bit 4  | `0x40000020` bit 5  | both give up on it                            |
 
 **Tested as a prediction rather than searched for.** Driven with a memory
 implementing exactly that mapping and nothing else, the firmware reads the
@@ -343,14 +343,14 @@ The one independent implementation is software: ares carries it as `armdsp`. It
 agrees with the mapping above on every point, having been written by somebody
 else from the same artifacts:
 
-| Derived here | ares |
-|:--|:--|
-| Console writes `$3802`, part reads `0x40000010` | `cputoarm` buffer, ready flag cleared on the read |
-| Part writes `0x40000000`, console reads `$3800` | `armtocpu` buffer, ready flag cleared on the read |
-| `$3804` read is status, written to drive reset | the same, with bit 0 of the written byte driving it |
-| `0x40000020` bit 3 set means a byte is waiting for the part | `cputoarm.ready` |
-| `0x40000020` bit 0 clear means the last outgoing byte was collected | `armtocpu.ready` |
-| `$3804` bit 7 is what the console waits for after reset | `ready` |
+| Derived here                                                        | ares                                                |
+| :------------------------------------------------------------------ | :-------------------------------------------------- |
+| Console writes `$3802`, part reads `0x40000010`                     | `cputoarm` buffer, ready flag cleared on the read   |
+| Part writes `0x40000000`, console reads `$3800`                     | `armtocpu` buffer, ready flag cleared on the read   |
+| `$3804` read is status, written to drive reset                      | the same, with bit 0 of the written byte driving it |
+| `0x40000020` bit 3 set means a byte is waiting for the part         | `cputoarm.ready`                                    |
+| `0x40000020` bit 0 clear means the last outgoing byte was collected | `armtocpu.ready`                                    |
+| `$3804` bit 7 is what the console waits for after reset             | `ready`                                             |
 
 **And it explains the write this record could not pair.** The firmware writes
 `0x40000020`, `0x40000024` and `0x40000028` and then `0x4000002C`, which was

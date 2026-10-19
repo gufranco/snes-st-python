@@ -32,10 +32,10 @@ The write to `0x000000` lands below the shared window, on the processor's data p
 
 ## Install
 
-| Requirement | Version |
-|:--|:--|
-| Python | 3.12 or newer |
-| git | Any, to fetch the submodules |
+| Requirement      | Version                                              |
+| :--------------- | :--------------------------------------------------- |
+| Python           | 3.12 or newer                                        |
+| git              | Any, to fetch the submodules                         |
 | A firmware image | One per part you build, dumped from hardware you own |
 
 ```bash
@@ -58,32 +58,32 @@ Releases follow [Semantic Versioning](https://semver.org/) and are cut from the 
 
 `snesst.Chip(model, **options)` builds one part. `model` is required and is matched without regard to case, hyphens or underscores. The ST010 and ST011 come back as `snesst.chip.Chip`, which runs a NEC uPD96050. The ST018 comes back as `snesst.ST018`, which runs an ARM60.
 
-| Model | Aliases | Processor | Image bytes | What the program does |
-|:--|:--|:--|--:|:--|
-| `st010` | `st-010`, `seta010`, `setast010` | uPD96050 | 53,248 | Eight commands for a racing cartridge |
-| `st011` | `st-011`, `seta011`, `setast011` | uPD96050 | 53,248 | Plays shogi |
-| `st018` | `st-018`, `seta018`, `setast018` | ARM60 | 163,840 | Plays shogi, through a one byte mailbox |
+| Model   | Aliases                          | Processor | Image bytes | What the program does                   |
+| :------ | :------------------------------- | :-------- | ----------: | :-------------------------------------- |
+| `st010` | `st-010`, `seta010`, `setast010` | uPD96050  |      53,248 | Eight commands for a racing cartridge   |
+| `st011` | `st-011`, `seta011`, `setast011` | uPD96050  |      53,248 | Plays shogi                             |
+| `st018` | `st-018`, `seta018`, `setast018` | ARM60     |     163,840 | Plays shogi, through a one byte mailbox |
 
 ### The catalogue and the errors
 
-| Name | Content |
-|:--|:--|
-| `snesst.MODELS` | The three `Model` records, keyed by canonical name |
-| `snesst.Model` | `name`, `aliases`, `summary`, and `image`, the name of the image it runs |
+| Name                 | Content                                                                                                                        |
+| :------------------- | :----------------------------------------------------------------------------------------------------------------------------- |
+| `snesst.MODELS`      | The three `Model` records, keyed by canonical name                                                                             |
+| `snesst.Model`       | `name`, `aliases`, `summary`, and `image`, the name of the image it runs                                                       |
 | `snesst.available()` | A dict of every part whose image is on this machine, each an identity and a path. Empty when the uPD96050 submodule is missing |
-| `snesst.why_not()` | The sentence saying why no part can be built here, because the uPD96050 submodule or every image is missing. `None` otherwise |
-| `snesst.ST018` | The ARM part's class, for a caller who builds it directly |
-| `snesst.__version__` | The installed version |
+| `snesst.why_not()`   | The sentence saying why no part can be built here, because the uPD96050 submodule or every image is missing. `None` otherwise  |
+| `snesst.ST018`       | The ARM part's class, for a caller who builds it directly                                                                      |
+| `snesst.__version__` | The installed version                                                                                                          |
 
-| Error | Raised when |
-|:--|:--|
-| `UnknownModelError` | The model is missing or no part goes by that name. The message lists the names accepted |
-| `NoFirmware` | A processor submodule is not checked out, no image for the part is found, or an image is passed to a uPD96050 part without an `identity` |
-| `NeverFinished` | A started command has not cleared the start bit within `patience` instructions |
-| `WrongShape` | An image is not the length its processor takes |
-| `Unrecognised` | `snesst.firmware.identify` meets bytes whose SHA-256 the manifest does not hold. The directory search skips such a file instead |
-| `Corrupt` | An image matches a manifest entry on SHA-256 and disagrees with it on another digest |
-| `UnknownPort` | An ST018 read or write lands on an address other than its three ports |
+| Error               | Raised when                                                                                                                              |
+| :------------------ | :--------------------------------------------------------------------------------------------------------------------------------------- |
+| `UnknownModelError` | The model is missing or no part goes by that name. The message lists the names accepted                                                  |
+| `NoFirmware`        | A processor submodule is not checked out, no image for the part is found, or an image is passed to a uPD96050 part without an `identity` |
+| `NeverFinished`     | A started command has not cleared the start bit within `patience` instructions                                                           |
+| `WrongShape`        | An image is not the length its processor takes                                                                                           |
+| `Unrecognised`      | `snesst.firmware.identify` meets bytes whose SHA-256 the manifest does not hold. The directory search skips such a file instead          |
+| `Corrupt`           | An image matches a manifest entry on SHA-256 and disagrees with it on another digest                                                     |
+| `UnknownPort`       | An ST018 read or write lands on an address other than its three ports                                                                    |
 
 ```python
 import snesst
@@ -114,35 +114,35 @@ no model was named, and this package will not choose one for you. Name one of: s
 
 `Chip("st011", memory=None, fill=0, patience=4000000, boot=200000, image=None, identity=None, images=None)` shows every option with its default.
 
-| Option | Effect |
-|:--|:--|
-| `memory` | Bytes copied into the shared memory after the handshake, up to 4,096 of them |
-| `fill` | The value the processor's registers and memories hold at power-on |
-| `patience` | Instructions a started command may run before `NeverFinished` |
-| `boot` | Instructions run after the handshake's two reads, before the part is handed back |
-| `image` | The image bytes. No directory is searched and no variable is read |
-| `identity` | What `image` is, as a `snesst.firmware.Identity`. Required with `image` |
-| `images` | A catalogue shaped like `available()`, searched in place of this machine's |
+| Option     | Effect                                                                           |
+| :--------- | :------------------------------------------------------------------------------- |
+| `memory`   | Bytes copied into the shared memory after the handshake, up to 4,096 of them     |
+| `fill`     | The value the processor's registers and memories hold at power-on                |
+| `patience` | Instructions a started command may run before `NeverFinished`                    |
+| `boot`     | Instructions run after the handshake's two reads, before the part is handed back |
+| `image`    | The image bytes. No directory is searched and no variable is read                |
+| `identity` | What `image` is, as a `snesst.firmware.Identity`. Required with `image`          |
+| `images`   | A catalogue shaped like `available()`, searched in place of this machine's       |
 
-| Call | Effect |
-|:--|:--|
-| `read(address)` | With bit `0x80000` set, the shared memory byte at `address & 0xFFF`. Otherwise the data port, or the status port at an odd address |
+| Call                    | Effect                                                                                                                                                                                                                |
+| :---------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `read(address)`         | With bit `0x80000` set, the shared memory byte at `address & 0xFFF`. Otherwise the data port, or the status port at an odd address                                                                                    |
 | `write(address, value)` | With bit `0x80000` set, a shared memory byte, then the program runs if the part is enabled and the byte at `0x21` has bit `0x80`. Otherwise a write that enables the part, passed to the data port at an even address |
-| `handshake(boot=None)` | One instruction, two reads of the data port, then `boot` instructions. Returns the part |
-| `step(count)` | `count` processor instructions |
-| `reset()` | Clears `enabled`. The program and the shared memory are untouched. Returns the part |
+| `handshake(boot=None)`  | One instruction, two reads of the data port, then `boot` instructions. Returns the part                                                                                                                               |
+| `step(count)`           | `count` processor instructions                                                                                                                                                                                        |
+| `reset()`               | Clears `enabled`. The program and the shared memory are untouched. Returns the part                                                                                                                                   |
 
-| Attribute | Meaning |
-|:--|:--|
-| `model`, `part` | The canonical model name |
-| `processor` | `upd96050` |
-| `identity` | The `Identity` of the image that runs |
-| `core` | The processor from `nec-upd7725-96050-python` |
-| `console` | The host side of the processor's ports |
-| `enabled` | True once a write below the shared window has arrived since the last reset |
-| `memory` | The 4,096 bytes of shared memory, read without side effects |
-| `command`, `execute` | The register bytes at `0x20` and `0x21` |
-| `patience`, `boot` | The values passed in |
+| Attribute            | Meaning                                                                    |
+| :------------------- | :------------------------------------------------------------------------- |
+| `model`, `part`      | The canonical model name                                                   |
+| `processor`          | `upd96050`                                                                 |
+| `identity`           | The `Identity` of the image that runs                                      |
+| `core`               | The processor from `nec-upd7725-96050-python`                              |
+| `console`            | The host side of the processor's ports                                     |
+| `enabled`            | True once a write below the shared window has arrived since the last reset |
+| `memory`             | The 4,096 bytes of shared memory, read without side effects                |
+| `command`, `execute` | The register bytes at `0x20` and `0x21`                                    |
+| `patience`, `boot`   | The values passed in                                                       |
 
 ```python
 from snesst import Chip, NeverFinished
@@ -176,26 +176,26 @@ A program of zeroes needs no image, so this runs on any checkout with its submod
 
 `Chip("st018", image=None, images=None, fill=0, processor=None)` shows every option with its default. `image` is 163,840 bytes, 131,072 of program and 32,768 of data, and is not identified first. `images` is an iterable of identity and path pairs searched in place of this machine's directories. `processor` names a checkout of `arm6-python` other than the submodule.
 
-| Call | Effect |
-|:--|:--|
-| `read(0x3800)` | The byte the ARM sent, once. Clears the waiting flag, and reads 0 when nothing is waiting |
-| `write(0x3802, value)` | A byte for the ARM. Sets the sent flag |
-| `read(0x3804)` | The status byte: `0x01` a byte waits for the console, `0x08` a byte waits for the ARM, `0x80` the part is up |
-| `write(0x3804, value)` | Resets the part when bit 0 is set |
-| `status()` | The status byte, read the same way |
+| Call                                   | Effect                                                                                                                                                                                     |
+| :------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `read(0x3800)`                         | The byte the ARM sent, once. Clears the waiting flag, and reads 0 when nothing is waiting                                                                                                  |
+| `write(0x3802, value)`                 | A byte for the ARM. Sets the sent flag                                                                                                                                                     |
+| `read(0x3804)`                         | The status byte: `0x01` a byte waits for the console, `0x08` a byte waits for the ARM, `0x80` the part is up                                                                               |
+| `write(0x3804, value)`                 | Resets the part when bit 0 is set                                                                                                                                                          |
+| `status()`                             | The status byte, read the same way                                                                                                                                                         |
 | `port(offset)`, `drive(offset, value)` | The ARM's side of the mailbox: reading offset `0x10` takes the console's byte, reading `0x20` gives the status, driving `0x00` sends a byte to the console and driving `0x20` sets `timer` |
-| `step(count=1)` | `count` ARM instructions. Returns the part |
-| `reset()` | Empties the mailbox, sets the part up and resets the ARM. Returns the part |
+| `step(count=1)`                        | `count` ARM instructions. Returns the part                                                                                                                                                 |
+| `reset()`                              | Empties the mailbox, sets the part up and resets the ARM. Returns the part                                                                                                                 |
 
-| Attribute | Meaning |
-|:--|:--|
-| `model`, `part` | `st018` |
-| `processor` | `arm60` |
-| `identity` | The `Identity` of the image found, or `None` when `image` was passed |
-| `core` | The `arm6.Cpu` running the program |
-| `stores` | The ARM's address space: program at `0x00000000`, ports at `0x40000000`, data at `0xA0000000`, 16 KB of work RAM at `0xE0000000` |
-| `incoming`, `outgoing`, `sent`, `waiting`, `up`, `timer` | The mailbox state behind the status byte |
-| `steps` | ARM instructions run since the part was built. A reset leaves it alone |
+| Attribute                                                | Meaning                                                                                                                          |
+| :------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------- |
+| `model`, `part`                                          | `st018`                                                                                                                          |
+| `processor`                                              | `arm60`                                                                                                                          |
+| `identity`                                               | The `Identity` of the image found, or `None` when `image` was passed                                                             |
+| `core`                                                   | The `arm6.Cpu` running the program                                                                                               |
+| `stores`                                                 | The ARM's address space: program at `0x00000000`, ports at `0x40000000`, data at `0xA0000000`, 16 KB of work RAM at `0xE0000000` |
+| `incoming`, `outgoing`, `sent`, `waiting`, `up`, `timer` | The mailbox state behind the status byte                                                                                         |
+| `steps`                                                  | ARM instructions run since the part was built. A reset leaves it alone                                                           |
 
 ```python
 from snesst import Chip, UnknownPort
@@ -230,14 +230,14 @@ A zeroed image builds an ARM that runs zeroes, so the mailbox can be driven with
 
 Each runs from the repository root.
 
-| Command | Arguments | Exit codes |
-|:--|:--|:--|
-| `python3 snesst/doctor.py` | None | 0 when every check passes, 1 when any fails |
-| `python3 -m conformance.speed` | None | 0 at or above 150,000 uPD96050 instructions a second, or when no part can be built here. 1 below that |
-| `python3 -m conformance.against_cartridges` | A part, `st010` by default | 0 when at least one recorded exchange got a byte back, 1 when none did, 2 when no part can be built here |
-| `python3 -m conformance.record` | A directory of cartridges, then an output directory | 0 when every part found yields shapes, 1 when one yields none, 2 for a missing argument, a missing directory, or no cartridge carrying a part |
-| `python3 -m conformance.links` | None | 0 unless an address in this README answers 404 or 410 |
-| `python3 -m conformance.package` | A built wheel | 0 when every module is in it and no test is, 1 otherwise or when the file is absent, 2 without an argument |
+| Command                                     | Arguments                                           | Exit codes                                                                                                                                    |
+| :------------------------------------------ | :-------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------- |
+| `python3 snesst/doctor.py`                  | None                                                | 0 when every check passes, 1 when any fails                                                                                                   |
+| `python3 -m conformance.speed`              | None                                                | 0 at or above 150,000 uPD96050 instructions a second, or when no part can be built here. 1 below that                                         |
+| `python3 -m conformance.against_cartridges` | A part, `st010` by default                          | 0 when at least one recorded exchange got a byte back, 1 when none did, 2 when no part can be built here                                      |
+| `python3 -m conformance.record`             | A directory of cartridges, then an output directory | 0 when every part found yields shapes, 1 when one yields none, 2 for a missing argument, a missing directory, or no cartridge carrying a part |
+| `python3 -m conformance.links`              | None                                                | 0 unless an address in this README answers 404 or 410                                                                                         |
+| `python3 -m conformance.package`            | A built wheel                                       | 0 when every module is in it and no test is, 1 otherwise or when the file is absent, 2 without an argument                                    |
 
 `conformance.against_cartridges` plays the exchanges in [`conformance/st010shapes.json`](conformance/st010shapes.json) and [`conformance/st011shapes.json`](conformance/st011shapes.json) at the part. `conformance.record` writes those files: it reads each cartridge's own code through `snes-driver-python` and keeps the shape of every exchange, never a byte of the cartridge. It accepts only cartridges named in that submodule's manifest and checks all four of their digests.
 
@@ -257,10 +257,10 @@ Without an image a part refuses to build. It never falls back to an answer that 
 
 Every image is identified before a byte of it runs. SHA-256 decides. The CRC32 is there to cross-check against a catalogue that keys on it.
 
-| Part | Bytes | CRC32 | SHA-256 |
-|:--|--:|:--|:--|
-| `st010` | 53,248 | `8d136190` | `55c697e864562445621cdf8a7bf6e84ae91361e393d382a3704e9aa55559041e` |
-| `st011` | 53,248 | `750c6012` | `651b82a1e26c4fa8dd549e91e7f923012ed2ca54c1d9fd858655ab30679c2f0e` |
+| Part    |   Bytes | CRC32      | SHA-256                                                            |
+| :------ | ------: | :--------- | :----------------------------------------------------------------- |
+| `st010` |  53,248 | `8d136190` | `55c697e864562445621cdf8a7bf6e84ae91361e393d382a3704e9aa55559041e` |
+| `st011` |  53,248 | `750c6012` | `651b82a1e26c4fa8dd549e91e7f923012ed2ca54c1d9fd858655ab30679c2f0e` |
 | `st018` | 163,840 | `5c403cc5` | `6df209ab5d2524d1839c038be400ae5eb20dafc14a3771a3239cd9e8acd53806` |
 
 [`snesst/artifacts.manifest.json`](snesst/artifacts.manifest.json) holds these with the MD5 and SHA-1 beside them. The search reads files ending in `.bin` or `.rom`, in this order, and the first image found for a part wins:
@@ -286,10 +286,10 @@ The window below the shared memory is the processor's data port, and the shared 
 
 `Chip` performs that handshake while building the part: one instruction, two reads of the data port, then 200,000 instructions. Each program then waits in a place of its own.
 
-| Part | Where its program waits |
-|:--|:--|
+| Part  | Where its program waits                                                                  |
+| :---- | :--------------------------------------------------------------------------------------- |
 | ST010 | Words 3, 4 and 5, testing the top bit of the word holding the command and the start byte |
-| ST011 | Word 2 |
+| ST011 | Word 2                                                                                   |
 
 ```python
 from snesst import Chip
@@ -310,14 +310,14 @@ This example needs both images.
 
 [`conformance/hardware.json`](conformance/hardware.json) records every value the package asserts about the interface, each marked unverified, with its evidence and the measurement that would settle it: the 4,096 byte shared window, enable bit `0x80000`, the register bytes at `0x20` and `0x21`, the two handshake reads, both wait places, and what a reset does. [`conformance/hardware.test.py`](conformance/hardware.test.py) drives a part built on a program of zeroes to hold the window, the enable bit, the registers and the handshake, and [`snesst/microcode.test.py`](snesst/microcode.test.py) holds both wait places on the real images.
 
-| Layer | What is checked | Needs an image |
-|:--|:--|:--:|
-| The processors | Every instruction, in [nec-upd7725-96050-python](https://github.com/gufranco/nec-upd7725-96050-python) and [arm6-python](https://github.com/gufranco/arm6-python) | No |
-| The decode | The enabling write, the two register bytes, the shared window, on a program of zeroes | No |
-| The ST018 mailbox | Its three ports, its status bits and its refusals, on short ARM programs written in the tests | No |
-| Identity | Each image named by a deciding digest, and every refusal a wrong file gets | No |
-| The catalogue | All three parts and every name they answer to | No |
-| The parts | The ST010 and ST011 each reach their own wait and stay there for 4,096 instructions, and the ST010 answers a command | Yes |
+| Layer             | What is checked                                                                                                                                                   | Needs an image |
+| :---------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------: |
+| The processors    | Every instruction, in [nec-upd7725-96050-python](https://github.com/gufranco/nec-upd7725-96050-python) and [arm6-python](https://github.com/gufranco/arm6-python) |       No       |
+| The decode        | The enabling write, the two register bytes, the shared window, on a program of zeroes                                                                             |       No       |
+| The ST018 mailbox | Its three ports, its status bits and its refusals, on short ARM programs written in the tests                                                                     |       No       |
+| Identity          | Each image named by a deciding digest, and every refusal a wrong file gets                                                                                        |       No       |
+| The catalogue     | All three parts and every name they answer to                                                                                                                     |       No       |
+| The parts         | The ST010 and ST011 each reach their own wait and stay there for 4,096 instructions, and the ST010 answers a command                                              |      Yes       |
 
 [`snesst/microcode.test.py`](snesst/microcode.test.py) carries the last row and reports as skipped when no image is present. A separate CI job starts every part, runs `conformance.against_cartridges` for the ST010 and ST011, and says on the run page whether a part was driven at all.
 
@@ -325,13 +325,13 @@ This example needs both images.
 
 ## Working on it
 
-| Need | Where |
-|:--|:--|
-| Every gate and the order to run them | [CONTRIBUTING.md](CONTRIBUTING.md) |
-| The same material for a coding agent | [AGENTS.md](AGENTS.md) |
-| The standard this repository shares with the rest of the family | [FAMILY.md](FAMILY.md) |
-| Bug reports | [GitHub Issues](https://github.com/gufranco/snes-st-python/issues) |
-| Security reports | [SECURITY.md](SECURITY.md) |
+| Need                                                            | Where                                                              |
+| :-------------------------------------------------------------- | :----------------------------------------------------------------- |
+| Every gate and the order to run them                            | [CONTRIBUTING.md](CONTRIBUTING.md)                                 |
+| The same material for a coding agent                            | [AGENTS.md](AGENTS.md)                                             |
+| The standard this repository shares with the rest of the family | [FAMILY.md](FAMILY.md)                                             |
+| Bug reports                                                     | [GitHub Issues](https://github.com/gufranco/snes-st-python/issues) |
+| Security reports                                                | [SECURITY.md](SECURITY.md)                                         |
 
 ```bash
 uvx ruff@0.16.3 format --check .

@@ -28,12 +28,12 @@ interface appears here.
 every member of the family takes first, and the name is the kind rather than the
 chip.
 
-| Call | What it does |
-|:--|:--|
-| `read(address)`, `write(address, value)` | The two accesses a cartridge makes |
-| `handshake()` | What the console does at power on to wake the part |
-| `step(count)` | Run the processor for a number of its own instructions |
-| `reset()` | Back to a part that has not been woken, handed back for chaining |
+| Call                                     | What it does                                                     |
+| :--------------------------------------- | :--------------------------------------------------------------- |
+| `read(address)`, `write(address, value)` | The two accesses a cartridge makes                               |
+| `handshake()`                            | What the console does at power on to wake the part               |
+| `step(count)`                            | Run the processor for a number of its own instructions           |
+| `reset()`                                | Back to a part that has not been woken, handed back for chaining |
 
 ## The authority ladder
 
@@ -167,6 +167,21 @@ their reasons live here, beside those of the other exclusions:
   building a part needs a file this repository does not carry, so on a runner
   without it the family tests that build one are skipped.
 
+The formatter's ignores in [`.prettierignore`](.prettierignore) carry no
+comments either, so their reasons live here:
+
+- `pnpm-lock.yaml` and `package-lock.json`: the package manager writes them, in
+  its own layout, on every install.
+- `node_modules/`, `.venv/`, `venv/`, `build/`, `dist/` and `*.egg-info/`:
+  installed or built, never written by hand.
+- `.coverage`, `coverage.json`, `htmlcov/` and the tool caches: the output of a
+  run, never committed.
+- `docs/`, `specs/`, `.work/` and `.claude/`: local working material, never
+  committed.
+- `nec-upd7725-96050-python/`, `snes-driver-python/` and `arm6-python/`:
+  submodules. Each is a member that formats and checks itself, and the commit
+  pinned here is not this repository's to change.
+
 ## Layout
 
 ```text
@@ -209,6 +224,7 @@ nec-upd7725-96050-python/  the processor both parts are, as a submodule at the r
   ```
 
   Change one and change the other two in the same task.
+
 - **The submodule is not optional.** Without it nothing here can run, and the
   refusal says so rather than falling back to a guess.
 - **A part cannot be built without an image.** `Chip("st010")` raises

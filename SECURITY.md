@@ -10,12 +10,12 @@ about what a malformed input can make the code do.
 
 ## What is in scope
 
-| Class | Example |
-|-------|---------|
-| Supply chain | A dependency or a pinned action that has been compromised |
+| Class           | Example                                                                                     |
+| --------------- | ------------------------------------------------------------------------------------------- |
+| Supply chain    | A dependency or a pinned action that has been compromised                                   |
 | Malformed input | A crafted image that makes the loader allocate without bound, or microcode that never halts |
-| Path handling | An input that causes a write outside the directory the caller named |
-| Image handling | Anything that lets a file the manifest did not name be loaded and run |
+| Path handling   | An input that causes a write outside the directory the caller named                         |
+| Image handling  | Anything that lets a file the manifest did not name be loaded and run                       |
 
 ## What is not
 
