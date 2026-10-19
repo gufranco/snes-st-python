@@ -8,7 +8,7 @@ English | [日本語](README.ja.md) | [简体中文](README.zh-Hans.md) | [繁�
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-st-python)](https://github.com/gufranco/snes-st-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**3** parts, **0** commands described by hand, both waits measured on the shipped microcode, **0** disagreements between those waits and the record, **732** tests, **100%** statement and branch coverage, no dependencies
+**3** parts, **0** commands described by hand, both waits measured on the shipped microcode, **0** disagreements between those waits and the record, **740** tests, **100%** statement and branch coverage, no dependencies
 
 ```python
 from snesst import Chip
@@ -291,6 +291,8 @@ certutil -hashfile firmware\st0010.bin SHA256
 ```
 
 A file whose digest is not in the manifest is skipped by the search. Passed to `snesst.firmware.identify`, it is refused, and the refusal says whether removing a 512 byte header, dropping the last 512 bytes or swapping byte pairs turns it into a known image.
+
+A dump that stores each program word and each table word low byte first, the layout of the ST010 and ST011 files in common circulation, is accepted too. Reversing the bytes of every 3-byte program word and every 2-byte table word of those two files gives exactly the digests above, so the search identifies such a file by that reversal, marks its `Identity` with `low_byte_first`, and the part runs the reversed bytes. The doctor names the digest of the bytes it runs and says the file was stored the other way. The ST018 file has no words to reverse and matches as it stands.
 
 ## The handshake nothing documents
 

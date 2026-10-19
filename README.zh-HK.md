@@ -8,7 +8,7 @@ Seta 為 Super Nintendo 卡帶製造的三款協處理器的 Python 實現。每
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-st-python)](https://github.com/gufranco/snes-st-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**3** 款晶片，**0** 個人手描述的命令，兩處等待位置均在出貨的微碼上量度，這些等待位置與記錄之間 **0** 處分歧，**732** 個測試，**100%** 語句與分支覆蓋率，無任何依賴
+**3** 款晶片，**0** 個人手描述的命令，兩處等待位置均在出貨的微碼上量度，這些等待位置與記錄之間 **0** 處分歧，**740** 個測試，**100%** 語句與分支覆蓋率，無任何依賴
 
 ```python
 from snesst import Chip
@@ -291,6 +291,8 @@ certutil -hashfile firmware\st0010.bin SHA256
 ```
 
 摘要不在清單中的檔案會被搜尋略過。傳給 `snesst.firmware.identify` 時，它會被拒絕，拒絕訊息會說明移除 512 位元組標頭、刪去最後 512 個位元組或交換位元組對，能否把它變成已知映像檔。
+
+把每個程式字和每個表字以低位元組在前儲存的傾印亦會被接受，這是流傳較廣的 ST010 和 ST011 檔案的排列方式。把這兩個檔案中每個 3 位元組程式字和每個 2 位元組表字的位元組反轉，得到的正好是上表中的摘要，因此搜尋以這種反轉識別這樣的檔案，在其 `Identity` 上標記 `low_byte_first`，晶片執行的是反轉後的位元組。診斷腳本報告它執行的位元組的摘要，並說明檔案是以另一種次序儲存的。ST018 檔案沒有需要反轉的字，按原樣即可配對。
 
 ## 沒有文件記載的握手
 

@@ -113,7 +113,7 @@ class Chip:
                     f" be run. {WHY_NOT_FIRMWARE}"
                 )
             identity, where = catalogue[part]
-            image = Path(where).read_bytes()
+            image = firmware.read(where, identity)
         elif identity is None:
             raise NoFirmware(
                 "an image was supplied without saying what it is, and the processor"

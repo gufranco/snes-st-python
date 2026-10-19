@@ -30,6 +30,22 @@ class DigestTest(unittest.TestCase):
             found, ", sha256 d57911c29fed03d95df95d0745a8a78c1cc6e0aa2bdcea932911435909f28c17"
         )
 
+    def test_a_dump_storing_each_word_low_byte_first_reports_the_bytes_it_runs(self) -> None:
+        # Arrange
+        where = Path(tempfile.mkdtemp()) / "made-up.bin"
+        where.write_bytes(bytes(range(1, 9)))
+        turned = firmware.Identity("st010", "upd7725", "MADE UP", 2, 1, low_byte_first=True)
+
+        # Act
+        found = doctor.digest_of("st010", {"st010": (turned, where)})
+
+        # Assert
+        self.assertEqual(
+            found,
+            ", sha256 27bc0714ef81fd9981322af16d7cc2467eda4b01d28ab1e6be80cbbcab3376df,"
+            " read from a file that stores each word low byte first",
+        )
+
     def test_a_file_that_cannot_be_read_says_so_rather_than_going_quiet(self) -> None:
         # Arrange
         catalogue = self._catalogue(Path("/nowhere/at/all.bin"))

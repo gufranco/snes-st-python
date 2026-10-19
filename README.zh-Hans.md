@@ -8,7 +8,7 @@ Seta 为 Super Nintendo 卡带制造的三款协处理器的 Python 实现，每
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-st-python)](https://github.com/gufranco/snes-st-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**3** 个部件，**0** 条手工描述的命令，两处等待位置均在出厂微码上测得，这些等待位置与记录之间 **0** 处不一致，**732** 个测试，**100%** 语句和分支覆盖率，无依赖
+**3** 个部件，**0** 条手工描述的命令，两处等待位置均在出厂微码上测得，这些等待位置与记录之间 **0** 处不一致，**740** 个测试，**100%** 语句和分支覆盖率，无依赖
 
 ```python
 from snesst import Chip
@@ -291,6 +291,8 @@ certutil -hashfile firmware\st0010.bin SHA256
 ```
 
 摘要不在清单中的文件会被搜索跳过。传给 `snesst.firmware.identify` 时它会被拒绝，拒绝信息会说明去掉 512 字节文件头、丢弃最后 512 字节或交换字节对之后，它是否会变成已知镜像。
+
+把每个程序字和每个表字以低字节在前存储的转储也会被接受，这是流传较广的 ST010 和 ST011 文件的排列方式。把这两个文件中每个 3 字节程序字和每个 2 字节表字的字节反转，得到的正好是上表中的摘要，因此搜索通过这种反转识别这样的文件，在其 `Identity` 上标记 `low_byte_first`，部件运行的是反转后的字节。诊断脚本报告它运行的字节的摘要，并说明文件是以另一种顺序存储的。ST018 文件没有需要反转的字，按原样即可匹配。
 
 ## 没有任何文档记载的握手
 

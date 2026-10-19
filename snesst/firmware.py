@@ -53,6 +53,7 @@ class Identity:
     __slots__ = (
         "data_bytes",
         "data_words",
+        "low_byte_first",
         "part",
         "processor",
         "program_bytes",
@@ -69,6 +70,7 @@ class Identity:
         data_words: int = 0,
         program_bytes: int = 0,
         data_bytes: int = 0,
+        low_byte_first: bool = False,
     ) -> None:
         self.part = part
         self.processor = processor
@@ -77,6 +79,7 @@ class Identity:
         self.data_words = data_words
         self.program_bytes = program_bytes
         self.data_bytes = data_bytes
+        self.low_byte_first = low_byte_first
 
     @override
     def __repr__(self) -> str:
@@ -109,10 +112,23 @@ def directories(environment: Mapping[str, str] | None = None) -> tuple[Path, ...
     return tuple(seen)
 
 
-def identify(image: bytes, catalogue: dict[str, Any] | None = None) -> Identity:
-    found = digests_of(image)
-    entries = (catalogue or manifest())["artifacts"]
+def reordered(image: bytes, program_words: int) -> bytes:
+    split = program_words * PROGRAM_BYTES_PER_WORD
+    program = b"".join(
+        image[at : at + PROGRAM_BYTES_PER_WORD][::-1]
+        for at in range(0, split, PROGRAM_BYTES_PER_WORD)
+    )
+    table = b"".join(
+        image[at : at + TABLE_BYTES_PER_WORD][::-1]
+        for at in range(split, len(image), TABLE_BYTES_PER_WORD)
+    )
+    return program + table
 
+
+def _named(
+    image: bytes, entries: list[dict[str, Any]], low_byte_first: bool = False
+) -> Identity | None:
+    found = digests_of(image)
     for entry in entries:
         for accepted in entry["accepted"]:
             if accepted[DECIDES] != found[DECIDES]:
@@ -126,9 +142,34 @@ def identify(image: bytes, catalogue: dict[str, Any] | None = None) -> Identity:
                 data_words=entry.get("dataWords", 0),
                 program_bytes=entry.get("programBytes", 0),
                 data_bytes=entry.get("dataBytes", 0),
+                low_byte_first=low_byte_first,
             )
+    return None
 
-    raise Unrecognised(_diagnosis(image, found[DECIDES], entries))
+
+def _turned(image: bytes, entries: list[dict[str, Any]]) -> Identity | None:
+    for entry in entries:
+        if "programWords" not in entry or entry["bytes"] != len(image):
+            continue
+        found = _named(reordered(image, entry["programWords"]), [entry], low_byte_first=True)
+        if found is not None:
+            return found
+    return None
+
+
+def identify(image: bytes, catalogue: dict[str, Any] | None = None) -> Identity:
+    entries = (catalogue or manifest())["artifacts"]
+    found = _named(image, entries) or _turned(image, entries)
+    if found is None:
+        raise Unrecognised(_diagnosis(image, digests_of(image)[DECIDES], entries))
+    return found
+
+
+def read(where: Path | str, identity: Identity) -> bytes:
+    image = Path(where).read_bytes()
+    if not identity.low_byte_first:
+        return image
+    return reordered(image, identity.program_words)
 
 
 def _confirm(entry: dict[str, Any], accepted: dict[str, Any], found: dict[str, str]) -> None:

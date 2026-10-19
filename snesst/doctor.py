@@ -19,7 +19,7 @@ def reachable(root: Path = ROOT, path: list[str] | None = None) -> bool:
 
 reachable()
 
-from snesst import chip, environment, models, st018  # noqa: E402
+from snesst import chip, environment, firmware, models, st018  # noqa: E402
 from snesst.version import VERSION  # noqa: E402
 
 
@@ -136,11 +136,18 @@ def digest_of(wanted: str, images: Images | None) -> str:
     held = images.get(wanted) if isinstance(images, dict) else None
     if not isinstance(held, tuple) or len(held) != 2:
         return ""
+    identity, where = held
     try:
-        raw = Path(held[1]).read_bytes()
+        raw = Path(where).read_bytes()
     except OSError as trouble:
         return f", but its file could not be read: {trouble}"
-    return f", sha256 {hashlib.sha256(raw).hexdigest()}"
+    if not getattr(identity, "low_byte_first", False):
+        return f", sha256 {hashlib.sha256(raw).hexdigest()}"
+    run = firmware.reordered(raw, identity.program_words)
+    return (
+        f", sha256 {hashlib.sha256(run).hexdigest()},"
+        " read from a file that stores each word low byte first"
+    )
 
 
 def check_waits(build: Build | None = None, images: Images | None = None) -> Finding:

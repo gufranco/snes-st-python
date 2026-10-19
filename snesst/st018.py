@@ -153,7 +153,7 @@ class ST018:
     def _search(images: Iterator[tuple[Any, Path | str]] | None) -> tuple[bytes, Any]:
         for identity, where in firmware.search() if images is None else images:
             if identity.part == PART:
-                return Path(where).read_bytes(), identity
+                return firmware.read(where, identity), identity
         raise NoFirmware(
             f"there is no image for {PART} in any of the places this package looks,"
             " so its program cannot be run"
