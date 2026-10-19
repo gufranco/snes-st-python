@@ -10,7 +10,7 @@
       "layout": "lorom",
       "chipset": "0xf6",
       "name": "Hayazashi Nidan Morita Shougi (Japan).sfc",
-      "shapes": 13,
+      "shapes": 16,
       "crc32": "81e822ad",
       "md5": "ea342f4da33bf6eb3dc1fd2f89aa751f",
       "sha1": "82b4bca58918a18707f932ec6afc0a12a3c4b872",
@@ -19,67 +19,82 @@
   ],
   "shapes": [
     {
-      "shape": "poll1@0x600001 write1@0x600000 poll1@0x600001 read1@0x68012c",
+      "shape": "poll1~@0x600001",
+      "seen": 7,
+      "cartridges": 1
+    },
+    {
+      "shape": "poll?@0x600001",
+      "seen": 5,
+      "cartridges": 1
+    },
+    {
+      "shape": "write1~@0x600000 poll1~@0x600001",
+      "seen": 5,
+      "cartridges": 1
+    },
+    {
+      "shape": "write?@0x600000 poll?@0x600001",
+      "seen": 5,
+      "cartridges": 1
+    },
+    {
+      "shape": "read?@0x68012c",
       "seen": 3,
       "cartridges": 1
     },
     {
-      "shape": "poll1@0x600001 write1@0x600000 poll1@0x600001 poll1@0x600001 write1@0x600000 write1@0x600000 write1@0x600000 write1@0x600000 write1@0x600000 poll1@0x600001",
+      "shape": "read1~@0x68012c read1~@0x68012e poll1@0x600001 write1@0x600000 write1@0x600000 write1@0x600000 write1@0x600000 write1@0x600000 poll1@0x600001",
       "seen": 2,
       "cartridges": 1
     },
     {
-      "shape": "poll1@0x600001 write1@0x600000 poll1@0x600001 read1@0x68012c read1@0x68012e poll1@0x600001 write1@0x600000 write1@0x600000 write1@0x600000 write1@0x600000 write1@0x600000 poll1@0x600001",
+      "shape": "read?@0x68012c read?@0x68012e",
       "seen": 2,
       "cartridges": 1
     },
     {
-      "shape": "poll1@0x600001 write1@0x600000 poll1@0x600001 read2@0x68012c read2@0x68012e",
-      "seen": 2,
-      "cartridges": 1
-    },
-    {
-      "shape": "poll1@0x600001 read1@0x600000",
+      "shape": "poll?@0x600001 read?@0x600000",
       "seen": 1,
       "cartridges": 1
     },
     {
-      "shape": "poll1@0x600001 write1@0x600000",
+      "shape": "poll?@0x600001 write?@0x600000",
       "seen": 1,
       "cartridges": 1
     },
     {
-      "shape": "poll1@0x600001 write1@0x600000 poll1@0x600001 read2@0x68012c",
+      "shape": "read2~@0x68012c",
       "seen": 1,
       "cartridges": 1
     },
     {
-      "shape": "poll1@0x600001 write1@0x600000 poll1@0x600001 write1@0x600000 write1@0x600000",
+      "shape": "read?@0x6b0017",
       "seen": 1,
       "cartridges": 1
     },
     {
-      "shape": "poll1@0x600001 write1@0x600000 write1@0x600000 write1@0x600000 write1@0x600000 write1@0x600000 poll1@0x600001",
+      "shape": "read?@0x6e0264",
       "seen": 1,
       "cartridges": 1
     },
     {
-      "shape": "read1@0x6b0017",
+      "shape": "write1~@0x600000 poll1@0x600001 write1@0x600000 write1@0x600000",
       "seen": 1,
       "cartridges": 1
     },
     {
-      "shape": "read1@0x6e0264",
+      "shape": "write1~@0x600000 write1@0x600000 write1@0x600000 write1@0x600000 write1@0x600000 poll1@0x600001",
       "seen": 1,
       "cartridges": 1
     },
     {
-      "shape": "write1@0x6c07b8",
+      "shape": "write?@0x6c07b8",
       "seen": 1,
       "cartridges": 1
     },
     {
-      "shape": "write1@0x6d0c00",
+      "shape": "write?@0x6d0c00",
       "seen": 1,
       "cartridges": 1
     }

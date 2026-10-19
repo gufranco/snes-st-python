@@ -17,6 +17,18 @@ POLL = "poll"
 
 STEPS = (WRITE, READ, POLL)
 
+KNOWN = ""
+
+RAN = "*"
+
+TRACED = "~"
+
+ASSUMED = "?"
+
+MARKS = (RAN, TRACED)
+
+ASSUMED_WIDTH = 1
+
 DEFAULT_SEED = 0x51A7C0
 
 Shapes = tuple[tuple["tuple[Step, ...]", int], ...]
@@ -33,34 +45,60 @@ class Addressed(Protocol):
 
 
 class Step:
-    __slots__ = ("address", "what", "width")
+    __slots__ = ("address", "label", "what", "width")
 
-    def __init__(self, what: str, width: int, address: int) -> None:
+    def __init__(self, what: str, width: int, address: int, label: str = KNOWN) -> None:
         self.what = what
         self.width = width
         self.address = address
+        self.label = label
 
     @property
     def moves(self) -> bool:
         return self.what in (WRITE, READ)
 
+    @property
+    def assumed(self) -> bool:
+        return self.label == ASSUMED
+
+    @property
+    def spelled_width(self) -> str:
+        return ASSUMED if self.assumed else f"{self.width}{self.label}"
+
     @override
     def __repr__(self) -> str:
-        return f"{self.what}{self.width}@{self.address:#08x}"
+        return f"{self.what}{self.spelled_width}@{self.address:#08x}"
+
+    def _key(self) -> tuple[str, int, int, str]:
+        return (self.what, self.width, self.address, self.label)
 
     @override
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Step):
             return NotImplemented
-        return (self.what, self.width, self.address) == (other.what, other.width, other.address)
+        return self._key() == other._key()
 
     @override
     def __hash__(self) -> int:
-        return hash((self.what, self.width, self.address))
+        return hash(self._key())
 
 
 def spell(steps: "Iterable[Step]") -> str:
     return " ".join(repr(step) for step in steps)
+
+
+def assumptions(steps: "Iterable[Step]") -> int:
+    return sum(1 for step in steps if step.assumed)
+
+
+def width_of(word: str, spelled: str) -> tuple[int, str]:
+    if spelled == ASSUMED:
+        return ASSUMED_WIDTH, ASSUMED
+    label = spelled[-1] if spelled[-1:] in MARKS else KNOWN
+    digits = spelled[: len(spelled) - len(label)]
+    if not digits.isdigit():
+        raise Malformed(f"{word} does not say how wide it is")
+    return int(digits), label
 
 
 def parse(shape: str) -> "tuple[Step, ...]":
@@ -72,14 +110,12 @@ def parse(shape: str) -> "tuple[Step, ...]":
         known = next((one for one in STEPS if kind.startswith(one)), None)
         if known is None:
             raise Malformed(f"{kind} is not one of {', '.join(STEPS)}")
-        width = kind[len(known) :]
-        if not width.isdigit():
-            raise Malformed(f"{word} does not say how wide it is")
+        width, label = width_of(word, kind[len(known) :])
         try:
             address = int(rest, 16)
         except ValueError as reason:
             raise Malformed(f"{rest} is not an address") from reason
-        found.append(Step(known, int(width), address))
+        found.append(Step(known, width, address, label))
     if not found:
         raise Malformed("a shape with no accesses in it drives nothing")
     return tuple(found)

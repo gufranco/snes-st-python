@@ -81,6 +81,62 @@ class ParseTest(unittest.TestCase):
             shapes.parse("   ")
 
 
+class LabelTest(unittest.TestCase):
+    def test_each_of_the_four_labels_reads_back_as_it_was_written(self) -> None:
+        # Arrange
+        spelled = "write1@0x680000 write2*@0x680002 read2~@0x680010 poll?@0x680021"
+
+        # Act
+        found = shapes.parse(spelled)
+
+        # Assert
+        self.assertEqual(
+            (shapes.spell(found), [step.label for step in found]),
+            (spelled, [shapes.KNOWN, shapes.RAN, shapes.TRACED, shapes.ASSUMED]),
+        )
+
+    def test_an_assumed_width_is_replayed_as_one_byte(self) -> None:
+        # Arrange
+        spelled = "write?@0x680020"
+
+        # Act
+        found = shapes.parse(spelled)[0]
+
+        # Assert
+        self.assertEqual((found.width, found.assumed), (1, True))
+
+    def test_only_an_assumed_width_is_an_assumption(self) -> None:
+        # Arrange
+        steps = shapes.parse("write1@0x0 write2*@0x0 write2~@0x0 write?@0x0")
+
+        # Act
+        found = shapes.assumptions(steps)
+
+        # Assert
+        self.assertEqual(found, 1)
+
+    def test_two_steps_that_differ_only_in_their_label_are_different_steps(self) -> None:
+        # Arrange
+        traced = shapes.parse("write2~@0x680020")[0]
+
+        # Act
+        found = traced == shapes.parse("write2@0x680020")[0]
+
+        # Assert
+        self.assertFalse(found)
+
+    def test_a_mark_with_no_width_before_it_is_refused(self) -> None:
+        # Arrange
+        spelled = "write~@0x680020"
+
+        # Act
+        def parsing() -> object:
+            return shapes.parse(spelled)
+
+        # Assert
+        self.assertRaises(shapes.Malformed, parsing)
+
+
 class RecordedTest(unittest.TestCase):
     def test_a_part_with_no_recorded_file_has_no_recorded_shapes(self) -> None:
         found = shapes.recorded("nosuchpart")

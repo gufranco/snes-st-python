@@ -1,5 +1,6 @@
 import collections
 import hashlib
+import importlib.util
 import json
 import sys
 import zlib
@@ -101,8 +102,13 @@ def confirmed(image: bytes, named: dict[str, dict[str, Any]]) -> dict[str, Any] 
     return row
 
 
+DRIVER_ROOT = Path(__file__).resolve().parent.parent / "snes-driver-python"
+
+LAYOUT = "lorom"
+
+
 def _driver() -> Any:
-    here = Path(__file__).resolve().parent.parent / "snes-driver-python"
+    here = DRIVER_ROOT
     for where in (here, here / "mos65xx-python", here / "snes-mapper-python"):
         if str(where) not in sys.path:
             sys.path.insert(0, str(where))
@@ -120,10 +126,29 @@ def windows_for(part: str) -> "Anywhere":
     return Anywhere([one for one in reached if one is not None])
 
 
-def through_the_driver(image: bytes, part: str = "st010") -> tuple[dict[str, int], bool]:
+def traced_widths(digest: str) -> dict[int, int]:
+    spec = importlib.util.spec_from_file_location(
+        "snes_driver_corpus", DRIVER_ROOT / "conformance" / "corpus.py"
+    )
+    assert spec is not None and spec.loader is not None, "the driver carries no corpus reader"
+    corpus = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(corpus)
+    found: dict[int, int] = corpus.widths(digest)
+    return found
+
+
+def spelled(talk: Any) -> str:
+    return " ".join(f"{one.token}@{one.whole:#08x}" for one in talk.steps)
+
+
+def through_the_driver(
+    image: bytes, part: str = "st010", traced: dict[int, int] | None = None
+) -> tuple[dict[str, int], bool]:
     driver = _driver()
     reaching = windows_for(part)
     find = driver.reached if part == "st018" else driver.conversation.sites
+    seen_by_a_run = traced if traced is not None else traced_widths(digests_of(image)["sha256"])
+    known = driver.widths(image, LAYOUT)
 
     counted: collections.Counter[str] = collections.Counter()
     seen: set[int] = set()
@@ -131,10 +156,22 @@ def through_the_driver(image: bytes, part: str = "st010") -> tuple[dict[str, int
     for site in find(image, reaching):
         if site in seen:
             continue
-        talk = driver.conversation.at(image, site, reaching)
-        seen.update(talk.covered)
-        banked = banked and talk.banked
-        counted[" ".join(f"{one.what}{one.width}@{one.whole:#08x}" for one in talk.steps)] += 1
+        heard: set[str] = set()
+        for (wide, index), told in driver.conversation.starts(site, None, known, {}):
+            talk = driver.conversation.at(
+                image,
+                site,
+                reaching,
+                wide,
+                index=index,
+                known=known,
+                ran=told,
+                traced=seen_by_a_run,
+            )
+            seen.update(talk.covered)
+            banked = banked and talk.banked
+            heard.add(spelled(talk))
+        counted.update(heard)
     return dict(counted), banked
 
 

@@ -10,7 +10,7 @@
       "layout": "lorom",
       "chipset": "0xf6",
       "name": "Exhaust Heat II - F1 Driver e no Michi (Japan).sfc",
-      "shapes": 32,
+      "shapes": 40,
       "crc32": "e2c8e535",
       "md5": "9b0dffe0222a9b7b7c8dcb98cc8ca058",
       "sha1": "3600f81d5a7e2ec41f362cc22a16a58ce2612048",
@@ -22,7 +22,7 @@
       "layout": "lorom",
       "chipset": "0xf6",
       "name": "F1-ROC II - Race of Champions (USA).sfc",
-      "shapes": 32,
+      "shapes": 40,
       "crc32": "3447609e",
       "md5": "000ba16a5a4c08992ec93d0309d8ed6c",
       "sha1": "fb81dd15b8a9ddf8f5564d3d2fb934c6f8bfb392",
@@ -31,42 +31,42 @@
   ],
   "shapes": [
     {
-      "shape": "read1@0x6c0268",
+      "shape": "read?@0x6c0268",
       "seen": 18,
       "cartridges": 2
     },
     {
-      "shape": "read1@0x6f0f7f",
+      "shape": "read?@0x6f0f7f",
       "seen": 10,
       "cartridges": 2
     },
     {
-      "shape": "write1@0x6d0359",
+      "shape": "write?@0x6d0359",
       "seen": 10,
       "cartridges": 2
     },
     {
-      "shape": "write1@0x680000 write1@0x680002",
-      "seen": 8,
-      "cartridges": 2
-    },
-    {
-      "shape": "write1@0x680004 write1@0x680000 write1@0x680002",
+      "shape": "write2~@0x680000 write2~@0x680002",
       "seen": 6,
       "cartridges": 2
     },
     {
-      "shape": "write1@0x680020 poll1@0x680020 read1@0x680010",
-      "seen": 6,
+      "shape": "read?@0x6f00e8",
+      "seen": 4,
       "cartridges": 2
     },
     {
-      "shape": "write1@0x680020 poll1@0x680020 read1@0x680010 read1@0x680012",
-      "seen": 6,
+      "shape": "write2~@0x680004 write2~@0x680000 write2~@0x680002",
+      "seen": 4,
       "cartridges": 2
     },
     {
-      "shape": "read1@0x6f00e8",
+      "shape": "write2~@0x680020 poll2~@0x680020 read2~@0x680010",
+      "seen": 4,
+      "cartridges": 2
+    },
+    {
+      "shape": "write2~@0x680020 poll2~@0x680020 read2~@0x680010 read2~@0x680012",
       "seen": 4,
       "cartridges": 2
     },
@@ -76,117 +76,157 @@
       "cartridges": 2
     },
     {
-      "shape": "read1@0x680015",
+      "shape": "read2~@0x680015",
       "seen": 2,
       "cartridges": 2
     },
     {
-      "shape": "read1@0x68026c",
+      "shape": "read2~@0x68086e write2@0x680810 read2@0x6808ce write2@0x680870 read2@0x68092e write2@0x6808d0",
       "seen": 2,
       "cartridges": 2
     },
     {
-      "shape": "read1@0x6803f0",
+      "shape": "read2~@0x6809f0",
       "seen": 2,
       "cartridges": 2
     },
     {
-      "shape": "read1@0x680829",
+      "shape": "read2~@0x6809f2",
       "seen": 2,
       "cartridges": 2
     },
     {
-      "shape": "read1@0x68086e write2@0x680810 read2@0x6808ce write2@0x680870 read2@0x68092e write2@0x6808d0",
+      "shape": "read?@0x68026c",
       "seen": 2,
       "cartridges": 2
     },
     {
-      "shape": "read1@0x680889",
+      "shape": "read?@0x6803f0",
       "seen": 2,
       "cartridges": 2
     },
     {
-      "shape": "read1@0x6808e9",
+      "shape": "read?@0x680829",
       "seen": 2,
       "cartridges": 2
     },
     {
-      "shape": "read1@0x6809f0 read2@0x6809f2 write2@0x680810 write2@0x680870 write2@0x6808d0 write2@0x68086e write2@0x6808ce write2@0x68092e write2@0x6809f0 write2@0x6809f2",
+      "shape": "read?@0x680889",
       "seen": 2,
       "cartridges": 2
     },
     {
-      "shape": "read1@0x690407",
+      "shape": "read?@0x6808e9",
       "seen": 2,
       "cartridges": 2
     },
     {
-      "shape": "read1@0x6d0fd5",
+      "shape": "read?@0x690407",
       "seen": 2,
       "cartridges": 2
     },
     {
-      "shape": "write1@0x680000",
+      "shape": "read?@0x6d0fd5",
       "seen": 2,
       "cartridges": 2
     },
     {
-      "shape": "write1@0x680020",
+      "shape": "write2@0x680000 write2@0x680020",
       "seen": 2,
       "cartridges": 2
     },
     {
-      "shape": "write1@0x680020 poll1@0x680020",
+      "shape": "write2~@0x680020 poll2~@0x680020",
       "seen": 2,
       "cartridges": 2
     },
     {
-      "shape": "write1@0x680020 poll1@0x680020 read1@0x680011",
+      "shape": "write2~@0x680020 poll2~@0x680020 read2~@0x680011",
       "seen": 2,
       "cartridges": 2
     },
     {
-      "shape": "write1@0x680024",
+      "shape": "write2~@0x680024",
       "seen": 2,
       "cartridges": 2
     },
     {
-      "shape": "write1@0x680810 write1@0x680870 write1@0x6808d0",
+      "shape": "write2~@0x680810 write2~@0x680870 write2~@0x6808d0",
       "seen": 2,
       "cartridges": 2
     },
     {
-      "shape": "write1@0x68086e write2@0x6808ce write2@0x68092e write2@0x6809f0 write2@0x6809f2",
+      "shape": "write2~@0x68086e",
       "seen": 2,
       "cartridges": 2
     },
     {
-      "shape": "write1@0x6b0111",
+      "shape": "write2~@0x6808ce",
       "seen": 2,
       "cartridges": 2
     },
     {
-      "shape": "write1@0x6b047d",
+      "shape": "write2~@0x68092e",
       "seen": 2,
       "cartridges": 2
     },
     {
-      "shape": "write1@0x6b09a0",
+      "shape": "write2~@0x6809f0",
       "seen": 2,
       "cartridges": 2
     },
     {
-      "shape": "write1@0x6b0cff",
+      "shape": "write2~@0x6809f2",
       "seen": 2,
       "cartridges": 2
     },
     {
-      "shape": "write1@0x6c0700",
+      "shape": "write?@0x680000 write?@0x680002",
       "seen": 2,
       "cartridges": 2
     },
     {
-      "shape": "write1@0x6d0fd5",
+      "shape": "write?@0x680004 write?@0x680000 write?@0x680002",
+      "seen": 2,
+      "cartridges": 2
+    },
+    {
+      "shape": "write?@0x680020 poll?@0x680020 read?@0x680010",
+      "seen": 2,
+      "cartridges": 2
+    },
+    {
+      "shape": "write?@0x680020 poll?@0x680020 read?@0x680010 read?@0x680012",
+      "seen": 2,
+      "cartridges": 2
+    },
+    {
+      "shape": "write?@0x6b0111",
+      "seen": 2,
+      "cartridges": 2
+    },
+    {
+      "shape": "write?@0x6b047d",
+      "seen": 2,
+      "cartridges": 2
+    },
+    {
+      "shape": "write?@0x6b09a0",
+      "seen": 2,
+      "cartridges": 2
+    },
+    {
+      "shape": "write?@0x6b0cff",
+      "seen": 2,
+      "cartridges": 2
+    },
+    {
+      "shape": "write?@0x6c0700",
+      "seen": 2,
+      "cartridges": 2
+    },
+    {
+      "shape": "write?@0x6d0fd5",
       "seen": 2,
       "cartridges": 2
     }

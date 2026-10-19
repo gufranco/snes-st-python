@@ -8,7 +8,7 @@ SetaがSuper Nintendoのカートリッジ向けに作った3つのコプロセ�
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-st-python)](https://github.com/gufranco/snes-st-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**3**個のパーツ、手で記述したコマンドは**0**個、2つの待機位置はどちらも出荷時のマイクロコードで測定済み、それらの待機位置と記録との食い違いは**0**件、テストは**722**個、ステートメントとブランチの**100%**カバレッジ、依存関係なし
+**3**個のパーツ、手で記述したコマンドは**0**個、2つの待機位置はどちらも出荷時のマイクロコードで測定済み、それらの待機位置と記録との食い違いは**0**件、テストは**732**個、ステートメントとブランチの**100%**カバレッジ、依存関係なし
 
 ```python
 from snesst import Chip
@@ -250,6 +250,8 @@ nothing establishes what a read of $3806 does
 | `python3 -m conformance.package`            | ビルド済みのwheel                                  | すべてのモジュールが含まれ、テストが1つも含まれていなければ0、それ以外やファイルがない場合は1、引数がなければ2                             |
 
 `conformance.against_cartridges`は、[`conformance/st010shapes.json`](conformance/st010shapes.json)と[`conformance/st011shapes.json`](conformance/st011shapes.json)にあるやり取りをパーツに対して再生します。`conformance.record`はそれらのファイルを書き出します。`snes-driver-python`を通して各カートリッジ自身のコードを読み、すべてのやり取りの形だけを残し、カートリッジのバイトは1つも残しません。そのサブモジュールのマニフェストに名前のあるカートリッジだけを受け付け、その4つのダイジェストをすべて確認します。
+
+これらのファイルの幅にはすべてラベルが付いています。`write2`のような裸の幅は、カートリッジのコードがアクセスの前に設定する幅です。`*`はイメージの実行が使った幅、`~`はヘッドレスのMAMEによるトレースがその命令でバスの動きを見た幅、`?`は何も確定させなかった幅を示します。`?`は1バイトとして再生され、実行は再生したアクセスのうちいくつがその仮定に頼っているかを出力します。[OPEN-QUESTIONS.md](OPEN-QUESTIONS.md)はそれをパーツごとに数えています。
 
 ## 問題
 

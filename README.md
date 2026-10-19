@@ -8,7 +8,7 @@ English | [日本語](README.ja.md) | [简体中文](README.zh-Hans.md) | [繁�
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-st-python)](https://github.com/gufranco/snes-st-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**3** parts, **0** commands described by hand, both waits measured on the shipped microcode, **0** disagreements between those waits and the record, **722** tests, **100%** statement and branch coverage, no dependencies
+**3** parts, **0** commands described by hand, both waits measured on the shipped microcode, **0** disagreements between those waits and the record, **732** tests, **100%** statement and branch coverage, no dependencies
 
 ```python
 from snesst import Chip
@@ -250,6 +250,8 @@ Each runs from the repository root.
 | `python3 -m conformance.package`            | A built wheel                                       | 0 when every module is in it and no test is, 1 otherwise or when the file is absent, 2 without an argument                                    |
 
 `conformance.against_cartridges` plays the exchanges in [`conformance/st010shapes.json`](conformance/st010shapes.json) and [`conformance/st011shapes.json`](conformance/st011shapes.json) at the part. `conformance.record` writes those files: it reads each cartridge's own code through `snes-driver-python` and keeps the shape of every exchange, never a byte of the cartridge. It accepts only cartridges named in that submodule's manifest and checks all four of their digests.
+
+Every width in those files carries its label. A bare width such as `write2` is one the cartridge's code sets before the access, `*` marks one a run of the image used, `~` one a headless MAME trace saw the bus move at that instruction, and `?` one nothing settled. A `?` is played as one byte, and the run says how many of the accesses it played rest on that assumption. [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) counts them per part.
 
 ## The problem
 

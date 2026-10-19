@@ -50,10 +50,13 @@ and the record says so.
 
 ## What is settled and what is not
 
-**Not settled: 6 things**, each in
+**Not settled: 7 things**, each in
 [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) with the measurement that would close it.
-They are all the interface rather than the behaviour: the memory map, the number
-of registers, timing, and what a reset does.
+Six are the interface rather than the behaviour: the memory map, the number of
+registers, timing, and what a reset does. The seventh is how wide the recorded
+cartridge accesses are where nothing settled it: every recorded width carries
+its label, known, `*` for a run, `~` for a trace or `?` for an assumption
+replayed as one byte, and no label is ever dropped.
 
 Settled: what every command computes, because the program is run; where each
 part's program waits, because it was measured on both; and which image each part

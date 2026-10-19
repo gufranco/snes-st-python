@@ -160,6 +160,31 @@ class ReportTest(unittest.TestCase):
 
         self.assertIn("0x5a", against.report(found)[0])
 
+    def test_a_run_counts_the_accesses_that_rest_on_an_assumed_width(self) -> None:
+        # Arrange
+        with _one_shape("write?@0x680020 write2~@0x680000 read?@0x680010") as where:
+            found = against.driven("st010", lambda part: Echoing(), where=where)
+
+        # Act
+        lines = against.lines_for(found, "st010")
+
+        # Assert
+        self.assertIn(
+            "  2 of the 3 accesses played rest on an assumed width, replayed as one byte",
+            lines,
+        )
+
+    def test_an_assumed_width_is_played_as_one_byte(self) -> None:
+        # Arrange
+        part = Echoing()
+
+        # Act
+        with _one_shape("write?@0x680020 read1@0x680020") as where:
+            found = against.driven("st010", lambda name: part, where=where)
+
+        # Assert
+        self.assertEqual((sorted(part.held), len(found[0].said[0])), ([0x680020], 1))
+
     def test_no_more_than_a_handful_of_lines_are_printed(self) -> None:
         found = against.driven("st010", lambda part: Echoing())
 

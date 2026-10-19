@@ -8,7 +8,7 @@ Seta 为 Super Nintendo 卡带制造的三款协处理器的 Python 实现，每
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-st-python)](https://github.com/gufranco/snes-st-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**3** 个部件，**0** 条手工描述的命令，两处等待位置均在出厂微码上测得，这些等待位置与记录之间 **0** 处不一致，**722** 个测试，**100%** 语句和分支覆盖率，无依赖
+**3** 个部件，**0** 条手工描述的命令，两处等待位置均在出厂微码上测得，这些等待位置与记录之间 **0** 处不一致，**732** 个测试，**100%** 语句和分支覆盖率，无依赖
 
 ```python
 from snesst import Chip
@@ -250,6 +250,8 @@ nothing establishes what a read of $3806 does
 | `python3 -m conformance.package`            | 一个构建好的 wheel               | 每个模块都在其中且不含任何测试时为 0，否则或文件不存在时为 1，没有参数时为 2                   |
 
 `conformance.against_cartridges` 将 [`conformance/st010shapes.json`](conformance/st010shapes.json) 和 [`conformance/st011shapes.json`](conformance/st011shapes.json) 中的交互回放给部件。`conformance.record` 生成这些文件：它通过 `snes-driver-python` 读取每个卡带自身的代码，保留每次交互的形态，从不保留卡带的任何字节。它只接受该子模块清单中列出的卡带，并检查它们全部四个摘要。
+
+这些文件中的每个宽度都带有标签。像 `write2` 这样不带标记的宽度，是卡带代码在访问之前设定的宽度；`*` 表示镜像的一次运行所用的宽度，`~` 表示无界面 MAME 追踪在该指令处看到总线搬运的宽度，`?` 表示没有任何东西确定的宽度。`?` 按一个字节播放，运行会说明所播放的访问中有多少依赖这个假设。[OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) 按部件统计了它们。
 
 ## 问题
 

@@ -281,12 +281,44 @@ def _a_routine() -> bytes:
 
 class ReadingTest(unittest.TestCase):
     def test_the_reader_finds_a_routine_that_pokes_both_windows(self) -> None:
-        try:
-            found: Any = record.through_the_driver(_a_routine())[0]
-        except ImportError:  # pragma: no cover
-            self.skipTest("the driver is not checked out beside this")
+        # Arrange
+        image = _a_routine()
 
-        self.assertEqual(sorted(found), ["write1@0x600000 write1@0x680020 read1@0x680010"])
+        # Act
+        found = record.through_the_driver(image)[0]
+
+        # Assert
+        self.assertEqual(sorted(found), ["write?@0x600000 write?@0x680020 read?@0x680010"])
+
+    def test_a_width_the_driver_saw_traced_is_kept_with_its_mark(self) -> None:
+        # Arrange
+        image = _a_routine()
+
+        # Act
+        found = record.through_the_driver(image, traced={0x100: 1, 0x104: 2})[0]
+
+        # Assert
+        self.assertEqual(sorted(found), ["write1~@0x600000 write2~@0x680020 read?@0x680010"])
+
+    def test_a_cartridge_the_driver_never_traced_settles_no_width(self) -> None:
+        # Arrange
+        digest = record.digests_of(_a_routine())["sha256"]
+
+        # Act
+        found = record.traced_widths(digest)
+
+        # Assert
+        self.assertEqual(found, {})
+
+    def test_a_cartridge_the_driver_traced_has_its_widths_read_from_the_driver(self) -> None:
+        # Arrange
+        digest = "405c33f64701faf40963a4e6a2d0d69420e6751caf436387ddd3e145b25ed46c"
+
+        # Act
+        found = record.traced_widths(digest)
+
+        # Assert
+        self.assertEqual(found.get(0x0D69), 2)
 
     def test_a_cartridge_whose_code_pokes_neither_yields_nothing(self) -> None:
         try:

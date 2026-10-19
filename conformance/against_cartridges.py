@@ -31,7 +31,10 @@ class Played:
         self.shape = shape
         self.said = said
         self.kinds = tuple(kinds)
-        self.kinds_in_order = tuple(one.what for one in shapes.parse(shape))
+        steps = shapes.parse(shape)
+        self.kinds_in_order = tuple(one.what for one in steps)
+        self.accesses = len(steps)
+        self.assumed = shapes.assumptions(steps)
 
     @property
     def asks(self) -> bool:
@@ -109,6 +112,10 @@ def lines_for(found: "Sequence[Played]", part: str) -> list[str]:
     lines = [f"  {part}: {len(found)} exchanges a real cartridge makes, played at the part"]
     lines.extend(report(found))
     lines.append(f"  {len(spoken(found))} of them got something back, {len(quiet)} of them nothing")
+    lines.append(
+        f"  {sum(one.assumed for one in found)} of the {sum(one.accesses for one in found)}"
+        " accesses played rest on an assumed width, replayed as one byte"
+    )
 
     mute = wordless(found)
     if mute:

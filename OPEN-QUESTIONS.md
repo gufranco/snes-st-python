@@ -97,9 +97,11 @@ So the earlier statement here, that every write to the pair is one byte wide, wa
 wrong. The reader in
 [snes-driver-python](https://github.com/gufranco/snes-driver-python) lost the
 accumulator width at these sites and recorded `write1@0x680020` where the
-cartridge writes two bytes. The shapes in
-[`conformance/st010shapes.json`](conformance/st010shapes.json) still carry that,
-because they are what that reader produces rather than something edited here.
+cartridge writes two bytes. Re-recorded on 2026-10-19 from that reader at
+`adc1b8c`, the shapes in
+[`conformance/st010shapes.json`](conformance/st010shapes.json) now carry
+`write2~@0x680020` wherever its MAME trace saw the word store, and `write?` where
+nothing settled the width.
 
 **What is still open.** The ST011. Its cartridge, Hayazashi Nidan Morita Shougi
 (Japan), 524,288 bytes, SHA-256
@@ -111,11 +113,40 @@ store to `$680020` or `$680021`. Whether its engine is ever started through the
 start byte is unknown.
 
 **What this costs.** No command sweep for either part yet. The ST010's start is
-now known to be a word write of `$80nn`, and its recorded shapes still say a byte.
+now known to be a word write of `$80nn`, and its recorded shapes say so where a
+trace reached the routine and say `?` where none did.
 
 **What would settle or reopen it.** For the ST011, a run that reaches the shogi
 engine's own moves while watching `$680021` and `$600000`, or a capture of a real
 console driving it.
+
+### Which recorded shapes rest on an assumed width.
+
+**The document says.** Nothing. How wide an access is depends on the
+accumulator's width when the cartridge's routine runs, and that is set by
+whoever called the routine.
+
+**What this project follows.** Every shape the reader gives, with every width
+labelled. A bare width, such as `write2`, is one the code sets on the way to the
+access. `*` marks one a run of the image used, `~` one that snes-driver-python's
+headless MAME trace saw the bus move at that instruction, and `?` one nothing
+settled. A `?` is replayed as one byte, as every width was before the label
+existed, and `conformance.against_cartridges` prints how many of the accesses it
+played rest on that assumption.
+
+**What that leaves, measured on 2026-10-19.** Re-recorded from the reader at
+`adc1b8c`: 21 of the 40 ST010 shapes carry a `?`, 92 of the 198 accesses they
+make counting each shape as often as it was seen, while 17 shapes and 88 accesses
+are traced and 2 shapes are known throughout. 10 of the 16 ST011 shapes carry a
+`?`, 30 of 76 accesses. All 7 ST018 shapes are known, because the sweep from the
+reset vector reaches every routine that touches the part. Before the labels, all
+339 accesses across the three files read as one byte with nothing saying that
+was assumed.
+
+**What would settle or reopen it.** A trace that reaches the routine an assumed
+width sits in, which for these cartridges means input that gets the game past
+its attract run, or a jump table the reader's walk can follow to the routine's
+callers.
 
 ### What either part does with a command number outside the eight.
 

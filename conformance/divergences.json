@@ -83,12 +83,26 @@
       "documentSays": "Nothing. Seta published nothing about either part.",
       "referenceDoes": "Reference implementations start a command on a write to $680021, which is what the microcode waits on rather than something a driver was read for.",
       "packageFollows": "cartridges",
-      "reasoning": "The static readings never reached a write to $680021, and the record said every write to the pair was one byte wide. Running the cartridge showed otherwise. The ST010 image Exhaust Heat II - F1 Driver e no Michi (Japan), SHA-256 1c78d8208a05cbfe88ee019edbc3a0c9cdabfd2b62089ca119215bbc7e581611, run headless in MAME 0.289 with a write tap on $680000-$6FFFFF, wrote $06 to $680020 and $80 to $680021 from one instruction at $80:8D69, frame 992 of the attract run. Its bytes at file offset 0x0D66 are A9 06 80 8F 20 00 68: a sixteen bit load of $8006 and a long store to $680020, so the start is a word-wide write whose high byte carries the start bit, and all nine long stores to $680020 in the image are preceded by A9 nn 80. The snes-driver-python reader lost the accumulator width at these sites and the ST010 shapes still record write1@0x680020. The ST011 image, Hayazashi Nidan Morita Shougi (Japan), SHA-256 85825a75ef662b28d0111c0462ec3c34234da1d78d10472b8022fcba3b9eaed5, run the same way for 600 seconds with buttons pressed in turn, wrote only the data port at $600000 and never $680000-$68017F, and holds no long store to the pair.",
+      "reasoning": "The static readings never reached a write to $680021, and the record said every write to the pair was one byte wide. Running the cartridge showed otherwise. The ST010 image Exhaust Heat II - F1 Driver e no Michi (Japan), SHA-256 1c78d8208a05cbfe88ee019edbc3a0c9cdabfd2b62089ca119215bbc7e581611, run headless in MAME 0.289 with a write tap on $680000-$6FFFFF, wrote $06 to $680020 and $80 to $680021 from one instruction at $80:8D69, frame 992 of the attract run. Its bytes at file offset 0x0D66 are A9 06 80 8F 20 00 68: a sixteen bit load of $8006 and a long store to $680020, so the start is a word-wide write whose high byte carries the start bit, and all nine long stores to $680020 in the image are preceded by A9 nn 80. The snes-driver-python reader lost the accumulator width at these sites; re-recorded on 2026-10-19 from that reader at adc1b8c, the ST010 shapes carry write2~@0x680020 wherever its MAME trace saw the word store. The ST011 image, Hayazashi Nidan Morita Shougi (Japan), SHA-256 85825a75ef662b28d0111c0462ec3c34234da1d78d10472b8022fcba3b9eaed5, run the same way for 600 seconds with buttons pressed in turn, wrote only the data port at $600000 and never $680000-$68017F, and holds no long store to the pair.",
       "wouldSettleIt": [
         "for the ST011, a run that reaches the shogi engine's moves while watching $680021 and $600000",
         "a capture of a real console driving the ST011"
       ],
       "wouldReopenIt": "An ST010 site that starts a command some other way than a word write of $80nn to $680020."
+    },
+    {
+      "id": "a-recorded-width-can-be-assumed",
+      "parts": ["st010", "st011"],
+      "severity": "medium",
+      "status": "open",
+      "documentSays": "Nothing. An access's width is the accumulator's width when the cartridge's routine runs, which whoever called the routine set.",
+      "referenceDoes": "snes-driver-python reads each width from the code where the code sets it, from a run where one used it, marked *, from a headless MAME trace of the cartridge, marked ~, and otherwise reports it as ?.",
+      "packageFollows": "cartridges",
+      "reasoning": "Every recorded shape is kept and every width carries its label; a ? is replayed as one byte, as every width was before the label existed, and conformance.against_cartridges counts the accesses that rest on that assumption. Measured on 2026-10-19 from the reader at adc1b8c: 21 of 40 ST010 shapes and 10 of 16 ST011 shapes carry a ?, 92 of 198 and 30 of 76 accesses counted as often as each shape was seen. The 7 ST018 shapes are all known.",
+      "wouldSettleIt": [
+        "a trace that reaches the routine an assumed width sits in",
+        "a jump table the reader's walk can follow to that routine's callers"
+      ]
     },
     {
       "id": "the-timer-is-an-implementation-s-reading",
