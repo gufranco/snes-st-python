@@ -70,38 +70,52 @@ a third does not exist; it establishes that no shipped program uses one.
 **What would settle or reopen it.** A cartridge that addresses a third, or a
 schematic.
 
-### Why no recorded shape writes the byte that starts a command.
+### Whether the ST011 ever writes the byte that starts a command.
 
 **The document says.** Nothing.
 
-**What this project follows.** The record, which is what the cartridges do. Five
-ST010 shapes write `$680020`, the command register, and no shape on either part
-writes `$680021`, the byte that starts the command running. Every recorded
-routine that names a command hands the part a number and then ends.
+**What running the ST010 cartridge showed.** The static readings never found a
+write to `$680021`, the byte that starts a command running, so on 2026-10-19 the
+cartridge was run instead. The image was Exhaust Heat II - F1 Driver e no Michi
+(Japan), 1,048,576 bytes, SHA-256
+`1c78d8208a05cbfe88ee019edbc3a0c9cdabfd2b62089ca119215bbc7e581611`, with the ST010
+microcode appended, in MAME 0.289 headless with a write tap on `$680000` to
+`$6FFFFF` and the `$E80000` mirror. With the controls untouched, at frame 992 of
+the attract run, one instruction at `$80:8D69` wrote `$06` to `$680020` and `$80`
+to `$680021`.
 
-**Why it is a limit of the reading rather than of the games.** A game that never
-started a command would never get an answer, and both of these games work.
+The cartridge's own bytes say why the readings missed it. At file offset
+`0x0D66` they are `A9 06 80 8F 20 00 68`: a load of `$8006` with a sixteen bit
+accumulator, then a long store to `$680020`. That is one word-wide write carrying
+the command in its low byte and the start bit in its high byte. It is followed by
+`AF 20 00 68 30 FA`, a word read of the same pair that loops while bit 15 is set,
+which is the console polling the start bit. The image holds nine long stores to
+`$680020` and every one is preceded by `A9 nn 80`, for commands 1, 2, 3, 4, 6, 7
+and 8.
 
-Three readings have been tried and none found it. Splitting the status range by
-direction made the command write visible, which it had not been. Following calls
-into their callees made the exchanges much longer, the longest ST010 one going
-from two accesses to ten and the longest ST011 one from five to twelve. And a
-control-flow sweep seeded from all ten vectors, which is a different method from
-the byte search the other two used, reaches `$680020` eight times as a write and
-fourteen as a poll on F1-ROC II and `$680021` never.
+So the earlier statement here, that every write to the pair is one byte wide, was
+wrong. The reader in
+[snes-driver-python](https://github.com/gufranco/snes-driver-python) lost the
+accumulator width at these sites and recorded `write1@0x680020` where the
+cartridge writes two bytes. The shapes in
+[`conformance/st010shapes.json`](conformance/st010shapes.json) still carry that,
+because they are what that reader produces rather than something edited here.
 
-Every write to the pair is one byte wide, which also rules out the explanation
-that a word-wide write to `$680020` covers both bytes at once. So the start is
-reached through something no static reading follows, most likely a computed
-jump.
+**What is still open.** The ST011. Its cartridge, Hayazashi Nidan Morita Shougi
+(Japan), 524,288 bytes, SHA-256
+`85825a75ef662b28d0111c0462ec3c34234da1d78d10472b8022fcba3b9eaed5`, run the same
+way for 600 seconds with Start, A, B and Right pressed in turn, never wrote
+anywhere in `$680000` to `$68017F`. All 13 of its writes to the part went to the
+data port at `$600000`, from code in bank `$84`, and the image holds no long
+store to `$680020` or `$680021`. Whether its engine is ever started through the
+start byte is unknown.
 
-**What this costs.** No command sweep. The DSP's run tries all 256 command
-numbers because there the first byte a shape writes is the command and writing it
-is the whole gesture. Here a sweep would set a command and never start it, so
-every answer would come from whatever the part was doing already.
+**What this costs.** No command sweep for either part yet. The ST010's start is
+now known to be a word write of `$80nn`, and its recorded shapes still say a byte.
 
-**What would settle or reopen it.** Running the cartridge rather than reading it,
-or a capture of a real console driving either part.
+**What would settle or reopen it.** For the ST011, a run that reaches the shogi
+engine's own moves while watching `$680021` and `$600000`, or a capture of a real
+console driving it.
 
 ### What either part does with a command number outside the eight.
 
@@ -117,20 +131,34 @@ rather than an answer.
 **What would settle or reopen it.** Nothing published would. A capture of a real
 part answering one would.
 
+### How long one instruction takes on each board.
+
+**What this project does.** Runs a started command on the processor's clock. The
+write that sets the start bit only stores it, a console polling the start byte
+reads the part busy, and the program advances only when the host steps it.
+`finish()` returns the instructions a command took: 106 for the ST010's command 1
+on the point the README uses. That is a count of instructions, not of time.
+
+**What the boards carry.** Martin Korth's fullsnes,
+`https://problemkaputt.de/fullsnes.htm`, fetched on 2026-10-19 with SHA-256
+`3853b65a7331bf12eea431ff494a2948a1c78ef22f7e819db4b139fd5a79f6c6`, lists the
+oscillators found in cartridges by their markings: the ST010 board carries a
+22.000 MHz plastic oscillator marked `[M]22000C`, and the ST011 board a 15.000 MHz
+ceramic one marked `15.00X`. That is a third-party board reading, the same kind of
+source as the ST018 component list below, and it settles which oscillator each
+board carries.
+
+**What is still not known.** How many oscillator periods one uPD96050 instruction
+costs. The uPD77C25 executes one instruction per external clock, no document for
+the uPD96050 exists, and fullsnes's notes that the ST010 runs internally at
+11.000 MHz and the ST011 without a divider come with no measurement behind them.
+So nothing here converts an instruction count into time.
+
+**What would settle it.** A uPD96050 data sheet, or a cartridge timed on a
+console: start a command, count console cycles until the start bit clears, and
+divide by the instruction count `finish()` reports for the same command.
+
 ## Where the question is a scope boundary, not an unknown
-
-### Anything about timing.
-
-**What this project does.** Models neither how long a command takes nor whether a
-console polling for an answer can outrun it.
-
-**Why it is not a gap in the model.** The cycles are spent inside the processor,
-and that member is the one that reports them. A second claim about timing here
-would be a second source of truth for something a member already answers.
-
-**What would settle or reopen it.** A measurement of a real cartridge, which
-would belong in this repository because it is a property of the board rather than
-of the processor.
 
 ### What a reset does.
 

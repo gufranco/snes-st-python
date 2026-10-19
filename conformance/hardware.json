@@ -66,7 +66,7 @@
     }
   },
   "notStated": [
-    "Anything about timing. How long a command takes, and whether a console polling for an answer can outrun it, is unmodelled and unmeasured.",
+    "How long one uPD96050 instruction lasts on either board. A command's length is counted in instructions by running the microcode on the processor's clock, and the boards' oscillators are known from a third-party reading, 22.000 MHz on the ST010 and 15.000 MHz on the ST011, but how many oscillator periods an instruction takes is unmeasured.",
     "What either part does with a command number outside the eight, beyond what running the microcode shows.",
     "The contents of either image, which belong to whoever made the part and are not carried here.",
     "Whether the two registers past the shared memory are the only two."
