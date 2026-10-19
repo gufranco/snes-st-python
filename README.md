@@ -8,7 +8,7 @@ English | [日本語](README.ja.md) | [简体中文](README.zh-Hans.md) | [繁�
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-st-python)](https://github.com/gufranco/snes-st-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**3** parts, **0** commands described by hand, both waits measured on the shipped microcode, **0** disagreements between those waits and the record, **708** tests, **100%** statement and branch coverage, no dependencies
+**3** parts, **0** commands described by hand, both waits measured on the shipped microcode, **0** disagreements between those waits and the record, **712** tests, **100%** statement and branch coverage, no dependencies
 
 ```python
 from snesst import Chip
@@ -20,15 +20,19 @@ for at, value in enumerate((0x00, 0x01, 0x00, 0x02)):
     part.write(0x680000 + at, value)
 part.write(0x680020, 0x01)
 part.write(0x680021, 0x80)
+print(hex(part.read(0x680021)))
 
+print(part.finish(), hex(part.read(0x680021)))
 print(hex(part.read(0x680010) | part.read(0x680011) << 8))
 ```
 
 ```
+0x80
+106 0x0
 0x9300
 ```
 
-The write to `0x000000` lands below the shared window, on the processor's data port, and lets the part act on a start byte. The next four bytes put the point `0x0100, 0x0200` at the bottom of the shared memory. Command `0x01` goes in the register byte at `0x20` and the start bit in the one at `0x21`, and the ST010's own program runs until it clears that bit. The answer comes back out of the same memory at `0x10`. The example needs an ST010 image; without one, `Chip("st010")` raises `NoFirmware`.
+The write to `0x000000` lands below the shared window, on the processor's data port, and lets the part act on a start byte. The next four bytes put the point `0x0100, 0x0200` at the bottom of the shared memory. Command `0x01` goes in the register byte at `0x20` and the start bit in the one at `0x21`. The write only stores the bit, so a console polling `0x21` straight after it reads `0x80`, the part still busy. `finish()` runs the ST010's own program until it clears that bit and returns the instructions it took, 106 for this command. The answer comes back out of the same memory at `0x10`. The example needs an ST010 image; without one, `Chip("st010")` raises `NoFirmware`.
 
 ## Install
 
@@ -79,7 +83,7 @@ Releases follow [Semantic Versioning](https://semver.org/) and are cut from the 
 | :------------------ | :--------------------------------------------------------------------------------------------------------------------------------------- |
 | `UnknownModelError` | The model is missing or no part goes by that name. The message lists the names accepted                                                  |
 | `NoFirmware`        | A processor submodule is not checked out, no image for the part is found, or an image is passed to a uPD96050 part without an `identity` |
-| `NeverFinished`     | A started command has not cleared the start bit within `patience` instructions                                                           |
+| `NeverFinished`     | `finish()` has run `patience` instructions and the start bit is still set                                                                |
 | `WrongShape`        | An image is not the length its processor takes                                                                                           |
 | `Unrecognised`      | `snesst.firmware.identify` meets bytes whose SHA-256 the manifest does not hold. The directory search skips such a file instead          |
 | `Corrupt`           | An image matches a manifest entry on SHA-256 and disagrees with it on another digest                                                     |
@@ -118,19 +122,20 @@ no model was named, and this package will not choose one for you. Name one of: s
 | :--------- | :------------------------------------------------------------------------------- |
 | `memory`   | Bytes copied into the shared memory after the handshake, up to 4,096 of them     |
 | `fill`     | The value the processor's registers and memories hold at power-on                |
-| `patience` | Instructions a started command may run before `NeverFinished`                    |
+| `patience` | Instructions `finish()` may run before `NeverFinished`                           |
 | `boot`     | Instructions run after the handshake's two reads, before the part is handed back |
 | `image`    | The image bytes. No directory is searched and no variable is read                |
 | `identity` | What `image` is, as a `snesst.firmware.Identity`. Required with `image`          |
 | `images`   | A catalogue shaped like `available()`, searched in place of this machine's       |
 
-| Call                    | Effect                                                                                                                                                                                                                |
-| :---------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `read(address)`         | With bit `0x80000` set, the shared memory byte at `address & 0xFFF`. Otherwise the data port, or the status port at an odd address                                                                                    |
-| `write(address, value)` | With bit `0x80000` set, a shared memory byte, then the program runs if the part is enabled and the byte at `0x21` has bit `0x80`. Otherwise a write that enables the part, passed to the data port at an even address |
-| `handshake(boot=None)`  | One instruction, two reads of the data port, then `boot` instructions. Returns the part                                                                                                                               |
-| `step(count)`           | `count` processor instructions                                                                                                                                                                                        |
-| `reset()`               | Clears `enabled`. The program and the shared memory are untouched. Returns the part                                                                                                                                   |
+| Call                    | Effect                                                                                                                                                                                         |
+| :---------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `read(address)`         | With bit `0x80000` set, the shared memory byte at `address & 0xFFF`. Otherwise the data port, or the status port at an odd address                                                             |
+| `write(address, value)` | With bit `0x80000` set, a shared memory byte, and nothing runs. Otherwise a write that enables the part, passed to the data port at an even address                                            |
+| `handshake(boot=None)`  | One instruction, two reads of the data port, then `boot` instructions. Returns the part                                                                                                        |
+| `step(count)`           | `count` processor instructions. This is the part's clock: a started command advances only when it runs                                                                                         |
+| `finish()`              | On an enabled part with bit `0x80` of the byte at `0x21` set, runs instructions until the program clears it. Returns how many ran, 0 when none had to. Raises `NeverFinished` after `patience` |
+| `reset()`               | Clears `enabled`. The program and the shared memory are untouched. Returns the part                                                                                                            |
 
 | Attribute            | Meaning                                                                    |
 | :------------------- | :------------------------------------------------------------------------- |
@@ -156,8 +161,9 @@ part.write(0x680020, 0x02)
 print(hex(part.read(0x680005)), part.memory[5], part.command, part.enabled)
 
 part.write(0x600000, 0x00)
+part.write(0x680021, 0x80)
 try:
-    part.write(0x680021, 0x80)
+    part.finish()
 except NeverFinished as refused:
     print(refused)
 
@@ -170,7 +176,7 @@ st010 did not finish command 0x02 within 1000 instructions
 False <Chip st010 on upd96050>
 ```
 
-A program of zeroes needs no image, so this runs on any checkout with its submodules. The shared memory and the registers take writes before the part is enabled. Once the write to `0x600000` enables it, the start bit runs the program, which never clears the bit, and the part gives up after 1,000 instructions.
+A program of zeroes needs no image, so this runs on any checkout with its submodules. The shared memory and the registers take writes before the part is enabled. Once the write to `0x600000` enables it, `finish()` runs the program, which never clears the start bit, and gives up after 1,000 instructions.
 
 ### The ST018
 

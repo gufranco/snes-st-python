@@ -182,13 +182,12 @@ class Chip:
 
         self.core.stores.write_byte(address & (MEMORY_BYTES - 1), value)
 
-        if self.enabled and self.execute & START:
-            self._run()
-
-    def _run(self) -> None:
-        for _ in range(self.patience):
+    def finish(self) -> int:
+        if not self.enabled:
+            return 0
+        for spent in range(self.patience):
             if not self.execute & START:
-                return
+                return spent
             self.core.step()
         raise NeverFinished(
             f"{self.part} did not finish command {self.command:#04x} within"

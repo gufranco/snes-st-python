@@ -348,10 +348,11 @@ class RunningTest(unittest.TestCase):
         # Arrange
         part = woken(patience=64)
         part.write(COMMAND, 0x03)
+        part.write(START, START_BIT)
 
         # Act
         with self.assertRaises(snesst.NeverFinished) as raised:
-            part.write(START, START_BIT)
+            part.finish()
 
         # Assert
         self.assertEqual(
@@ -361,23 +362,63 @@ class RunningTest(unittest.TestCase):
     def test_a_write_without_the_start_bit_starts_nothing(self) -> None:
         # Arrange
         part = woken(patience=64)
-
-        # Act
         part.write(START, 0x01)
 
+        # Act
+        spent = part.finish()
+
         # Assert
-        self.assertEqual(part.execute, 0x01)
+        self.assertEqual((spent, part.execute), (0, 0x01))
+
+    def test_a_part_never_woken_runs_nothing_when_asked_to_finish(self) -> None:
+        # Arrange
+        part = built(patience=64)
+        before = part.core.steps
+        part.write(START, START_BIT)
+
+        # Act
+        spent = part.finish()
+
+        # Assert
+        self.assertEqual((spent, part.core.steps), (0, before))
 
     def test_a_program_that_clears_the_start_byte_is_taken_at_its_word(self) -> None:
         # Arrange
         image = a_program(POINT_AT_THE_REGISTERS, CLEAR_WHERE_POINTED, JUMP_TO_THE_TOP)
         part = woken(image=image, patience=8)
-
-        # Act
         part.write(START, START_BIT)
 
+        # Act
+        spent = part.finish()
+
         # Assert
-        self.assertEqual(part.execute, 0x00)
+        self.assertEqual((spent, part.execute), (3, 0x00))
+
+    def test_a_console_polling_right_after_the_start_still_sees_it_busy(self) -> None:
+        # Arrange
+        image = a_program(POINT_AT_THE_REGISTERS, CLEAR_WHERE_POINTED, JUMP_TO_THE_TOP)
+        part = woken(image=image, patience=8)
+        part.write(START, START_BIT)
+
+        # Act
+        found = part.read(START)
+
+        # Assert
+        self.assertEqual(found, START_BIT)
+
+    def test_the_bit_clears_on_the_instruction_that_clears_it_and_no_sooner(self) -> None:
+        # Arrange
+        image = a_program(POINT_AT_THE_REGISTERS, CLEAR_WHERE_POINTED, JUMP_TO_THE_TOP)
+        part = woken(image=image, patience=8)
+        part.write(START, START_BIT)
+        part.step(2)
+        polled = part.read(START)
+
+        # Act
+        part.step(1)
+
+        # Assert
+        self.assertEqual((polled, part.read(START)), (START_BIT, 0x00))
 
     def test_the_odd_address_in_the_port_window_is_the_status_side(self) -> None:
         # Arrange

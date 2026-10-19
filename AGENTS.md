@@ -33,6 +33,7 @@ chip.
 | `read(address)`, `write(address, value)` | The two accesses a cartridge makes                               |
 | `handshake()`                            | What the console does at power on to wake the part               |
 | `step(count)`                            | Run the processor for a number of its own instructions           |
+| `finish()`                               | Run a started command until its program clears the start bit     |
 | `reset()`                                | Back to a part that has not been woken, handed back for chaining |
 
 ## The authority ladder

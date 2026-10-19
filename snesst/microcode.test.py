@@ -81,9 +81,10 @@ class RealMicrocodeTest(unittest.TestCase):
     def test_a_command_runs_and_answers(self) -> None:
         # Arrange
         part = pointed_at(snesst.Chip("st010"))
+        part.write(START, START_BIT)
 
         # Act
-        part.write(START, START_BIT)
+        part.finish()
 
         # Assert
         self.assertEqual(part.read(WINDOW + 0x10) | (part.read(WINDOW + 0x11) << 8), 0x9300)
@@ -91,12 +92,23 @@ class RealMicrocodeTest(unittest.TestCase):
     def test_and_the_start_byte_is_clear_once_it_has(self) -> None:
         # Arrange
         part = pointed_at(snesst.Chip("st010"))
+        part.write(START, START_BIT)
+
+        # Act
+        part.finish()
+
+        # Assert
+        self.assertEqual(part.execute & START_BIT, 0)
+
+    def test_a_console_polling_the_start_byte_sees_the_part_busy_first(self) -> None:
+        # Arrange
+        part = pointed_at(snesst.Chip("st010"))
 
         # Act
         part.write(START, START_BIT)
 
         # Assert
-        self.assertEqual(part.execute & START_BIT, 0)
+        self.assertEqual(part.read(START) & START_BIT, START_BIT)
 
 
 if __name__ == "__main__":
