@@ -501,8 +501,10 @@ which walks both arms of every forward branch, the cartridge gives 1,543 shapes,
 1,541 of which move a byte. `conformance.against_cartridges st018` plays the 64
 with the fewest accesses, in 23 seconds on the machine that recorded this: 28 of
 them read `$3800`, and 12 of those got a byte back, so the run exits 0. Playing
-every one, with `--every`, took more than twelve minutes and is a local run
-rather than a CI step; CI plays the same 64 whenever an image is present.
+every one, with `--every`, took more than eighteen minutes of processor time:
+1,032 of the 1,541 got a byte back and 449 that read got nothing, and the run
+exits 0. That is a local run rather than a CI step; CI plays the same 64
+whenever an image is present.
 
 ## What is deliberately not modelled
 
