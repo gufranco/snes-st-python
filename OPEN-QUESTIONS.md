@@ -454,6 +454,33 @@ both are read by code that has never seen them set, and what they mean is
 unestablished on both sides. The remaining bits of both registers are never read
 at all, which is documented silence rather than a claim that they are unused.
 
+**What replaying the cartridge's exchanges shows.** `conformance.against_cartridges
+st018` plays the five recorded shapes that move a byte at the part built from the dump in
+`snes-roms/5 Tools & Service Test Carts/CPU/`, SHA-256
+`6df209ab5d2524d1839c038be400ae5eb20dafc14a3771a3239cd9e8acd53806`. Until
+2026-10-20 the replay never ran the ARM between two console accesses, so a byte
+written to `$3802` sat unread and the one read of `$3800` found nothing. Nothing
+gives the number of ARM cycles one console access allows, so the replay now does
+what the cartridge does instead of claiming a time: the ARM runs 100 instructions
+before every access, and a poll that comes right before a read of `$3800` keeps
+polling `$3804`, the ARM running 100 instructions between looks, until bit 0
+sets or 400 looks have passed. That is the loop at `$E886`, file offset
+`0x006886`, `AD 04 38 29 01 F0 F9`, followed by `AD 00 38` at `$E88D`. The 100
+and the 400 are the pacing the program dump run already uses, not a measurement.
+
+Run on 2026-10-20 the ARM now takes the first byte the longest shape sends: the
+status falls from `$88` to `$80`. Nothing comes back, and the run still exits 1.
+The reason is in the shapes rather than the part. The only recorded shape that
+reads `$3800` is `poll1@0x003804 read1@0x003800`, which sends nothing, and the
+replay plays it after shapes whose writes to `$3804` reset the part. The shapes
+that send carry no read of `$3800`, while the cartridge's own routine at `$E778`
+sends with `JSR $E873` at `$E77F` and receives with `JSR $E87E` at `$E782`, one
+call after the other. A replay that sends a byte and then waits, as
+`PacedTest.test_a_byte_sent_to_the_third_part_comes_back_through_its_program`
+does with a program that echoes, gets the byte back. What would close it is a
+recorded shape that keeps the send and the receive of one call together, which
+means a reader that follows `$E778` into both routines.
+
 ## What is deliberately not modelled
 
 Absent rather than unknown, and absent on purpose:

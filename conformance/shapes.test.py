@@ -235,6 +235,26 @@ class DriveTest(unittest.TestCase):
 
         self.assertEqual((part.written, said), ([(0x680000, 0x01)], [[0x42]]))
 
+    def test_a_pace_sees_every_step_with_the_one_that_follows_it(self) -> None:
+        # Arrange
+        steps = shapes.parse("write1@0x003802 poll1@0x003804 read1@0x003800")
+        seen: list[tuple[str, str]] = []
+
+        # Act
+        shapes.drive(
+            Recording(), steps, [[0x01]], lambda one, then: seen.append((repr(one), repr(then)))
+        )
+
+        # Assert
+        self.assertEqual(
+            seen,
+            [
+                ("write1@0x003802", "poll1@0x003804"),
+                ("poll1@0x003804", "read1@0x003800"),
+                ("read1@0x003800", "None"),
+            ],
+        )
+
     def test_the_contract_a_run_needs_is_smaller_than_a_part(self) -> None:
         self.assertIsInstance(Recording(), shapes.Addressed)
 

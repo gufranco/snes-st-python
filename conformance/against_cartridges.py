@@ -8,7 +8,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import snesst
 from conformance import shapes
-from snesst import chip
+from conformance.testroms import PATIENCE, STEP
+from snesst import chip, st018
 
 DEFAULT_PART = "st010"
 
@@ -63,6 +64,40 @@ def surface(part: str, where: Path | str | None = None) -> tuple[tuple[int, str]
     return tuple(sorted(found))
 
 
+class Mailbox:
+    def __init__(
+        self, part: "shapes.Clocked", instructions: int = STEP, patience: int = PATIENCE
+    ) -> None:
+        self.part = part
+        self.instructions = instructions
+        self.patience = patience
+
+    def __call__(self, step: "shapes.Step", following: "shapes.Step | None") -> None:
+        self.part.step(self.instructions)
+        if step.what == shapes.POLL and receives(following):
+            self.wait()
+
+    def wait(self) -> None:
+        for _ in range(self.patience):
+            if self.part.read(st018.STATUS) & st018.WAITING:
+                return
+            self.part.step(self.instructions)
+
+
+def receives(step: "shapes.Step | None") -> bool:
+    return step is not None and step.what == shapes.READ and step.address == st018.FROM_PART
+
+
+def paced(part: str, piece: "shapes.Addressed") -> "shapes.Pace | None":
+    if part != st018.PART:
+        return None
+    if not isinstance(piece, shapes.Clocked):
+        raise Usage(
+            f"{part} answers through a program that runs between accesses, so it needs a step"
+        )
+    return Mailbox(piece)
+
+
 def _silicon(part: str) -> "shapes.Addressed":  # pragma: no cover
     return snesst.Chip(part)
 
@@ -78,10 +113,11 @@ def driven(
         raise Usage(f"no cartridge exchanges are recorded for {part}")
     chance = shapes.rolls() if seed is None else shapes.rolls(seed)
     piece = build(part)
+    pace = paced(part, piece)
     found: list[Played] = []
     for steps, _seen in held:
         payload = shapes.payload_for(steps, chance)
-        said = shapes.drive(piece, steps, payload)
+        said = shapes.drive(piece, steps, payload, pace)
         taken = [one.what for one in steps if one.what in (shapes.READ, shapes.POLL)]
         named = shapes.spell(steps)
         found.append(Played(named, said, taken))

@@ -1,7 +1,7 @@
 import json
 import random
 import sys
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from pathlib import Path
 from typing import Protocol, override, runtime_checkable
 
@@ -33,6 +33,8 @@ DEFAULT_SEED = 0x51A7C0
 
 Shapes = tuple[tuple["tuple[Step, ...]", int], ...]
 
+Pace = Callable[["Step", "Step | None"], None]
+
 
 class Malformed(Exception): ...
 
@@ -42,6 +44,11 @@ class Addressed(Protocol):
     def write(self, address: int, value: int) -> None: ...
 
     def read(self, address: int) -> int: ...
+
+
+@runtime_checkable
+class Clocked(Addressed, Protocol):
+    def step(self, steps: int = 1) -> object: ...
 
 
 class Step:
@@ -141,11 +148,17 @@ def payload_for(steps: "Iterable[Step]", chance: random.Random) -> list[list[int
 
 
 def drive(
-    part: "Addressed", steps: "Iterable[Step]", payload: Iterable[Sequence[int]]
+    part: "Addressed",
+    steps: "Iterable[Step]",
+    payload: Iterable[Sequence[int]],
+    pace: "Pace | None" = None,
 ) -> list[list[int]]:
     giving = iter(payload)
     said: list[list[int]] = []
-    for step in steps:
+    ordered = tuple(steps)
+    for step, following in zip(ordered, (*ordered[1:], None), strict=True):
+        if pace is not None:
+            pace(step, following)
         if step.what == WRITE:
             for at, byte in enumerate(next(giving)):
                 part.write(step.address + at, byte)

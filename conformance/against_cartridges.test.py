@@ -286,6 +286,123 @@ class SurfaceTest(unittest.TestCase):
         self.assertEqual(len(found), len(held))
 
 
+ECHO = arm(
+    0xE3A0B101,
+    0xE5DB1020,
+    0xE3110008,
+    0x0AFFFFFC,
+    0xE5DB0010,
+    0xE5CB0000,
+    0xEAFFFFFE,
+)
+
+ST018_STATUS = 0x3804
+
+ST018_READY = 0x80
+
+INSTRUCTIONS_PER_ACCESS = 100
+
+
+class Tapping:
+    def __init__(self, part: snesst.ST018) -> None:
+        self.part = part
+        self.sent: list[int] = []
+        self.ran: list[int] = []
+
+    def write(self, address: int, value: int) -> None:
+        if address == ST018_TO_PART:
+            self.sent.append(value)
+        self.part.write(address, value)
+
+    def read(self, address: int) -> int:
+        return self.part.read(address)
+
+    def step(self, steps: int = 1) -> object:
+        self.ran.append(steps)
+        return self.part.step(steps)
+
+
+class PacedTest(unittest.TestCase):
+    def test_a_byte_sent_to_the_third_part_comes_back_through_its_program(self) -> None:
+        # Arrange
+        part = Tapping(snesst.ST018(ECHO))
+
+        # Act
+        with _one_shape("write1@0x003802 poll1@0x003804 read1@0x003800") as where:
+            found = against.driven("st018", lambda name: part, where=where)
+
+        # Assert
+        self.assertEqual(found[0].said[-1], part.sent)
+
+    def test_a_poll_with_nothing_on_its_way_gives_up_and_reads_nothing(self) -> None:
+        # Arrange
+        part = snesst.ST018(IDLE)
+
+        # Act
+        with _one_shape("poll1@0x003804 read1@0x003800") as where:
+            found = against.driven("st018", lambda name: part, where=where)
+
+        # Assert
+        self.assertEqual(found[0].said, [[ST018_READY], [0x00]])
+
+    def test_the_wait_before_a_read_is_bounded(self) -> None:
+        # Arrange
+        part = Tapping(snesst.ST018(IDLE))
+        pace = against.Mailbox(part, instructions=1, patience=3)
+        poll, read = shapes.parse("poll1@0x003804 read1@0x003800")
+
+        # Act
+        pace(poll, read)
+
+        # Assert
+        self.assertEqual(part.ran, [1, 1, 1, 1])
+
+    def test_a_poll_before_anything_but_a_read_of_the_part_does_not_wait(self) -> None:
+        # Arrange
+        part = Tapping(snesst.ST018(IDLE))
+        pace = against.Mailbox(part, instructions=1, patience=3)
+        poll, status = shapes.parse("poll1@0x003804 read1@0x003804")
+
+        # Act
+        pace(poll, status)
+
+        # Assert
+        self.assertEqual(part.ran, [1])
+
+    def test_the_part_runs_before_every_access_a_console_makes(self) -> None:
+        # Arrange
+        part = Tapping(snesst.ST018(IDLE))
+
+        # Act
+        with _one_shape("write1@0x003802 write1@0x003804 read1@0x003804") as where:
+            against.driven("st018", lambda name: part, where=where)
+
+        # Assert
+        self.assertEqual(part.ran, [INSTRUCTIONS_PER_ACCESS] * 3)
+
+    def test_the_third_part_is_refused_a_piece_that_cannot_run(self) -> None:
+        # Arrange
+        piece = Echoing()
+
+        # Act
+        refused = self.assertRaises(against.Usage)
+        with refused:
+            against.paced("st018", piece)
+
+        # Assert
+        self.assertIn("needs a step", str(refused.exception))
+
+    def test_the_two_signal_processors_are_played_unpaced(self) -> None:
+        # Arrange
+        piece = Echoing()
+
+        # Act
+        pace = against.paced("st010", piece)
+
+        # Assert
+        self.assertIsNone(pace)
+
+
 def answers(part: snesst.ST018, address: int, what: str) -> bool:
     try:
         if what == shapes.WRITE:
