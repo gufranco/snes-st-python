@@ -15,6 +15,10 @@ DEFAULT_PART = "st010"
 
 SHOWN = 8
 
+SAMPLE = 64
+
+EVERY = "--every"
+
 
 Build = Callable[[str], "shapes.Addressed"]
 
@@ -102,13 +106,21 @@ def _silicon(part: str) -> "shapes.Addressed":  # pragma: no cover
     return snesst.Chip(part)
 
 
+def sampled(held: "shapes.Shapes", size: int | None) -> "shapes.Shapes":
+    if size is None or len(held) <= size:
+        return held
+    order = sorted(range(len(held)), key=lambda at: (len(held[at][0]), at))
+    return tuple(held[at] for at in sorted(order[:size]))
+
+
 def driven(
     part: str = DEFAULT_PART,
     build: Build = _silicon,
     seed: int | None = None,
     where: Path | str | None = None,
+    size: int | None = None,
 ) -> "list[Played]":
-    held = shapes.interesting(shapes.recorded(part, where))
+    held = sampled(shapes.interesting(shapes.recorded(part, where)), size)
     if not held:
         raise Usage(f"no cartridge exchanges are recorded for {part}")
     chance = shapes.rolls() if seed is None else shapes.rolls(seed)
@@ -174,10 +186,14 @@ def main(
         say(f"  nothing was driven: {reason}")
         return 2
 
-    part = argv[0] if argv else DEFAULT_PART
-    found = driven(part, build)
+    named = [one for one in argv if one != EVERY]
+    part = named[0] if named else DEFAULT_PART
+    found = driven(part, build, size=None if EVERY in argv else SAMPLE)
     for line in lines_for(found, part):
         say(line)
+    held = len(shapes.interesting(shapes.recorded(part)))
+    if len(found) < held:
+        say(f"  the {len(found)} shortest of the {held} recorded were played; {EVERY} plays all")
     return 0 if spoken(found) else 1
 
 

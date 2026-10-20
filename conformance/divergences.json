@@ -98,7 +98,7 @@
       "documentSays": "Nothing. An access's width is the accumulator's width when the cartridge's routine runs, which whoever called the routine set.",
       "referenceDoes": "snes-driver-python reads each width from the code where the code sets it, from a run where one used it, marked *, from a headless MAME trace of the cartridge, marked ~, and otherwise reports it as ?.",
       "packageFollows": "cartridges",
-      "reasoning": "Every recorded shape is kept and every width carries its label; a ? is replayed as one byte, as every width was before the label existed, and conformance.against_cartridges counts the accesses that rest on that assumption. Measured on 2026-10-19 from the reader at adc1b8c: 21 of 40 ST010 shapes and 10 of 16 ST011 shapes carry a ?, 92 of 198 and 30 of 76 accesses counted as often as each shape was seen. The 7 ST018 shapes are all known.",
+      "reasoning": "Every recorded shape is kept and every width carries its label; a ? is replayed as one byte, as every width was before the label existed, and conformance.against_cartridges counts the accesses that rest on that assumption. Measured on 2026-10-20 from the reader at 62d619b, which walks both arms of every forward conditional branch: 21 of 42 ST010 shapes and 10 of 16 ST011 shapes carry a ?, 92 of 232 and 30 of 76 accesses counted as often as each shape was seen. The 1,543 ST018 shapes are all known.",
       "wouldSettleIt": [
         "a trace that reaches the routine an assumed width sits in",
         "a jump table the reader's walk can follow to that routine's callers"

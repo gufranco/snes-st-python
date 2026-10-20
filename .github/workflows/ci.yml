@@ -169,7 +169,7 @@ jobs:
         run: |
           set +e
           status=0
-          for part in st010 st011; do
+          for part in st010 st011 st018; do
             echo "::group::${part}"
             python -m conformance.against_cartridges "${part}"
             here=$?

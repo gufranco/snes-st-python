@@ -158,7 +158,7 @@ def through_the_driver(
             continue
         heard: set[str] = set()
         for (wide, index), told in driver.conversation.starts(site, None, known, {}):
-            talk = driver.conversation.at(
+            arms = driver.conversation.every(
                 image,
                 site,
                 reaching,
@@ -168,9 +168,9 @@ def through_the_driver(
                 ran=told,
                 traced=seen_by_a_run,
             )
-            seen.update(talk.covered)
-            banked = banked and talk.banked
-            heard.add(spelled(talk))
+            seen.update(arms.covered)
+            banked = banked and all(talk.banked for talk in arms.conversations)
+            heard.update(spelled(talk) for talk in arms.conversations)
         counted.update(heard)
     return dict(counted), banked
 

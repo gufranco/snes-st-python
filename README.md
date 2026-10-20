@@ -8,7 +8,7 @@ English | [日本語](README.ja.md) | [简体中文](README.zh-Hans.md) | [繁�
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-st-python)](https://github.com/gufranco/snes-st-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**3** parts, **0** commands described by hand, both waits measured on the shipped microcode, **0** disagreements between those waits and the record, **793** tests, **100%** statement and branch coverage, no dependencies
+**3** parts, **0** commands described by hand, both waits measured on the shipped microcode, **0** disagreements between those waits and the record, **799** tests, **100%** statement and branch coverage, no dependencies
 
 ```python
 from snesst import Chip
@@ -241,15 +241,15 @@ A zeroed image builds an ARM that runs zeroes, so the mailbox can be driven with
 
 Each runs from the repository root.
 
-| Command                                     | Arguments                                                     | Exit codes                                                                                                                                    |
-| :------------------------------------------ | :------------------------------------------------------------ | :-------------------------------------------------------------------------------------------------------------------------------------------- |
-| `python3 snesst/doctor.py`                  | None                                                          | 0 when every check passes, 1 when any fails                                                                                                   |
-| `python3 -m conformance.speed`              | None                                                          | 0 at or above 150,000 uPD96050 instructions a second, or when no part can be built here. 1 below that                                         |
-| `python3 -m conformance.against_cartridges` | A part, `st010` by default                                    | 0 when at least one recorded exchange got a byte back, 1 when none did, 2 when no part can be built here                                      |
-| `python3 -m conformance.record`             | A directory of cartridges, then an output directory           | 0 when every part found yields shapes, 1 when one yields none, 2 for a missing argument, a missing directory, or no cartridge carrying a part |
-| `python3 -m conformance.links`              | None                                                          | 0 unless an address in this README answers 404 or 410                                                                                         |
-| `python3 -m conformance.package`            | A built wheel                                                 | 0 when every module is in it and no test is, 1 otherwise or when the file is absent, 2 without an argument                                    |
-| `python3 -m conformance.testroms`           | A folder of program dumps, `--record` to rewrite the verdicts | 0 when every dump found agrees with its recorded verdict, 1 when one does not, 2 without a folder or when no recorded dump is in it           |
+| Command                                     | Arguments                                                                                             | Exit codes                                                                                                                                    |
+| :------------------------------------------ | :---------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------- |
+| `python3 snesst/doctor.py`                  | None                                                                                                  | 0 when every check passes, 1 when any fails                                                                                                   |
+| `python3 -m conformance.speed`              | None                                                                                                  | 0 at or above 150,000 uPD96050 instructions a second, or when no part can be built here. 1 below that                                         |
+| `python3 -m conformance.against_cartridges` | A part, `st010` by default, and `--every` to play every recorded exchange rather than the 64 shortest | 0 when at least one recorded exchange got a byte back, 1 when none did, 2 when no part can be built here                                      |
+| `python3 -m conformance.record`             | A directory of cartridges, then an output directory                                                   | 0 when every part found yields shapes, 1 when one yields none, 2 for a missing argument, a missing directory, or no cartridge carrying a part |
+| `python3 -m conformance.links`              | None                                                                                                  | 0 unless an address in this README answers 404 or 410                                                                                         |
+| `python3 -m conformance.package`            | A built wheel                                                                                         | 0 when every module is in it and no test is, 1 otherwise or when the file is absent, 2 without an argument                                    |
+| `python3 -m conformance.testroms`           | A folder of program dumps, `--record` to rewrite the verdicts                                         | 0 when every dump found agrees with its recorded verdict, 1 when one does not, 2 without a folder or when no recorded dump is in it           |
 
 `conformance.against_cartridges` plays the exchanges in [`conformance/st010shapes.json`](conformance/st010shapes.json) and [`conformance/st011shapes.json`](conformance/st011shapes.json) at the part. `conformance.record` writes those files: it reads each cartridge's own code through `snes-driver-python` and keeps the shape of every exchange, never a byte of the cartridge. It accepts only cartridges named in that submodule's manifest and checks all four of their digests.
 
@@ -335,7 +335,7 @@ This example needs both images.
 | The catalogue     | All three parts and every name they answer to                                                                                                                     |       No       |
 | The parts         | The ST010 and ST011 each reach their own wait and stay there for 4,096 instructions, and the ST010 answers a command                                              |      Yes       |
 
-[`snesst/microcode.test.py`](snesst/microcode.test.py) carries the last row and reports as skipped when no image is present. A separate CI job starts every part, runs `conformance.against_cartridges` for the ST010 and ST011, and says on the run page whether a part was driven at all.
+[`snesst/microcode.test.py`](snesst/microcode.test.py) carries the last row and reports as skipped when no image is present. A separate CI job starts every part, runs `conformance.against_cartridges` for the ST010, the ST011 and the 64 shortest ST018 exchanges, and says on the run page whether a part was driven at all.
 
 [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) lists what is not known with the measurement that would close each item. [`conformance/divergences.json`](conformance/divergences.json) records where sources part, and which one this package follows.
 

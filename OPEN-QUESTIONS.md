@@ -134,14 +134,16 @@ settled. A `?` is replayed as one byte, as every width was before the label
 existed, and `conformance.against_cartridges` prints how many of the accesses it
 played rest on that assumption.
 
-**What that leaves, measured on 2026-10-19.** Re-recorded from the reader at
-`adc1b8c`: 21 of the 40 ST010 shapes carry a `?`, 92 of the 198 accesses they
-make counting each shape as often as it was seen, while 17 shapes and 88 accesses
-are traced and 2 shapes are known throughout. 10 of the 16 ST011 shapes carry a
-`?`, 30 of 76 accesses. All 7 ST018 shapes are known, because the sweep from the
-reset vector reaches every routine that touches the part. Before the labels, all
-339 accesses across the three files read as one byte with nothing saying that
-was assumed.
+**What that leaves, measured on 2026-10-20.** Re-recorded from the reader at
+`62d619b`, which walks both arms of every forward conditional branch: 21 of the
+42 ST010 shapes carry a `?`, 92 of the 232 accesses they make counting each
+shape as often as it was seen, while 19 shapes and 92 accesses are traced and 2
+shapes are known throughout. 10 of the 16 ST011 shapes carry a `?`, 30 of 76
+accesses, as before. All 1,543 ST018 shapes are known, against 7 from the
+reader at `adc1b8c`, which took only the arm a branch falls through to; the
+routine at `$E796` that reads `$3802` is still one the sweep from the reset
+vector does not reach. Before the labels, all 339 accesses across the three
+files read as one byte with nothing saying that was assumed.
 
 **What would settle or reopen it.** A trace that reaches the routine an assumed
 width sits in, which for these cartridges means input that gets the game past
@@ -488,18 +490,19 @@ sets or 400 looks have passed. That is the loop at `$E886`, file offset
 `0x006886`, `AD 04 38 29 01 F0 F9`, followed by `AD 00 38` at `$E88D`. The 100
 and the 400 are the pacing the program dump run already uses, not a measurement.
 
-Run on 2026-10-20 the ARM now takes the first byte the longest shape sends: the
-status falls from `$88` to `$80`. Nothing comes back, and the run still exits 1.
-The reason is in the shapes rather than the part. The only recorded shape that
-reads `$3800` is `poll1@0x003804 read1@0x003800`, which sends nothing, and the
-replay plays it after shapes whose writes to `$3804` reset the part. The shapes
-that send carry no read of `$3800`, while the cartridge's own routine at `$E778`
-sends with `JSR $E873` at `$E77F` and receives with `JSR $E87E` at `$E782`, one
-call after the other. A replay that sends a byte and then waits, as
-`PacedTest.test_a_byte_sent_to_the_third_part_comes_back_through_its_program`
-does with a program that echoes, gets the byte back. What would close it is a
-recorded shape that keeps the send and the receive of one call together, which
-means a reader that follows `$E778` into both routines.
+Run on 2026-10-20 against the seven shapes the reader at `adc1b8c` gave, the ARM
+took the first byte the longest shape sends, the status falling from `$88` to
+`$80`, and nothing came back: no shape that sent also read `$3800`, because that
+reader took only the arm a branch falls through to, and the receive at `$E87E`
+falls through `BCC $E886` to an `RTS`.
+
+**What it shows now.** Re-recorded the same day from the reader at `62d619b`,
+which walks both arms of every forward branch, the cartridge gives 1,543 shapes,
+1,541 of which move a byte. `conformance.against_cartridges st018` plays the 64
+with the fewest accesses, in 23 seconds on the machine that recorded this: 28 of
+them read `$3800`, and 12 of those got a byte back, so the run exits 0. Playing
+every one, with `--every`, took more than twelve minutes and is a local run
+rather than a CI step; CI plays the same 64 whenever an image is present.
 
 ## What is deliberately not modelled
 

@@ -10,7 +10,7 @@
       "layout": "lorom",
       "chipset": "0xf6",
       "name": "Exhaust Heat II - F1 Driver e no Michi (Japan).sfc",
-      "shapes": 40,
+      "shapes": 42,
       "crc32": "e2c8e535",
       "md5": "9b0dffe0222a9b7b7c8dcb98cc8ca058",
       "sha1": "3600f81d5a7e2ec41f362cc22a16a58ce2612048",
@@ -22,7 +22,7 @@
       "layout": "lorom",
       "chipset": "0xf6",
       "name": "F1-ROC II - Race of Champions (USA).sfc",
-      "shapes": 40,
+      "shapes": 42,
       "crc32": "3447609e",
       "md5": "000ba16a5a4c08992ec93d0309d8ed6c",
       "sha1": "fb81dd15b8a9ddf8f5564d3d2fb934c6f8bfb392",
@@ -81,17 +81,27 @@
       "cartridges": 2
     },
     {
+      "shape": "read2~@0x68086e",
+      "seen": 2,
+      "cartridges": 2
+    },
+    {
+      "shape": "read2~@0x68086e write2@0x680810 read2@0x6808ce read2@0x68092e read2@0x6809f0 read2@0x6809f2",
+      "seen": 2,
+      "cartridges": 2
+    },
+    {
+      "shape": "read2~@0x68086e write2@0x680810 read2@0x6808ce read2@0x68092e write2@0x6808d0 read2@0x6809f0",
+      "seen": 2,
+      "cartridges": 2
+    },
+    {
+      "shape": "read2~@0x68086e write2@0x680810 read2@0x6808ce write2@0x680870 read2@0x68092e read2@0x6809f0",
+      "seen": 2,
+      "cartridges": 2
+    },
+    {
       "shape": "read2~@0x68086e write2@0x680810 read2@0x6808ce write2@0x680870 read2@0x68092e write2@0x6808d0",
-      "seen": 2,
-      "cartridges": 2
-    },
-    {
-      "shape": "read2~@0x6809f0",
-      "seen": 2,
-      "cartridges": 2
-    },
-    {
-      "shape": "read2~@0x6809f2",
       "seen": 2,
       "cartridges": 2
     },

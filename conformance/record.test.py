@@ -279,7 +279,27 @@ def _a_routine() -> bytes:
     return _a_cartridge(bytes(body))
 
 
+def _a_branching_routine() -> bytes:
+    body = bytearray()
+    body += bytes((0x8F, 0x00, 0x00, 0x60))
+    body += bytes((0xF0, 0x01))
+    body += bytes((0x60,))
+    body += bytes((0xAF, 0x10, 0x00, 0x68))
+    body += bytes((0x60,))
+    return _a_cartridge(bytes(body))
+
+
 class ReadingTest(unittest.TestCase):
+    def test_both_arms_of_a_branch_are_recorded_as_shapes(self) -> None:
+        # Arrange
+        image = _a_branching_routine()
+
+        # Act
+        found = record.through_the_driver(image)[0]
+
+        # Assert
+        self.assertEqual(sorted(found), ["write?@0x600000", "write?@0x600000 read?@0x680010"])
+
     def test_the_reader_finds_a_routine_that_pokes_both_windows(self) -> None:
         # Arrange
         image = _a_routine()

@@ -8,7 +8,7 @@ Seta 為 Super Nintendo 卡帶製造的三款協處理器的 Python 實現。每
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-st-python)](https://github.com/gufranco/snes-st-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**3** 款晶片，**0** 個人手描述的命令，兩處等待位置均在出貨的微碼上量度，這些等待位置與記錄之間 **0** 處分歧，**793** 個測試，**100%** 語句與分支覆蓋率，無任何依賴
+**3** 款晶片，**0** 個人手描述的命令，兩處等待位置均在出貨的微碼上量度，這些等待位置與記錄之間 **0** 處分歧，**799** 個測試，**100%** 語句與分支覆蓋率，無任何依賴
 
 ```python
 from snesst import Chip
@@ -241,15 +241,15 @@ nothing establishes what a read of $3806 does
 
 每個工具都從儲存庫根目錄執行。
 
-| 命令                                        | 參數                                           | 結束碼                                                                                             |
-| :------------------------------------------ | :--------------------------------------------- | :------------------------------------------------------------------------------------------------- |
-| `python3 snesst/doctor.py`                  | 無                                             | 所有檢查通過時為 0，任何一項失敗時為 1                                                             |
-| `python3 -m conformance.speed`              | 無                                             | 每秒 150,000 條 uPD96050 指令或以上，或此處無法建構任何晶片時為 0。低於該值時為 1                  |
-| `python3 -m conformance.against_cartridges` | 一款晶片，預設為 `st010`                       | 至少一次記錄的交換取回一個位元組時為 0，全部都沒有時為 1，此處無法建構任何晶片時為 2               |
-| `python3 -m conformance.record`             | 一個卡帶目錄，然後一個輸出目錄                 | 找到的每款晶片都產生形態時為 0，有一款沒有產生時為 1，缺少參數、缺少目錄或沒有卡帶帶有晶片時為 2   |
-| `python3 -m conformance.links`              | 無                                             | 為 0，除非本 README 中有位址回應 404 或 410                                                        |
-| `python3 -m conformance.package`            | 一個已建構的 wheel                             | 每個模組都在其中且不含任何測試時為 0，否則或檔案不存在時為 1，沒有參數時為 2                       |
-| `python3 -m conformance.testroms`           | 程式傾印所在的資料夾，加 `--record` 則重寫判定 | 找到的每個傾印都與記錄的判定一致時為 0，有一個不一致時為 1，沒有資料夾或其中沒有記錄過的傾印時為 2 |
+| 命令                                        | 參數                                                                            | 結束碼                                                                                             |
+| :------------------------------------------ | :------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------- |
+| `python3 snesst/doctor.py`                  | 無                                                                              | 所有檢查通過時為 0，任何一項失敗時為 1                                                             |
+| `python3 -m conformance.speed`              | 無                                                                              | 每秒 150,000 條 uPD96050 指令或以上，或此處無法建構任何晶片時為 0。低於該值時為 1                  |
+| `python3 -m conformance.against_cartridges` | 一款晶片，預設為 `st010`；加上 `--every` 則重播每個記錄的交換，而非最短的 64 個 | 至少一次記錄的交換取回一個位元組時為 0，全部都沒有時為 1，此處無法建構任何晶片時為 2               |
+| `python3 -m conformance.record`             | 一個卡帶目錄，然後一個輸出目錄                                                  | 找到的每款晶片都產生形態時為 0，有一款沒有產生時為 1，缺少參數、缺少目錄或沒有卡帶帶有晶片時為 2   |
+| `python3 -m conformance.links`              | 無                                                                              | 為 0，除非本 README 中有位址回應 404 或 410                                                        |
+| `python3 -m conformance.package`            | 一個已建構的 wheel                                                              | 每個模組都在其中且不含任何測試時為 0，否則或檔案不存在時為 1，沒有參數時為 2                       |
+| `python3 -m conformance.testroms`           | 程式傾印所在的資料夾，加 `--record` 則重寫判定                                  | 找到的每個傾印都與記錄的判定一致時為 0，有一個不一致時為 1，沒有資料夾或其中沒有記錄過的傾印時為 2 |
 
 `conformance.against_cartridges` 把 [`conformance/st010shapes.json`](conformance/st010shapes.json) 與 [`conformance/st011shapes.json`](conformance/st011shapes.json) 中的交換向晶片重播。`conformance.record` 負責寫出這些檔案：它經由 `snes-driver-python` 讀取每張卡帶自身的程式碼，保留每次交換的形態，但從不保留卡帶的任何位元組。它只接受該子模組清單中列名的卡帶，並檢查其全部四個摘要。
 
@@ -335,7 +335,7 @@ st011 upd96050 2
 | 目錄       | 全部三款晶片及其接受的每個名稱                                                                                                                          |     否     |
 | 晶片       | ST010 與 ST011 各自到達自己的等待位置並在該處停留 4,096 條指令，且 ST010 回應一個命令                                                                   |     是     |
 
-[`snesst/microcode.test.py`](snesst/microcode.test.py) 負責最後一行，沒有映像檔時報告為已略過。另一個獨立的 CI 作業會啟動每款晶片，為 ST010 與 ST011 執行 `conformance.against_cartridges`，並在執行頁面上說明是否有晶片真正被驅動。
+[`snesst/microcode.test.py`](snesst/microcode.test.py) 負責最後一行，沒有映像檔時報告為已略過。另一個獨立的 CI 作業會啟動每款晶片，為 ST010、ST011 以及 ST018 最短的 64 個交換執行 `conformance.against_cartridges`，並在執行頁面上說明是否有晶片真正被驅動。
 
 [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) 列出未知的事項，以及可以解決每一項的量度。[`conformance/divergences.json`](conformance/divergences.json) 記錄各來源之間的分歧，以及本套件採用哪一個。
 

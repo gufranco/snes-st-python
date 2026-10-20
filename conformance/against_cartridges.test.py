@@ -42,6 +42,11 @@ class Echoing:
         return self.held.get(address, self.seed)
 
 
+class SteppedEchoing(Echoing):
+    def step(self, steps: int = 1) -> object:
+        return self
+
+
 @contextlib.contextmanager
 def _one_shape(shape: str) -> "Iterator[Path]":
     with tempfile.TemporaryDirectory() as where:
@@ -217,6 +222,33 @@ class MainTest(unittest.TestCase):
 
         self.assertEqual(code, 1)
 
+    def test_a_part_with_more_shapes_than_the_sample_plays_the_shortest(self) -> None:
+        # Arrange
+        said: list[str] = []
+
+        # Act
+        against.main(
+            ["st018"], why_not=lambda: None, build=lambda part: SteppedEchoing(), say=said.append
+        )
+
+        # Assert
+        self.assertIn("  the 64 shortest of the 1541 recorded were played; --every plays all", said)
+
+    def test_every_shape_is_played_when_asked_for_all(self) -> None:
+        # Arrange
+        said: list[str] = []
+
+        # Act
+        against.main(
+            ["st010", "--every"],
+            why_not=lambda: None,
+            build=lambda part: Echoing(),
+            say=said.append,
+        )
+
+        # Assert
+        self.assertIn("  st010: 42 exchanges a real cartridge makes, played at the part", said)
+
     def test_with_no_part_named_it_drives_the_first_one(self) -> None:
         said: list[str] = []
 
@@ -280,10 +312,10 @@ class SurfaceTest(unittest.TestCase):
         held = shapes.interesting(shapes.recorded("st018"))
 
         # Act
-        found = against.driven("st018", lambda part: snesst.ST018(IDLE))
+        found = against.driven("st018", lambda part: snesst.ST018(IDLE), size=against.SAMPLE)
 
         # Assert
-        self.assertEqual(len(found), len(held))
+        self.assertEqual(len(found), min(len(held), against.SAMPLE))
 
 
 ECHO = arm(
@@ -401,6 +433,41 @@ class PacedTest(unittest.TestCase):
 
         # Assert
         self.assertIsNone(pace)
+
+
+class SampleTest(unittest.TestCase):
+    def test_a_set_no_larger_than_the_sample_is_played_whole(self) -> None:
+        # Arrange
+        held = shapes.interesting(shapes.recorded("st011"))
+
+        # Act
+        found = against.sampled(held, len(held))
+
+        # Assert
+        self.assertEqual(found, held)
+
+    def test_no_sample_size_plays_the_whole_set(self) -> None:
+        # Arrange
+        held = shapes.interesting(shapes.recorded("st010"))
+
+        # Act
+        found = against.sampled(held, None)
+
+        # Assert
+        self.assertEqual(found, held)
+
+    def test_a_sample_keeps_the_shortest_in_their_recorded_order(self) -> None:
+        # Arrange
+        held = shapes.interesting(shapes.recorded("st010"))
+
+        # Act
+        found = against.sampled(held, 3)
+
+        # Assert
+        self.assertEqual(
+            [len(steps) for steps, _ in found],
+            sorted(len(steps) for steps, _ in held)[:3],
+        )
 
 
 def answers(part: snesst.ST018, address: int, what: str) -> bool:
