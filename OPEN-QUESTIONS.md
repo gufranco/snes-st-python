@@ -311,11 +311,11 @@ so it reports operand bytes as addresses.
 Three console-side addresses answer, and no others in `$2000` through `$5FFF`
 outside the console's own registers:
 
-| Address | What the cartridge does with it                        |
-| :------ | :----------------------------------------------------- |
-| `$3800` | Read only. One byte in from the part                   |
-| `$3802` | Written only. One byte out to the part                 |
-| `$3804` | Read for status, and written to drive the part's reset |
+| Address | What the cartridge does with it                                    |
+| :------ | :----------------------------------------------------------------- |
+| `$3800` | Read only. One byte in from the part                               |
+| `$3802` | Written for one byte out to the part, and read once to clear bit 2 |
+| `$3804` | Read for status, and written to drive the part's reset             |
 
 Five routines in bank `$00` are the whole of the console side, and every other
 site calls one of them:
@@ -333,9 +333,28 @@ That gives four bits of `$3804` a role the cartridge can be seen to rely on:
 | Bit | How the cartridge reads it                                                            |
 | :-- | :------------------------------------------------------------------------------------ |
 | 0   | Polled before every read of `$3800`. A byte is waiting                                |
+| 2   | Polled at `$E7E3` and `$E806`, then cleared by reading `$3802` at `$E812`             |
 | 4   | Polled before every transfer in either direction. Set means the transfer is abandoned |
 | 6   | Read once beside bit 7, in the routine at `$EFBD` that decides between two paths      |
 | 7   | Polled after the reset pulse until it sets                                            |
+
+**The read of `$3802`, corrected on 2026-10-20.** This record said `$3802` is
+only written. The walk from the reset vector never reaches the routine at
+`$E796`, and that routine reads it. Decoded from the cartridge's own bytes at
+file offset `0x006806`: `AD 04 38 29 04 F0 F9` polls `$3804` until bit 2 sets,
+`A9 00 8D C0 07` clears a flag in work RAM, then `AD 02 38` at `$E812` reads
+`$3802` and `A9 AD` at `$E815` loads `$AD` over the byte read, which is then
+sent as the next command. The value read is never used; the read is the point.
+The firmware has the other half: after a call into `0x001000`, it loads
+`0x40000000` into R11 at `0x00046C` and stores a byte at `0x40000010` at
+`0x000470`, `E5CB0010`, the only immediate-offset store to that offset in the
+program. That is the address it reads the console's byte from, and no console port is
+seen returning what is stored there. ares at
+`9408cb43d4948fc3ea6e152a307a34348df3fe04`, `sfc/coprocessor/armdsp/memory.cpp`
+and `io.cpp`, reads the pair as a signal: the store sets its `signal`, shown
+as bit 2 of `$3804`, and a console read of `$3802` clears it and answers 0. The
+model now does both, which is the rung of that implementation for the value 0
+and the artifacts' own rung for the two accesses.
 
 **What this still does not settle.** The names above are the cartridge's usage,
 never the part's documentation, and no document for this part exists. Nothing here
@@ -364,14 +383,15 @@ polls `0x40000020` under a mask, and both bracket the transfer with a
 sixty-four iteration delay at `0x0002B0`. The guard at `0x00011C` tests bit 5 of
 the same register and is the counterpart of the console's guard at `$E892`.
 
-That leaves one arrangement, because each side has exactly one port it writes and
-one it reads:
+That leaves one arrangement for the bytes, because each side has exactly one port
+it writes a byte to and one it reads a byte from:
 
 | Direction       | Console        | Part                | What gates it                                 |
 | :-------------- | :------------- | :------------------ | :-------------------------------------------- |
 | Console to part | writes `$3802` | reads `0x40000010`  | part waits for bit 3 of `0x40000020` to set   |
 | Part to console | reads `$3800`  | writes `0x40000000` | part waits for bit 0 of `0x40000020` to clear |
 | Abandon         | `$3804` bit 4  | `0x40000020` bit 5  | both give up on it                            |
+| Part signals    | reads `$3802`  | writes `0x40000010` | console waits for bit 2 of `$3804` to set     |
 
 **Tested as a prediction rather than searched for.** Driven with a memory
 implementing exactly that mapping and nothing else, the firmware reads the

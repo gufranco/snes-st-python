@@ -255,7 +255,7 @@ class SurfaceTest(unittest.TestCase):
         # Assert
         self.assertEqual(refused, [])
 
-    def test_the_send_port_is_written_and_never_read(self) -> None:
+    def test_no_recorded_shape_reads_the_send_port(self) -> None:
         # Arrange
         part = "st018"
 

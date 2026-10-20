@@ -20,6 +20,7 @@ TO_PART_PORT = 0x10
 STATUS_PORT = 0x20
 
 WAITING = 0x01
+SIGNAL = 0x04
 SENT = 0x08
 READY = 0x80
 
@@ -31,6 +32,12 @@ def arm(*words: int) -> bytes:
 
 
 IDLE = arm(0xEAFFFFFE)
+
+SIGNALS = arm(
+    0xE3A0B101,
+    0xE5CB0010,
+    0xEAFFFFFE,
+)
 
 ANSWER = arm(
     0xE3A0B101,
@@ -232,6 +239,51 @@ class ExchangeTest(unittest.TestCase):
 
         # Assert
         self.assertEqual(found.steps, 5)
+
+
+class SignalTest(unittest.TestCase):
+    def test_the_part_writing_its_receive_port_raises_bit_two(self) -> None:
+        # Arrange
+        found = a_part(SIGNALS)
+
+        # Act
+        found.step(2)
+
+        # Assert
+        self.assertEqual(found.read(STATUS), READY | SIGNAL)
+
+    def test_the_console_reading_the_send_port_clears_it_and_reads_nothing(self) -> None:
+        # Arrange
+        found = a_part(SIGNALS)
+        found.step(2)
+
+        # Act
+        byte = found.read(TO_PART)
+
+        # Assert
+        self.assertEqual((byte, found.read(STATUS)), (0, READY))
+
+    def test_a_reset_lowers_it(self) -> None:
+        # Arrange
+        found = a_part(SIGNALS)
+        found.step(2)
+
+        # Act
+        found.reset()
+
+        # Assert
+        self.assertEqual(found.read(STATUS) & SIGNAL, 0)
+
+    def test_raising_it_leaves_the_byte_waiting_for_the_part_alone(self) -> None:
+        # Arrange
+        found = a_part(SIGNALS)
+        found.write(TO_PART, 0x5A)
+
+        # Act
+        found.step(2)
+
+        # Assert
+        self.assertEqual(found.read(STATUS), READY | SENT | SIGNAL)
 
 
 if __name__ == "__main__":

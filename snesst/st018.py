@@ -40,6 +40,7 @@ STATUS = 0x3804
 CONSOLE_PORTS = (FROM_PART, TO_PART, STATUS)
 
 WAITING = 0x01
+SIGNAL = 0x04
 SENT = 0x08
 READY = 0x80
 
@@ -109,6 +110,7 @@ class ST018:
         "outgoing",
         "part",
         "sent",
+        "signal",
         "steps",
         "stores",
         "timer",
@@ -179,6 +181,7 @@ class ST018:
         self.incoming = 0
         self.outgoing = 0
         self.sent = False
+        self.signal = False
         self.waiting = False
         self.up = True
         self.timer = 0
@@ -217,6 +220,9 @@ class ST018:
             self.outgoing = value
             self.waiting = True
             return
+        if offset == TO_PART_PORT:
+            self.signal = True
+            return
         if offset in TIMER_LATCH_PORTS:
             place = TIMER_LATCH_PORTS.index(offset) * 8
             self.latch = self.latch & ~(0xFF << place) | value << place
@@ -228,6 +234,8 @@ class ST018:
         found = 0
         if self.waiting:
             found |= WAITING
+        if self.signal:
+            found |= SIGNAL
         if self.sent:
             found |= SENT
         if self.up:
@@ -242,6 +250,9 @@ class ST018:
             return self.outgoing
         if address == STATUS:
             return self.status()
+        if address == TO_PART:
+            self.signal = False
+            return 0
         raise UnknownPort(_why(address, "read"))
 
     def write(self, address: int, value: int) -> None:
