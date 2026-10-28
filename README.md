@@ -8,7 +8,7 @@ English | [日本語](README.ja.md) | [简体中文](README.zh-Hans.md) | [繁�
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-st-python)](https://github.com/gufranco/snes-st-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**3** parts, **0** commands described by hand, both waits measured on the shipped microcode, **0** disagreements between those waits and the record, **849** tests, **100%** statement and branch coverage, no dependencies
+**3** parts, **0** commands described by hand, both waits measured on the shipped microcode, **0** disagreements between those waits and the record, **851** tests, **100%** statement and branch coverage, no dependencies
 
 ```python
 from snesst import Chip
