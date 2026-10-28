@@ -78,13 +78,13 @@ running a program beats describing one.
 
 [`conformance/testroms.json`](conformance/testroms.json) names the three program
 dumps that exercise this member, each keyed by the SHA-256 of the file on disk
-and never committed. They live in `snes-roms/5 Tools & Service Test Carts/CPU/`
-in the local library. All three are `run`: the ST010 and ST011 dumps store each
+and never committed. Copies sit in `external/cartridges/`, taken from the
+`5 Tools & Service Test Carts/CPU/` folder of the cartridge library. All three are `run`: the ST010 and ST011 dumps store each
 word low byte first and are read through that reversal, and the ST018 dump is
 read as it stands.
 
 ```bash
-python3 -m conformance.testroms "../snes-roms/5 Tools & Service Test Carts/CPU"
+python3 -m conformance.testroms external/cartridges
 python3 -m conformance.testroms --record FOLDER   # only after a deliberate model change
 ```
 
@@ -99,6 +99,28 @@ Without an image the runner exits 2 and CI annotates the skip.
 No whole-console test cartridge reaches these parts: none of the factory,
 service or community cartridges on disk carries a Seta coprocessor, and the SNES
 catalogue names none, so nothing waits on another member.
+
+## Files kept in `external/`
+
+Everything this member reads and may not ship sits in `external/`, which git
+ignores and Dropbox is told to leave alone, per FAMILY.md's "Where the files a
+member reads are kept". [`artifacts.manifest.json`](artifacts.manifest.json)
+names all 5 by size, CRC32, MD5, SHA-1 and SHA-256:
+
+- `external/firmware/`, the ST010, ST011 and ST018 images the package finds
+  there after `SNES_ST_FIRMWARE_DIR` and `UPD7725_FIRMWARE_DIR`. The ST018 image
+  is the same file as its program dump below.
+- `external/cartridges/`, the three program dumps the cartridge record pins,
+  copied from the cartridge library.
+
+```bash
+python3 -m conformance.external
+python3 -m conformance.external --describe external/<file>
+```
+
+The first says which are here, verified, missing or wrong. The second prints
+the manifest entry for a file being added, which gets its entry in the same
+change.
 
 ## Every gate, in the order to run them
 
@@ -228,11 +250,13 @@ conformance/
   family_*.test.py the family standard, held to this repository, one topic a file
   family_member.py what this member answers to them
   family_shared.py what more than one of them reads
+  external.py       which files in external/ are here, verified, missing or wrong
   hardware.json   what this package asserts, and where each assertion comes from
   divergences.json where sources part, and what would settle each
   speed.py        the throughput floor
   testroms.py     the program dumps the record names, run and held to their verdicts
 nec-upd7725-96050-python/  the processor both parts are, as a submodule at the root
+external/           the firmware images and the program dumps, never committed
 ```
 
 ## Things that will bite you
@@ -282,4 +306,4 @@ which check and why rather than reporting a pass.
 
 A test that fails without the change and passes with it. An entry in
 [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) if it turned a settled thing into an open
-one, or removed one. Nothing in `firmware/` under version control, ever.
+one, or removed one. Nothing in `external/firmware/` under version control, ever.

@@ -8,7 +8,7 @@ Seta 為 Super Nintendo 卡帶製造的三款協處理器的 Python 實現。每
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-st-python)](https://github.com/gufranco/snes-st-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**3** 款晶片，**0** 個人手描述的命令，兩處等待位置均在出貨的微碼上量度，這些等待位置與記錄之間 **0** 處分歧，**799** 個測試，**100%** 語句與分支覆蓋率，無任何依賴
+**3** 款晶片，**0** 個人手描述的命令，兩處等待位置均在出貨的微碼上量度，這些等待位置與記錄之間 **0** 處分歧，**849** 個測試，**100%** 語句與分支覆蓋率，無任何依賴
 
 ```python
 from snesst import Chip
@@ -281,15 +281,15 @@ ST010 與 ST011 沒有自己的埠。每款都與主機共享四 KB 記憶體。
 
 1. `SNES_ST_FIRMWARE_DIR` 指定的每個目錄，以作業系統分隔路徑的方式分隔。
 2. `UPD7725_FIRMWARE_DIR` 指定的每個目錄。
-3. 本專案所簽出於其中的專案內的 `firmware/`。
-4. 本儲存庫中的 `firmware/`。
+3. 本專案所簽出於其中的專案內的 `external/firmware/`。
+4. 本儲存庫中的 `external/firmware/`。
 
 不會下載任何東西。在 macOS、Linux 或 Windows 上確認你持有的副本：
 
 ```bash
-shasum -a 256 firmware/st0010.bin
-sha256sum firmware/st0010.bin
-certutil -hashfile firmware\st0010.bin SHA256
+shasum -a 256 external/firmware/st0010.bin
+sha256sum external/firmware/st0010.bin
+certutil -hashfile external\firmware\st0010.bin SHA256
 ```
 
 摘要不在清單中的檔案會被搜尋略過。傳給 `snesst.firmware.identify` 時，它會被拒絕，拒絕訊息會說明移除 512 位元組標頭、刪去最後 512 個位元組或交換位元組對，能否把它變成已知映像檔。

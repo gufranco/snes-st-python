@@ -1,0 +1,167 @@
+{
+  "externalNote": "Every file this repository reads and may not ship. Each lives under external/, which git and Dropbox both ignore. python3 -m conformance.external reports which are here, which are missing and which are not the file named; SHA-256 alone decides.",
+  "external": {
+    "firmware-st018-japan-enhancement-chip-bin": {
+      "required": false,
+      "purpose": "A program and data image the package runs a part from; snesst/artifacts.manifest.json declares the same digests.",
+      "usedBy": ["snesst/firmware.py"],
+      "canonical_form": {
+        "container": "raw",
+        "header": "none",
+        "notes": "The image as the package reads it, the ST010 and ST011 words low byte first."
+      },
+      "accepted": [
+        {
+          "label": "ST018 (Japan) (Enhancement Chip)",
+          "path": "firmware/ST018 (Japan) (Enhancement Chip).bin",
+          "common_filename": "ST018 (Japan) (Enhancement Chip).bin",
+          "size": 163840,
+          "crc32": "5c403cc5",
+          "md5": "dafae0e0c71c924075811c595c61a30e",
+          "sha1": "91383b92745cc7cc4f15409ac5bc2c2f699a43f1",
+          "sha256": "6df209ab5d2524d1839c038be400ae5eb20dafc14a3771a3239cd9e8acd53806",
+          "preferred": true,
+          "provenance": {
+            "db": "a dump the author holds",
+            "dat_version": "copied 2026-10-27"
+          }
+        }
+      ]
+    },
+    "firmware-st0010-bin": {
+      "required": false,
+      "purpose": "A program and data image the package runs a part from; snesst/artifacts.manifest.json declares the same digests.",
+      "usedBy": ["snesst/firmware.py"],
+      "canonical_form": {
+        "container": "raw",
+        "header": "none",
+        "notes": "The image as the package reads it, the ST010 and ST011 words low byte first."
+      },
+      "accepted": [
+        {
+          "label": "st0010",
+          "path": "firmware/st0010.bin",
+          "common_filename": "st0010.bin",
+          "size": 53248,
+          "crc32": "8d136190",
+          "md5": "a1728c31df22b93e4bdae73718ba27a2",
+          "sha1": "75a3e5b5564ea251060dd35bff3dc468d4429e77",
+          "sha256": "55c697e864562445621cdf8a7bf6e84ae91361e393d382a3704e9aa55559041e",
+          "preferred": true,
+          "provenance": {
+            "db": "a dump the author holds",
+            "dat_version": "copied 2026-10-27"
+          }
+        }
+      ]
+    },
+    "firmware-st0011-bin": {
+      "required": false,
+      "purpose": "A program and data image the package runs a part from; snesst/artifacts.manifest.json declares the same digests.",
+      "usedBy": ["snesst/firmware.py"],
+      "canonical_form": {
+        "container": "raw",
+        "header": "none",
+        "notes": "The image as the package reads it, the ST010 and ST011 words low byte first."
+      },
+      "accepted": [
+        {
+          "label": "st0011",
+          "path": "firmware/st0011.bin",
+          "common_filename": "st0011.bin",
+          "size": 53248,
+          "crc32": "750c6012",
+          "md5": "2c56baddba22c6649c95c4c3b13adce3",
+          "sha1": "b2fdfa3edf08f76dbd30a0a4d3d0ef1e3d3f6905",
+          "sha256": "651b82a1e26c4fa8dd549e91e7f923012ed2ca54c1d9fd858655ab30679c2f0e",
+          "preferred": true,
+          "provenance": {
+            "db": "a dump the author holds",
+            "dat_version": "copied 2026-10-27"
+          }
+        }
+      ]
+    },
+    "cartridges-st010-japan-usa-enhancement-chip-bin": {
+      "required": false,
+      "purpose": "One of the three program dumps whose runs conformance/testroms.json records.",
+      "usedBy": ["conformance/testroms.py"],
+      "canonical_form": {
+        "container": "raw",
+        "header": "none",
+        "notes": "The dump as the cartridge library holds it; conformance/testroms.json pins the same SHA-256."
+      },
+      "accepted": [
+        {
+          "label": "ST010 (Japan, USA) (Enhancement Chip)",
+          "path": "cartridges/ST010 (Japan, USA) (Enhancement Chip).bin",
+          "common_filename": "ST010 (Japan, USA) (Enhancement Chip).bin",
+          "size": 53248,
+          "crc32": "8fc29d4c",
+          "md5": "636093910fbaff60c8b327be00aefbd9",
+          "sha1": "6472828403de3589433a906e2c3f3d274c0ff008",
+          "sha256": "fa9bced838fedea11c6f6ace33d1878024bdd0d02cc9485899d0bdd4015ec24c",
+          "preferred": true,
+          "provenance": {
+            "db": "the cartridge library's 5 Tools & Service Test Carts/CPU folder",
+            "dat_version": "copied 2026-10-27"
+          }
+        }
+      ]
+    },
+    "cartridges-st011-japan-enhancement-chip-bin": {
+      "required": false,
+      "purpose": "One of the three program dumps whose runs conformance/testroms.json records.",
+      "usedBy": ["conformance/testroms.py"],
+      "canonical_form": {
+        "container": "raw",
+        "header": "none",
+        "notes": "The dump as the cartridge library holds it; conformance/testroms.json pins the same SHA-256."
+      },
+      "accepted": [
+        {
+          "label": "ST011 (Japan) (Enhancement Chip)",
+          "path": "cartridges/ST011 (Japan) (Enhancement Chip).bin",
+          "common_filename": "ST011 (Japan) (Enhancement Chip).bin",
+          "size": 53248,
+          "crc32": "84aab2ae",
+          "md5": "5c209ce0283632b6574ad835bf862bee",
+          "sha1": "fecbae2cec76c710422486baa186ffa7ca1cf925",
+          "sha256": "8b2b3f3f3e6e29f4d21d8bc736b400bc988b7d2214ebee15643f01c1fee2f364",
+          "preferred": true,
+          "provenance": {
+            "db": "the cartridge library's 5 Tools & Service Test Carts/CPU folder",
+            "dat_version": "copied 2026-10-27"
+          }
+        }
+      ]
+    },
+    "cartridges-st018-japan-enhancement-chip-bin": {
+      "required": false,
+      "purpose": "One of the three program dumps whose runs conformance/testroms.json records.",
+      "usedBy": ["conformance/testroms.py"],
+      "canonical_form": {
+        "container": "raw",
+        "header": "none",
+        "notes": "The dump as the cartridge library holds it; conformance/testroms.json pins the same SHA-256."
+      },
+      "accepted": [
+        {
+          "label": "ST018 (Japan) (Enhancement Chip)",
+          "path": "cartridges/ST018 (Japan) (Enhancement Chip).bin",
+          "common_filename": "ST018 (Japan) (Enhancement Chip).bin",
+          "size": 163840,
+          "crc32": "5c403cc5",
+          "md5": "dafae0e0c71c924075811c595c61a30e",
+          "sha1": "91383b92745cc7cc4f15409ac5bc2c2f699a43f1",
+          "sha256": "6df209ab5d2524d1839c038be400ae5eb20dafc14a3771a3239cd9e8acd53806",
+          "preferred": true,
+          "provenance": {
+            "db": "the cartridge library's 5 Tools & Service Test Carts/CPU folder",
+            "dat_version": "copied 2026-10-27"
+          }
+        }
+      ]
+    }
+  }
+}

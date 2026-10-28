@@ -8,7 +8,7 @@ English | [日本語](README.ja.md) | [简体中文](README.zh-Hans.md) | [繁�
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-st-python)](https://github.com/gufranco/snes-st-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**3** parts, **0** commands described by hand, both waits measured on the shipped microcode, **0** disagreements between those waits and the record, **799** tests, **100%** statement and branch coverage, no dependencies
+**3** parts, **0** commands described by hand, both waits measured on the shipped microcode, **0** disagreements between those waits and the record, **849** tests, **100%** statement and branch coverage, no dependencies
 
 ```python
 from snesst import Chip
@@ -281,15 +281,15 @@ Every image is identified before a byte of it runs. SHA-256 decides. The CRC32 i
 
 1. Every directory named by `SNES_ST_FIRMWARE_DIR`, separated the way the operating system separates a path.
 2. Every directory named by `UPD7725_FIRMWARE_DIR`.
-3. `firmware/` in the project this one is checked out inside.
-4. `firmware/` in this repository.
+3. `external/firmware/` in the project this one is checked out inside.
+4. `external/firmware/` in this repository.
 
 Nothing is downloaded. Confirm a copy you hold on macOS, Linux or Windows:
 
 ```bash
-shasum -a 256 firmware/st0010.bin
-sha256sum firmware/st0010.bin
-certutil -hashfile firmware\st0010.bin SHA256
+shasum -a 256 external/firmware/st0010.bin
+sha256sum external/firmware/st0010.bin
+certutil -hashfile external\firmware\st0010.bin SHA256
 ```
 
 A file whose digest is not in the manifest is skipped by the search. Passed to `snesst.firmware.identify`, it is refused, and the refusal says whether removing a 512 byte header, dropping the last 512 bytes or swapping byte pairs turns it into a known image.

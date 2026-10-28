@@ -8,7 +8,7 @@ SetaがSuper Nintendoのカートリッジ向けに作った3つのコプロセ�
 [![Release](https://img.shields.io/github/v/release/gufranco/snes-st-python)](https://github.com/gufranco/snes-st-python/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**3**個のパーツ、手で記述したコマンドは**0**個、2つの待機位置はどちらも出荷時のマイクロコードで測定済み、それらの待機位置と記録との食い違いは**0**件、テストは**799**個、ステートメントとブランチの**100%**カバレッジ、依存関係なし
+**3**個のパーツ、手で記述したコマンドは**0**個、2つの待機位置はどちらも出荷時のマイクロコードで測定済み、それらの待機位置と記録との食い違いは**0**件、テストは**849**個、ステートメントとブランチの**100%**カバレッジ、依存関係なし
 
 ```python
 from snesst import Chip
@@ -281,15 +281,15 @@ ST010とST011には独自のポートがありません。どちらもコンソ�
 
 1. `SNES_ST_FIRMWARE_DIR`で指定されたすべてのディレクトリ。区切り方はオペレーティングシステムのパスの区切り方に従います。
 2. `UPD7725_FIRMWARE_DIR`で指定されたすべてのディレクトリ。
-3. このリポジトリがチェックアウトされている親プロジェクトの`firmware/`。
-4. このリポジトリの`firmware/`。
+3. このリポジトリがチェックアウトされている親プロジェクトの`external/firmware/`。
+4. このリポジトリの`external/firmware/`。
 
 何もダウンロードしません。手元のコピーはmacOS、Linux、Windowsで次のように確認します。
 
 ```bash
-shasum -a 256 firmware/st0010.bin
-sha256sum firmware/st0010.bin
-certutil -hashfile firmware\st0010.bin SHA256
+shasum -a 256 external/firmware/st0010.bin
+sha256sum external/firmware/st0010.bin
+certutil -hashfile external\firmware\st0010.bin SHA256
 ```
 
 ダイジェストがマニフェストにないファイルは、探索ではスキップされます。`snesst.firmware.identify`に渡すと拒否され、その拒否メッセージは、512バイトのヘッダを取り除く、末尾の512バイトを削る、またはバイトの組を入れ替えることで既知のイメージになるかどうかを示します。
