@@ -10,7 +10,7 @@ SetaがSuper Nintendoのカートリッジ向けに作った3つのコプロセ�
 [![openssf scorecard](https://img.shields.io/ossf-scorecard/github.com/gufranco/snes-st-python?style=flat-square&label=openssf%20scorecard)](https://scorecard.dev/viewer/?uri=github.com/gufranco/snes-st-python)
 [![license](https://img.shields.io/github/license/gufranco/snes-st-python?style=flat-square&label=license)](LICENSE)
 
-**3**個のパーツ、手で記述したコマンドは**0**個、2つの待機位置はどちらも出荷時のマイクロコードで測定済み、それらの待機位置と記録との食い違いは**0**件、テストは**851**個、ステートメントとブランチの**100%**カバレッジ、依存関係なし
+**3**個のパーツ、手で記述したコマンドは**0**個、2つの待機位置はどちらも出荷時のマイクロコードで測定済み、それらの待機位置と記録との食い違いは**0**件、テストは**852**個、ステートメントとブランチの**100%**カバレッジ、依存関係なし
 
 ```python
 from snesst import Chip
