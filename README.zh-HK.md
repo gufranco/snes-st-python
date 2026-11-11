@@ -10,7 +10,7 @@ Seta 為 Super Nintendo 卡帶製造的三款協處理器的 Python 實現。每
 [![openssf scorecard](https://img.shields.io/ossf-scorecard/github.com/gufranco/snes-st-python?style=flat-square&label=openssf%20scorecard)](https://scorecard.dev/viewer/?uri=github.com/gufranco/snes-st-python)
 [![license](https://img.shields.io/github/license/gufranco/snes-st-python?style=flat-square&label=license)](LICENSE)
 
-**3** 款晶片，**0** 個人手描述的命令，兩處等待位置均在出貨的微碼上量度，這些等待位置與記錄之間 **0** 處分歧，**851** 個測試，**100%** 語句與分支覆蓋率，無任何依賴
+**3** 款晶片，**0** 個人手描述的命令，兩處等待位置均在出貨的微碼上量度，這些等待位置與記錄之間 **0** 處分歧，**852** 個測試，**100%** 語句與分支覆蓋率，無任何依賴
 
 ```python
 from snesst import Chip
